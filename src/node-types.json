@@ -1,11 +1,15 @@
 [
   {
-    "type": "source_file",
+    "type": "whitespace",
     "named": true,
     "fields": {}
   },
   {
-    "type": "hello",
-    "named": false
+    "type": "block_comment",
+    "named": true
+  },
+  {
+    "type": "line_comment",
+    "named": true
   }
 ]

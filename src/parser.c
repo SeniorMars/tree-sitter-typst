@@ -7,30 +7,36 @@
 
 #define LANGUAGE_VERSION 14
 #define STATE_COUNT 4
-#define LARGE_STATE_COUNT 2
-#define SYMBOL_COUNT 3
+#define LARGE_STATE_COUNT 3
+#define SYMBOL_COUNT 5
 #define ALIAS_COUNT 0
-#define TOKEN_COUNT 2
-#define EXTERNAL_TOKEN_COUNT 0
+#define TOKEN_COUNT 4
+#define EXTERNAL_TOKEN_COUNT 1
 #define FIELD_COUNT 0
 #define MAX_ALIAS_SEQUENCE_LENGTH 1
 #define PRODUCTION_ID_COUNT 1
 
 enum {
-  anon_sym_hello = 1,
-  sym_source_file = 2,
+  aux_sym_whitespace_token1 = 1,
+  sym_line_comment = 2,
+  sym_block_comment = 3,
+  sym_whitespace = 4,
 };
 
 static const char * const ts_symbol_names[] = {
   [ts_builtin_sym_end] = "end",
-  [anon_sym_hello] = "hello",
-  [sym_source_file] = "source_file",
+  [aux_sym_whitespace_token1] = "whitespace_token1",
+  [sym_line_comment] = "line_comment",
+  [sym_block_comment] = "block_comment",
+  [sym_whitespace] = "whitespace",
 };
 
 static const TSSymbol ts_symbol_map[] = {
   [ts_builtin_sym_end] = ts_builtin_sym_end,
-  [anon_sym_hello] = anon_sym_hello,
-  [sym_source_file] = sym_source_file,
+  [aux_sym_whitespace_token1] = aux_sym_whitespace_token1,
+  [sym_line_comment] = sym_line_comment,
+  [sym_block_comment] = sym_block_comment,
+  [sym_whitespace] = sym_whitespace,
 };
 
 static const TSSymbolMetadata ts_symbol_metadata[] = {
@@ -38,11 +44,19 @@ static const TSSymbolMetadata ts_symbol_metadata[] = {
     .visible = false,
     .named = true,
   },
-  [anon_sym_hello] = {
-    .visible = true,
+  [aux_sym_whitespace_token1] = {
+    .visible = false,
     .named = false,
   },
-  [sym_source_file] = {
+  [sym_line_comment] = {
+    .visible = true,
+    .named = true,
+  },
+  [sym_block_comment] = {
+    .visible = true,
+    .named = true,
+  },
+  [sym_whitespace] = {
     .visible = true,
     .named = true,
   },
@@ -60,7 +74,7 @@ static const TSStateId ts_primary_state_ids[STATE_COUNT] = {
   [0] = 0,
   [1] = 1,
   [2] = 2,
-  [3] = 3,
+  [3] = 2,
 };
 
 static bool ts_lex(TSLexer *lexer, TSStateId state) {
@@ -68,30 +82,30 @@ static bool ts_lex(TSLexer *lexer, TSStateId state) {
   eof = lexer->eof(lexer);
   switch (state) {
     case 0:
-      if (eof) ADVANCE(5);
-      if (lookahead == 'h') ADVANCE(1);
+      if (eof) ADVANCE(2);
+      if (lookahead == '/') ADVANCE(1);
       if (lookahead == '\t' ||
           lookahead == '\n' ||
           lookahead == '\r' ||
-          lookahead == ' ') SKIP(0)
+          lookahead == ' ') ADVANCE(3);
       END_STATE();
     case 1:
-      if (lookahead == 'e') ADVANCE(3);
+      if (lookahead == '/') ADVANCE(4);
       END_STATE();
     case 2:
-      if (lookahead == 'l') ADVANCE(4);
-      END_STATE();
-    case 3:
-      if (lookahead == 'l') ADVANCE(2);
-      END_STATE();
-    case 4:
-      if (lookahead == 'o') ADVANCE(6);
-      END_STATE();
-    case 5:
       ACCEPT_TOKEN(ts_builtin_sym_end);
       END_STATE();
-    case 6:
-      ACCEPT_TOKEN(anon_sym_hello);
+    case 3:
+      ACCEPT_TOKEN(aux_sym_whitespace_token1);
+      if (lookahead == '\t' ||
+          lookahead == '\n' ||
+          lookahead == '\r' ||
+          lookahead == ' ') ADVANCE(3);
+      END_STATE();
+    case 4:
+      ACCEPT_TOKEN(sym_line_comment);
+      if (lookahead != 0 &&
+          lookahead != '\n') ADVANCE(4);
       END_STATE();
     default:
       return false;
@@ -99,48 +113,77 @@ static bool ts_lex(TSLexer *lexer, TSStateId state) {
 }
 
 static const TSLexMode ts_lex_modes[STATE_COUNT] = {
-  [0] = {.lex_state = 0},
-  [1] = {.lex_state = 0},
-  [2] = {.lex_state = 0},
-  [3] = {.lex_state = 0},
+  [0] = {.lex_state = 0, .external_lex_state = 1},
+  [1] = {.lex_state = 0, .external_lex_state = 1},
+  [2] = {.lex_state = 0, .external_lex_state = 1},
+  [3] = {(TSStateId)(-1)},
+};
+
+enum {
+  ts_external_token_block_comment = 0,
+};
+
+static const TSSymbol ts_external_scanner_symbol_map[EXTERNAL_TOKEN_COUNT] = {
+  [ts_external_token_block_comment] = sym_block_comment,
+};
+
+static const bool ts_external_scanner_states[2][EXTERNAL_TOKEN_COUNT] = {
+  [1] = {
+    [ts_external_token_block_comment] = true,
+  },
 };
 
 static const uint16_t ts_parse_table[LARGE_STATE_COUNT][SYMBOL_COUNT] = {
   [0] = {
+    [sym_whitespace] = STATE(0),
     [ts_builtin_sym_end] = ACTIONS(1),
-    [anon_sym_hello] = ACTIONS(1),
+    [aux_sym_whitespace_token1] = ACTIONS(3),
+    [sym_line_comment] = ACTIONS(5),
+    [sym_block_comment] = ACTIONS(5),
   },
   [1] = {
-    [sym_source_file] = STATE(3),
-    [anon_sym_hello] = ACTIONS(3),
+    [sym_whitespace] = STATE(1),
+    [aux_sym_whitespace_token1] = ACTIONS(7),
+    [sym_line_comment] = ACTIONS(5),
+    [sym_block_comment] = ACTIONS(5),
+  },
+  [2] = {
+    [sym_whitespace] = STATE(2),
+    [ts_builtin_sym_end] = ACTIONS(9),
+    [aux_sym_whitespace_token1] = ACTIONS(3),
+    [sym_line_comment] = ACTIONS(5),
+    [sym_block_comment] = ACTIONS(5),
   },
 };
 
 static const uint16_t ts_small_parse_table[] = {
   [0] = 1,
-    ACTIONS(5), 1,
-      ts_builtin_sym_end,
-  [4] = 1,
-    ACTIONS(7), 1,
+    ACTIONS(9), 1,
       ts_builtin_sym_end,
 };
 
 static const uint32_t ts_small_parse_table_map[] = {
-  [SMALL_STATE(2)] = 0,
-  [SMALL_STATE(3)] = 4,
+  [SMALL_STATE(3)] = 0,
 };
 
 static const TSParseActionEntry ts_parse_actions[] = {
   [0] = {.entry = {.count = 0, .reusable = false}},
   [1] = {.entry = {.count = 1, .reusable = false}}, RECOVER(),
-  [3] = {.entry = {.count = 1, .reusable = true}}, SHIFT(2),
-  [5] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_source_file, 1),
-  [7] = {.entry = {.count = 1, .reusable = true}},  ACCEPT_INPUT(),
+  [3] = {.entry = {.count = 1, .reusable = true}}, SHIFT(3),
+  [5] = {.entry = {.count = 1, .reusable = true}}, SHIFT_EXTRA(),
+  [7] = {.entry = {.count = 1, .reusable = true}}, SHIFT(2),
+  [9] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_whitespace, 1),
 };
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+void *tree_sitter_typst_external_scanner_create(void);
+void tree_sitter_typst_external_scanner_destroy(void *);
+bool tree_sitter_typst_external_scanner_scan(void *, TSLexer *, const bool *);
+unsigned tree_sitter_typst_external_scanner_serialize(void *, char *);
+void tree_sitter_typst_external_scanner_deserialize(void *, const char *, unsigned);
+
 #ifdef _WIN32
 #define extern __declspec(dllexport)
 #endif
@@ -168,6 +211,15 @@ extern const TSLanguage *tree_sitter_typst(void) {
     .alias_sequences = &ts_alias_sequences[0][0],
     .lex_modes = ts_lex_modes,
     .lex_fn = ts_lex,
+    .external_scanner = {
+      &ts_external_scanner_states[0][0],
+      ts_external_scanner_symbol_map,
+      tree_sitter_typst_external_scanner_create,
+      tree_sitter_typst_external_scanner_destroy,
+      tree_sitter_typst_external_scanner_scan,
+      tree_sitter_typst_external_scanner_serialize,
+      tree_sitter_typst_external_scanner_deserialize,
+    },
     .primary_state_ids = ts_primary_state_ids,
   };
   return &language;

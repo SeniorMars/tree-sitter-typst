@@ -7,8 +7,7 @@
         "gen": "tree-sitter generate",
         "test": "tree-sitter test",
         "parse": "tree-sitter parse",
-        "debug": "tree-sitter parse --debug-build",
-        "build": "tree-sitter generate && node-gyp build"
+        "debug": "tree-sitter parse --debug-build"
     },
     "repository": {
         "type": "git",
@@ -33,7 +32,7 @@
         "tree-sitter-cli": "^0.20.7"
     },
     "tree-sitter": [{
-        "scope": "document.typst",
+        "scope": "source.typst",
         "file-types": [
             "typ"
         ]
