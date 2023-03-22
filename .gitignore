@@ -1,0 +1,9 @@
+node_modules
+build
+Cargo.lock
+package-lock.json
+yarn.lock
+*.log
+result/
+*.wasm
+*.o

@@ -1,0 +1,40 @@
+{
+    "name": "tree-sitter-typst",
+    "version": "1.0.0",
+    "description": "A TreeSitter parser for the typst file format",
+    "main": "bindings/node",
+    "scripts": {
+        "gen": "tree-sitter generate",
+        "test": "tree-sitter test",
+        "parse": "tree-sitter parse",
+        "debug": "tree-sitter parse --debug-build"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/SeniorMars/typst.nvim.git"
+    },
+    "keywords": [
+        "typst",
+        "markup",
+        "treesitter",
+        "tree-sitter"
+    ],
+    "author": "SeniorMars",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/SeniorMars/typst.nvim/issues"
+    },
+    "homepage": "https://github.com/SeniorMars/typst.nvim#readme",
+    "dependencies": {
+        "nan": "^2.17.0"
+    },
+    "devDependencies": {
+        "tree-sitter-cli": "^0.20.7"
+    },
+    "tree-sitter": [{
+        "scope": "document.typst",
+        "file-types": [
+            "typ"
+        ]
+    }]
+}
