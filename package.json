@@ -7,7 +7,8 @@
         "gen": "tree-sitter generate",
         "test": "tree-sitter test",
         "parse": "tree-sitter parse",
-        "debug": "tree-sitter parse --debug-build"
+        "debug": "tree-sitter parse --debug-build",
+        "build": "tree-sitter generate && node-gyp build"
     },
     "repository": {
         "type": "git",
