@@ -1,0 +1,337 @@
+================================================================================
+Empty Block Function
+================================================================================
+
+#let function(hello, world) = {
+
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (expression_statement
+    (let_declaration
+      (function
+        (identifier)
+        (parameters
+          (parameter
+            (identifier))
+          (parameter
+            (identifier))))
+      (block))))
+
+================================================================================
+NonEmpty Block Function
+================================================================================
+
+#let function(hello, world) = {
+    let hello = "Hello, world!"
+    let world = "Hello, world!"
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (expression_statement
+    (let_declaration
+      (function
+        (identifier)
+        (parameters
+          (parameter
+            (identifier))
+          (parameter
+            (identifier))))
+      (block
+        (expression_statement
+          (let_declaration
+            (identifier)
+            (string_literal)))
+        (expression_statement
+          (let_declaration
+            (identifier)
+            (string_literal)))))))
+
+================================================================================
+Text
+================================================================================
+
+#let hello = "Hello, world!"
+[#hello]
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (expression_statement
+    (let_declaration
+      (identifier)
+      (string_literal)))
+  (content_block
+    (function
+      (identifier))))
+
+================================================================================
+Function call in text
+================================================================================
+
+hello #world(1, 2). "hello"
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (function
+    (identifier)
+    (parameters
+      (parameter
+        (int_literal))
+      (parameter
+        (int_literal))))
+  (quote))
+
+================================================================================
+Weird Function Calls
+================================================================================
+
+#emph[Hello]
+#list[A][B]
+#list([A], [B])
+#enum(start: 2)[A][B]
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (function
+    (identifier))
+  (content_block)
+  (function
+    (identifier))
+  (content_block)
+  (content_block)
+  (function
+    (identifier)
+    (parameters
+      (parameter
+        (content_block))
+      (parameter
+        (content_block))))
+  (function
+    (identifier)
+    (parameters
+      (parameter
+        (default_parameter
+          (identifier)
+          (int_literal)))))
+  (content_block)
+  (content_block))
+
+================================================================================
+Real World Example
+================================================================================
+
+#let alert(body, fill: red) = {
+  rect(
+    fill: fill,
+    inset: 8pt,
+    radius: 4pt,
+    [*Warning:\ #body*],
+  )
+}
+
+#alert[
+  Danger is imminent!
+]
+
+#alert(fill: blue)[
+  KEEP OFF TRACKS
+]
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (expression_statement
+    (let_declaration
+      (function
+        (identifier)
+        (parameters
+          (parameter
+            (identifier))
+          (parameter
+            (default_parameter
+              (identifier)
+              (identifier)))))
+      (block
+        (expression_statement
+          (function
+            (identifier)
+            (parameters
+              (parameter
+                (default_parameter
+                  (identifier)
+                  (identifier)))
+              (parameter
+                (default_parameter
+                  (identifier)
+                  (numeric
+                    (int_literal)
+                    (unit))))
+              (parameter
+                (default_parameter
+                  (identifier)
+                  (numeric
+                    (int_literal)
+                    (unit))))
+              (parameter
+                (content_block
+                  (line_break)
+                  (function
+                    (identifier))))))))))
+  (function
+    (identifier))
+  (content_block)
+  (function
+    (identifier)
+    (parameters
+      (parameter
+        (default_parameter
+          (identifier)
+          (identifier)))))
+  (content_block))
+
+================================================================================
+If block
+================================================================================
+
+#if 1 < 2 [
+  This is shown
+] else if 1 == 2 [
+  they are equal
+] else [
+  This is not.
+]
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (expression_statement
+    (if_expression
+      (comparison_operator
+        (int_literal)
+        (int_literal))
+      (content_block)
+      (else_clause
+        (if_expression
+          (comparison_operator
+            (int_literal)
+            (int_literal))
+          (content_block)
+          (else_clause
+            (content_block)))))))
+
+
+================================================================================
+logical operators
+================================================================================
+
+#if 1 < 2 and not false [
+  This is shown
+]
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (expression_statement
+    (if_expression
+      (boolean_operator
+        (comparison_operator
+          (int_literal)
+          (int_literal))
+        (unary_operator
+          (boolean_literal)))
+      (content_block))))
+
+================================================================================
+For loop
+================================================================================
+
+#for letter in "abc nope" {
+  if letter == " " {
+    break
+  }
+
+  letter
+}
+
+#for key, value in dict {
+  if letter == " " {
+    break
+  }
+
+  letter
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (expression_statement
+    (for_expression
+      (identifier)
+      (string_literal)
+      (block
+        (expression_statement
+          (if_expression
+            (comparison_operator
+              (identifier)
+              (string_literal))
+            (block
+              (expression_statement
+                (identifier)))))
+        (expression_statement
+          (identifier)))))
+  (expression_statement
+    (for_expression
+      (pattern_list
+        (identifier)
+        (identifier))
+      (identifier)
+      (block
+        (expression_statement
+          (if_expression
+            (comparison_operator
+              (identifier)
+              (string_literal))
+            (block
+              (expression_statement
+                (identifier)))))
+        (expression_statement
+          (identifier))))))
+
+================================================================================
+Examples from the website
+================================================================================
+
+#{
+  let a = [from]
+  let b = [*world*]
+  [hello ]
+  a + [ the ] + b
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+ (block
+  (expression_statement
+   (let_declaration
+    (identifier)
+    (content_block)))
+  (expression_statement
+   (let_declaration
+    (identifier)
+    (content_block)))
+  (expression_statement
+   (content_block))
+  (expression_statement
+   (binary_operator
+    (binary_operator
+     (identifier)
+     (content_block))
+    (identifier)))))
