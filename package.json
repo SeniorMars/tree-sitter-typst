@@ -12,7 +12,7 @@
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/SeniorMars/typst.nvim.git"
+        "url": "git+https://github.com/SeniorMars/tree-sitter-typst.git"
     },
     "keywords": [
         "typst",
@@ -23,9 +23,9 @@
     "author": "SeniorMars",
     "license": "MIT",
     "bugs": {
-        "url": "https://github.com/SeniorMars/typst.nvim/issues"
+        "url": "https://github.com/SeniorMars/tree-sitter-typst/issues"
     },
-    "homepage": "https://github.com/SeniorMars/typst.nvim#readme",
+    "homepage": "https://github.com/SeniorMars/tree-sitter-typst#readme",
     "dependencies": {
         "nan": "^2.17.0"
     },
@@ -37,13 +37,11 @@
         "eslint-plugin-promise": "^6.1.1",
         "tree-sitter-cli": "^0.20.7"
     },
-    "tree-sitter": [
-        {
-            "scope": "source.typst",
-            "injection-regex": "typst",
-            "file-types": [
-                "typ"
-            ]
-        }
-    ]
+    "tree-sitter": [{
+        "scope": "source.typst",
+        "injection-regex": "typst",
+        "file-types": [
+            "typ"
+        ]
+    }]
 }
