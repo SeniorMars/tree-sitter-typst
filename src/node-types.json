@@ -1,6 +1,40 @@
 [
   {
-    "type": "boolean",
+    "type": "_literal",
+    "named": true,
+    "subtypes": [
+      {
+        "type": "auto",
+        "named": true
+      },
+      {
+        "type": "boolean_literal",
+        "named": true
+      },
+      {
+        "type": "float_literal",
+        "named": true
+      },
+      {
+        "type": "int_literal",
+        "named": true
+      },
+      {
+        "type": "none",
+        "named": true
+      },
+      {
+        "type": "numeric",
+        "named": true
+      },
+      {
+        "type": "string_literal",
+        "named": true
+      }
+    ]
+  },
+  {
+    "type": "boolean_literal",
     "named": true,
     "fields": {}
   },
@@ -28,31 +62,7 @@
       "required": true,
       "types": [
         {
-          "type": "auto",
-          "named": true
-        },
-        {
-          "type": "boolean",
-          "named": true
-        },
-        {
-          "type": "float",
-          "named": true
-        },
-        {
-          "type": "int",
-          "named": true
-        },
-        {
-          "type": "none",
-          "named": true
-        },
-        {
-          "type": "numeric",
-          "named": true
-        },
-        {
-          "type": "str",
+          "type": "_literal",
           "named": true
         }
       ]
@@ -67,11 +77,11 @@
       "required": true,
       "types": [
         {
-          "type": "float",
+          "type": "float_literal",
           "named": true
         },
         {
-          "type": "int",
+          "type": "int_literal",
           "named": true
         },
         {
@@ -106,43 +116,7 @@
     "fields": {}
   },
   {
-    "type": "str",
-    "named": true,
-    "fields": {
-      "prefix": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "\"",
-            "named": false
-          }
-        ]
-      },
-      "string_content": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "string_content",
-            "named": true
-          }
-        ]
-      },
-      "suffix": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "\"",
-            "named": false
-          }
-        ]
-      }
-    }
-  },
-  {
-    "type": "string_content",
+    "type": "string_literal",
     "named": true,
     "fields": {},
     "children": {
@@ -242,6 +216,10 @@
     "named": true
   },
   {
+    "type": "block_comment",
+    "named": true
+  },
+  {
     "type": "cm",
     "named": false
   },
@@ -258,7 +236,7 @@
     "named": false
   },
   {
-    "type": "float",
+    "type": "float_literal",
     "named": true
   },
   {
@@ -270,7 +248,7 @@
     "named": false
   },
   {
-    "type": "int",
+    "type": "int_literal",
     "named": true
   },
   {

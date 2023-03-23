@@ -6,16 +6,41 @@
 
 // const sepBy = (rule, sep) => optional(sepBy1(rule, sep));
 
+const special = [
+    '\\',
+    '/',
+    '[',
+    ']',
+    '{',
+    '}',
+    '#',
+    '~',
+    '-',
+    '.',
+    ':',
+    '"',
+    '\'',
+    '*',
+    '_',
+    '`',
+    '$',
+    '=',
+    '<',
+    '>',
+    '@',
+];
+
 module.exports = grammar({
     name: 'typst',
-    extras: $ => [$._whitespace, $.line_comment],
-    // extras: $ => [$.whitespace, $.line_comment, $.block_comment],
 
-    // externals: $ => [
-    //     // $._string_content,
-    //     $.block_comment,
-    // ],
-    super: $ => [
+    extras: $ => [$._whitespace, $.line_comment, $.block_comment],
+
+    externals: $ => [
+        $._string_content,
+        $.block_comment,
+    ],
+
+    supertypes: $ => [
         $._literal,
     ],
 
@@ -26,12 +51,10 @@ module.exports = grammar({
         _whitespace: $ => /\s+/,
 
         // --- Comments
-        comment: $ => $.line_comment,
-
-        // choice(
-        //     $.line_comment,
-        //     $.block_comment
-        // ),
+        comment: $ => choice(
+            $.line_comment,
+            $.block_comment
+        ),
 
         line_comment: $ => token(seq(
             '//', /[^\r\n]*/
@@ -54,24 +77,24 @@ module.exports = grammar({
         _literal: $ => choice(
             $.none,
             $.auto,
-            $.boolean,
-            $.int,
-            $.float,
+            $.boolean_literal,
+            $.int_literal,
+            $.float_literal,
             $.numeric,
-            $.string
+            $.string_literal
         ),
 
         none: $ => 'none',
         auto: $ => 'auto',
 
         // boolean ::= 'false' | 'true'
-        boolean: $ => choice('true', 'false'),
+        boolean_literal: $ => choice('true', 'false'),
 
         // int ::= digit+
         // digit = '0' | ... | '9'
         // TODO: allow underscores in numbers?
         // could be a problem with the lexer as we use subscripts
-        int: $ => /\d+/,
+        int_literal: $ => /\d+/,
         // int: $ => token(choice(
         //     seq(
         //         choice('0x', '0X'),
@@ -99,7 +122,7 @@ module.exports = grammar({
 
         // float ::= ((digit+ ('.' digit*)?) | ('.' digit+)) ('e' digit+)?
         // A floating-point number: `1.2`, `10e-4`.
-        float: $ => {
+        float_literal: $ => {
             // const digits = repeat1(/\d+_?/);
             const digits = repeat1(/[0-9]+/);
             const exponent = seq(/[eE][+-]?/, digits)
@@ -119,22 +142,20 @@ module.exports = grammar({
         unit: $ => choice('pt', 'mm', 'cm', 'in', 'deg', 'rad', 'em', 'fr', '%'),
 
         // numeric ::= float unit
-        numeric: $ => seq(choice($.float, $.int), $.unit),
+        numeric: $ => seq(choice($.float_literal, $.int_literal), $.unit),
 
         // NOTE: not in the spec, but perhaps useful
-        negative_literal: $ => seq('-', choice($.int, $.float, $.numeric)),
+        negative_literal: $ => seq('-', choice($.int_literal, $.float_literal, $.numeric)),
 
         // str ::= '"' .* '"'
-        string: $ => seq(
-            field('prefix', '"'),
-            // field('prefix', alias($._string_start, '"')),
-            field('string_content', $.string_content),
-            field('suffix', '"')
-            // field('suffix', alias($._string_end, '"'))
+        string_literal: $ => seq(
+            /"/,
+            repeat(choice(
+                $.escape_sequence,
+                $._string_content
+            )),
+            token.immediate('"')
         ),
-
-        // --- Interpolation
-        _not_escape_sequence: $ => token.immediate('\\'),
 
         _escape_sequence: $ => token.immediate(
             seq('\\',
@@ -153,42 +174,6 @@ module.exports = grammar({
             $._escape_sequence,
         ),
 
-        // NOTE: perhaps this should be an <external>
-        string_content: $ => prec.right(0, repeat1(choice(
-            $.escape_sequence,
-            $._not_escape_sequence,
-            // "\\\\([\\\\\"nrt]|u\\{?[0-9a-zA-Z]*\\}?)"
-            seq(
-                optional(/\\\{/),
-                // optional(/{/),
-                /[0-9a-zA-Z]*/,
-                // optional(/}/)
-                optional(/\\\}/)
-            )
-        ))),
-
-        special: $ => choice(
-            '\\',
-            '/',
-            '[',
-            ']',
-            '{',
-            '}',
-            '#',
-            '~',
-            '-',
-            '.',
-            ':',
-            '"',
-            '\'',
-            '*',
-            '_',
-            '`',
-            '$',
-            '=',
-            '<',
-            '>',
-            '@',
-        ),
+        special: $ => choice(...special),
     }
 });

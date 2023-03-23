@@ -9,9 +9,9 @@ Integers
 
 (source_file
  (expression
-  (int))
+  (int_literal))
  (expression
-  (int)))
+  (int_literal)))
 
 ================================================================================
 Floats
@@ -21,7 +21,7 @@ Floats
 1.1
 123.4123
 123.123
-1.3.1
+1.3
 1.
 1e3.4
 .3e14
@@ -33,31 +33,29 @@ Floats
 
 (source_file
   (expression
-    (float))
+    (float_literal))
   (expression
-    (float))
+    (float_literal))
   (expression
-    (float))
+    (float_literal))
   (expression
-    (float))
+    (float_literal))
   (expression
-    (float))
+    (float_literal))
   (expression
-    (float))
+    (float_literal))
   (expression
-    (float))
+    (float_literal))
   (expression
-    (float))
+    (float_literal))
   (expression
-    (float))
+    (float_literal))
   (expression
-    (float))
+    (float_literal))
   (expression
-    (float))
+    (float_literal))
   (expression
-    (float))
-  (expression
-    (float)))
+    (float_literal)))
 
 ================================================================================
 Numbers
@@ -74,15 +72,15 @@ Numbers
 
 (source_file
   (expression
-    (int))
+    (int_literal))
   (expression
-    (int))
+    (int_literal))
   (expression
-    (float))
+    (float_literal))
   (expression
-    (int))
+    (int_literal))
   (expression
-    (float)))
+    (float_literal)))
 
 ================================================================================
 Numeric
@@ -103,39 +101,39 @@ Numeric
 (source_file
   (expression
     (numeric
-      (int)
+      (int_literal)
       (unit)))
   (expression
     (numeric
-      (float)
+      (float_literal)
       (unit)))
   (expression
     (numeric
-      (int)
+      (int_literal)
       (unit)))
   (expression
     (numeric
-      (float)
+      (float_literal)
       (unit)))
   (expression
     (numeric
-      (float)
+      (float_literal)
       (unit)))
   (expression
     (numeric
-      (int)
+      (int_literal)
       (unit)))
   (expression
     (numeric
-      (float)
+      (float_literal)
       (unit)))
   (expression
     (numeric
-      (float)
+      (float_literal)
       (unit)))
   (expression
     (numeric
-      (float)
+      (float_literal)
       (unit))))
 
 ================================================================================
@@ -147,23 +145,26 @@ Scientific Notation Floats
 1e+3
 1.8e10
 1.e10
+.1e14
 1e10
 
 --------------------------------------------------------------------------------
 
 (source_file
   (expression
-    (float))
+    (float_literal))
   (expression
-    (float))
+    (float_literal))
   (expression
-    (float))
+    (float_literal))
   (expression
-    (float))
+    (float_literal))
   (expression
-    (float))
+    (float_literal))
   (expression
-    (float)))
+    (float_literal))
+  (expression
+    (float_literal)))
 
 ================================================================================
 Strings
@@ -171,16 +172,17 @@ Strings
 
 "hello"
 "hello world"
+"unicode not working"
 
 --------------------------------------------------------------------------------
 
 (source_file
-  (expression
-    (string
-      (string_content)))
-  (expression
-    (string
-      (string_content))))
+ (expression
+  (string_literal))
+ (expression
+  (string_literal))
+ (expression
+  (string_literal)))
 
 ================================================================================
 Escape Sequences
@@ -197,25 +199,21 @@ Escape Sequences
 (source_file
   (escape_sequence)
   (expression
-    (string
-      (string_content
-        (escape_sequence))))
+    (string_literal
+      (escape_sequence)))
   (expression
-    (string
-      (string_content
-        (escape_sequence))))
+    (string_literal
+      (escape_sequence)))
   (expression
-    (string
-      (string_content
-        (escape_sequence)
-        (escape_sequence)
-        (escape_sequence))))
+    (string_literal
+      (escape_sequence)
+      (escape_sequence)
+      (escape_sequence)))
   (expression
-    (string
-      (string_content
-        (escape_sequence)
-        (escape_sequence)
-        (escape_sequence)))))
+    (string_literal
+      (escape_sequence)
+      (escape_sequence)
+      (escape_sequence))))
 
 ================================================================================
 Other Literals
@@ -230,9 +228,9 @@ auto
 
 (source_file
   (expression
-    (boolean))
+    (boolean_literal))
   (expression
-    (boolean))
+    (boolean_literal))
   (expression
     (none))
   (expression
@@ -248,11 +246,8 @@ Concatenated Strings
 
 (source_file
   (expression
-    (string
-      (string_content)))
+    (string_literal))
   (expression
-    (string
-      (string_content)))
+    (string_literal))
   (expression
-    (string
-      (string_content))))
+    (string_literal)))

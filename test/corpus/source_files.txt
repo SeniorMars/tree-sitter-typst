@@ -1,5 +1,5 @@
 ============================================
- Line comments
+ Line Comments
 ============================================
 
 // Comment
@@ -8,3 +8,20 @@
 
 (source_file
   (line_comment))
+
+============================================
+ Block Comments
+============================================
+
+/* Comment */
+
+/*
+hello
+world
+*/
+
+----
+
+(source_file
+  (block_comment)
+  (block_comment))
