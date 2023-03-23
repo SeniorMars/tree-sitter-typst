@@ -5,6 +5,7 @@ version = "0.0.1"
 keywords = ["incremental", "parsing", "typst"]
 categories = ["parsing", "text-editors"]
 repository = "https://github.com/tree-sitter/tree-sitter-typst"
+readme = "bindings/rust/README.md"
 edition = "2018"
 license = "MIT"
 
@@ -15,6 +16,7 @@ include = [
   "queries/*",
   "src/*",
 ]
+autoexamples = false
 
 [lib]
 path = "bindings/rust/lib.rs"

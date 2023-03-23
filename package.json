@@ -7,7 +7,8 @@
         "gen": "tree-sitter generate",
         "test": "tree-sitter test",
         "parse": "tree-sitter parse",
-        "debug": "tree-sitter parse --debug-build"
+        "debug": "tree-sitter parse --debug-build",
+        "build": "tree-sitter generate && node-gyp build"
     },
     "repository": {
         "type": "git",
@@ -29,12 +30,20 @@
         "nan": "^2.17.0"
     },
     "devDependencies": {
+        "eslint": "^8.36.0",
+        "eslint-config-standard": "^17.0.0",
+        "eslint-plugin-import": "^2.27.5",
+        "eslint-plugin-n": "^15.6.1",
+        "eslint-plugin-promise": "^6.1.1",
         "tree-sitter-cli": "^0.20.7"
     },
-    "tree-sitter": [{
-        "scope": "source.typst",
-        "file-types": [
-            "typ"
-        ]
-    }]
+    "tree-sitter": [
+        {
+            "scope": "source.typst",
+            "injection-regex": "typst",
+            "file-types": [
+                "typ"
+            ]
+        }
+    ]
 }
