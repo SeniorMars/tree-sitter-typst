@@ -1,16 +1,16 @@
 ============================================
- Line Comments
+Line Comments
 ============================================
 
 // Comment
 
-----
+--------------------------------------------
 
 (source_file
   (line_comment))
 
 ============================================
- Block Comments
+Block Comments
 ============================================
 
 /* Comment */
@@ -20,8 +20,40 @@ hello
 world
 */
 
-----
+--------------------------------------------
 
 (source_file
   (block_comment)
   (block_comment))
+
+============================================
+call.typ
+============================================
+
+// Omitted space.
+#let f() = {}
+#[#f()*Bold*]
+
+// Don't parse this as a function.
+// this is wrong
+#test (it)
+
+--------------------------------------------
+
+(source_file
+  (line_comment)
+  (let_declaration
+    (function
+      (identifier)
+      (parameters))
+    (code_block))
+  (content_block
+    (function_call
+      (identifier)
+      (parameters)))
+  (line_comment)
+  (line_comment)
+  (function_call
+    (identifier)
+    (parameters
+      (identifier))))

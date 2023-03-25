@@ -1,13 +1,70 @@
 # A tree-sitter parser for the typst file format
 
-DONE:
-- [x] literals
-- [x] correct strings parsing
-- [x] correct block comments
-- [x] BinOp
-- [x] correct code parsing
-- [x] if, for, and block statements
+Note: this language uses parentheses for so many things that it's hard to parse, and it's not like
+lisp where everything a tree :(
 
+DONE:
+
+- [ ] Code mode: `#` to enter code mode
+
+    - [x] variable access: `x`
+    - [x] any literal: `1`, `"hi"`, `true`, `false`, `none`, `auto`
+    - [x] code block: `{ x = 1 }`
+    - [x] content block: `[ *hello* ]`
+    - [x] parenthesized expression: `(1 + 2)`
+    - [x] array: `(1, 2, 3)`
+    - [ ] dictionary: `(a: "hi", b: 2)`
+    - [x] unary operator: `-x`
+    - [x] binary operator: `x + y`
+    - [x] assignment: `x = 1`
+    - [ ] I accidentally combined the next three :(. I have to redo
+        - [ ] field access: `x.y`
+        - [ ] method call: `x.flatten()`
+        - [ ] function call: `min(x, y)`
+    - [x] unnamed function: `(x, y) => x + y`
+    - [x] let binding: `let x = 1`
+    - [x] named function: `let f(x) = 2 * x`
+    - [ ] set rule: `set text(14pt)`
+    - [ ] set-if rule: `set text(..) if ..`
+    - [ ] show-set rule: `show par: set block(..)`
+    - [ ] show rule with function: `show par: set block(..)`
+    - [ ] show-everything rule: `show par: set block(..)`
+    - [x] conditional: `if x < 0 {0} else {x}`
+    - [x] for loop: `for x in [1, 2, 3]`
+    - [x] while loop: `while x < 10 {}`
+    - [x] loop control flow: `break`, `continue`
+    - [ ] return from function: `return x`
+    - [ ] include module: `include "bar.typ"`
+    - [ ] import module: `import "bar.typ"`
+    - [ ] import items from module: `import "bar.typ": a, b, c`
+    - [x] comment: `// hi` or `/* hi */`.
+
+- [ ] Math mode
+
+    - [ ] Everything :)
+
+- [ ] Markup mode
+
+    - [ ] paragraph break
+    - [ ] strong emphasis
+    - [ ] emphasis
+    - [x] raw text
+    - [ ] link
+    - [ ] label
+    - [ ] reference
+    - [ ] heading
+    - [ ] bullet list
+    - [ ] numbered list
+    - [ ] term list
+    - [ ] math
+    - [x] line break
+    - [ ] smart quote
+        - [ ] single quote
+        - [x] double quote
+    - [ ] symbol shorthand
+    - [x] code expression
+    - [x] character escape
+    - [x] comment.
 
 ---
 
@@ -48,9 +105,6 @@ list | enum | desc | label | ref | markup-expr | comment
 
 // Markup nodes.
 space ::= unicode(White_Space)+
-linebreak ::= '\' '+'?
-text ::= (!special)+
-escape ::= '\' special
 nbsp ::= '~'
 shy ::= '-?'
 endash ::= '--'
@@ -71,13 +125,8 @@ ref ::= '@' ident
 markup-expr ::= block | ('#' hash-expr)
 hash-expr ::= ident | func-call | keyword-expr
 
-special ::=
-'\' | '/' | '[' | ']' | '{' | '}' | '#' | '~' | '-' | '.' | ':' |
-'"' | "'" | '*' | '_' | '`' | '$' | '=' | '<' | '>' | '@'
-
 // Code and expressions.
 code ::= (expr (separator expr)* separator?)?
-separator ::= ';' | unicode(Newline)
 expr ::=
 literal | ident | block | group-expr | array-expr | dict-expr |
 unary-expr | binary-expr | field-access | func-call | method-call |
@@ -94,14 +143,7 @@ keyword ::=
 'as' | 'while' | 'break' | 'continue' | 'return' | 'import' |
 'include' | 'from'
 
-// Blocks.
-block ::= code-block | content-block
-code-block ::= '{' code '}'
-content-block ::= '[' markup ']'
-
 // Groups and collections.
-group-expr ::= '(' expr ')'
-array-expr ::= '(' ((expr ',') | (expr (',' expr)+ ','?))? ')'
 dict-expr ::= '(' (':' | (pair (',' pair)* ','?)) ')'
 pair ::= (ident | str) ':' expr
 
@@ -111,19 +153,14 @@ func-call ::= expr args
 method-call ::= expr '.' ident args
 args ::= ('(' (arg (',' arg)* ','?)? ')' content-block*) | content-block+
 arg ::= (ident ':')? expr
-func-expr ::= (params | ident) '=>' expr
-params ::= '(' (param (',' param)* ','?)? ')'
-param ::= ident (':' expr)?
+func-expr ::= (params | ident '=>') expr
 
 // Keyword expressions.
 set-expr ::= 'set' expr args
 show-expr ::= 'show' (ident ':')? expr 'as' expr
 wrap-expr ::= 'wrap' ident 'in' expr
-while-expr ::= 'while' expr block
 import-expr ::= 'import' import-items 'from' expr
 import-items ::= '*' | (ident (',' ident)* ','?)
 include-expr ::= 'include' expr
-break-expr ::= 'break'
-continue-expr ::= 'continue'
 return-expr ::= 'return' expr?
 ```

@@ -1,5 +1,5 @@
 ================================================================================
-Empty Block Function
+Empty block Function
 ================================================================================
 
 #let function(hello, world) = {
@@ -9,19 +9,16 @@ Empty Block Function
 --------------------------------------------------------------------------------
 
 (source_file
-  (expression_statement
-    (let_declaration
-      (function
-        (identifier)
-        (parameters
-          (parameter
-            (identifier))
-          (parameter
-            (identifier))))
-      (block))))
+ (let_declaration
+  (function
+   (identifier)
+   (parameters
+    (identifier)
+    (identifier)))
+  (code_block)))
 
 ================================================================================
-NonEmpty Block Function
+NonEmpty code_block Function
 ================================================================================
 
 #let function(hello, world) = {
@@ -32,60 +29,51 @@ NonEmpty Block Function
 --------------------------------------------------------------------------------
 
 (source_file
-  (expression_statement
-    (let_declaration
-      (function
-        (identifier)
-        (parameters
-          (parameter
-            (identifier))
-          (parameter
-            (identifier))))
-      (block
-        (expression_statement
-          (let_declaration
-            (identifier)
-            (string_literal)))
-        (expression_statement
-          (let_declaration
-            (identifier)
-            (string_literal)))))))
+ (let_declaration
+  (function
+   (identifier)
+   (parameters
+    (identifier)
+    (identifier)))
+  (code_block
+   (let_declaration
+    (identifier)
+    (string_literal))
+   (let_declaration
+    (identifier)
+    (string_literal)))))
 
 ================================================================================
 Text
 ================================================================================
 
 #let hello = "Hello, world!"
-[#hello]
+[ hello ]
 
 --------------------------------------------------------------------------------
 
 (source_file
-  (expression_statement
-    (let_declaration
-      (identifier)
-      (string_literal)))
-  (content_block
-    (function
-      (identifier))))
+ (let_declaration
+   (identifier)
+  (string_literal))
+ (content_block))
 
 ================================================================================
 Function call in text
 ================================================================================
 
-hello #world(1, 2). "hello"
+hello this #is(1, 2). "hello"
 
 --------------------------------------------------------------------------------
 
+
 (source_file
-  (function
-    (identifier)
-    (parameters
-      (parameter
-        (int_literal))
-      (parameter
-        (int_literal))))
-  (quote))
+ (function_call
+  (identifier)
+  (parameters
+   (int_literal)
+   (int_literal)))
+ (quote))
 
 ================================================================================
 Weird Function Calls
@@ -98,30 +86,28 @@ Weird Function Calls
 
 --------------------------------------------------------------------------------
 
+
 (source_file
-  (function
-    (identifier))
-  (content_block)
-  (function
-    (identifier))
-  (content_block)
-  (content_block)
-  (function
+ (function_call
+  (identifier))
+ (content_block)
+ (function_call
+  (identifier))
+ (content_block)
+ (content_block)
+ (function_call
+  (identifier)
+  (parameters
+   (content_block)
+   (content_block)))
+ (function_call
+  (identifier)
+  (parameters
+   (asssigned_parameter
     (identifier)
-    (parameters
-      (parameter
-        (content_block))
-      (parameter
-        (content_block))))
-  (function
-    (identifier)
-    (parameters
-      (parameter
-        (default_parameter
-          (identifier)
-          (int_literal)))))
-  (content_block)
-  (content_block))
+    (int_literal))))
+ (content_block)
+ (content_block))
 
 ================================================================================
 Real World Example
@@ -147,57 +133,48 @@ Real World Example
 --------------------------------------------------------------------------------
 
 (source_file
-  (expression_statement
-    (let_declaration
-      (function
-        (identifier)
-        (parameters
-          (parameter
-            (identifier))
-          (parameter
-            (default_parameter
-              (identifier)
-              (identifier)))))
-      (block
-        (expression_statement
-          (function
-            (identifier)
-            (parameters
-              (parameter
-                (default_parameter
-                  (identifier)
-                  (identifier)))
-              (parameter
-                (default_parameter
-                  (identifier)
-                  (numeric
-                    (int_literal)
-                    (unit))))
-              (parameter
-                (default_parameter
-                  (identifier)
-                  (numeric
-                    (int_literal)
-                    (unit))))
-              (parameter
-                (content_block
-                  (line_break)
-                  (function
-                    (identifier))))))))))
+ (let_declaration
   (function
-    (identifier))
-  (content_block)
-  (function
+   (identifier)
+   (parameters
+    (identifier)
+    (asssigned_parameter
+     (identifier)
+     (identifier))))
+  (code_block
+   (function_call
     (identifier)
     (parameters
-      (parameter
-        (default_parameter
-          (identifier)
-          (identifier)))))
-  (content_block))
+     (asssigned_parameter
+      (identifier)
+      (identifier))
+     (asssigned_parameter
+      (identifier)
+      (numeric
+       (int_literal)
+       (unit)))
+     (asssigned_parameter
+      (identifier)
+      (numeric
+       (int_literal)
+       (unit)))
+     (content_block
+      (line_break)
+      (function_call
+       (identifier)))))))
+    (function_call
+     (identifier))
+(content_block)
+    (function_call
+     (identifier)
+     (parameters
+      (asssigned_parameter
+       (identifier)
+       (identifier))))
+(content_block))
 
 ================================================================================
-If block
+If code_block
 ================================================================================
 
 #if 1 < 2 [
@@ -211,20 +188,19 @@ If block
 --------------------------------------------------------------------------------
 
 (source_file
-  (expression_statement
-    (if_expression
-      (comparison_operator
-        (int_literal)
-        (int_literal))
-      (content_block)
-      (else_clause
-        (if_expression
-          (comparison_operator
-            (int_literal)
-            (int_literal))
-          (content_block)
-          (else_clause
-            (content_block)))))))
+  (if_expression
+    (comparison_operator
+      (int_literal)
+      (int_literal))
+    (content_block)
+    (else_clause
+      (if_expression
+        (comparison_operator
+          (int_literal)
+          (int_literal))
+        (content_block)
+        (else_clause
+          (content_block))))))
 
 
 ================================================================================
@@ -238,15 +214,15 @@ logical operators
 --------------------------------------------------------------------------------
 
 (source_file
-  (expression_statement
-    (if_expression
-      (boolean_operator
-        (comparison_operator
-          (int_literal)
-          (int_literal))
-        (unary_operator
-          (boolean_literal)))
-      (content_block))))
+  (if_expression
+    (boolean_operator
+      (comparison_operator
+        (int_literal)
+        (int_literal))
+      (not_operator
+        (boolean_literal)))
+    (content_block)))
+
 
 ================================================================================
 For loop
@@ -270,39 +246,39 @@ For loop
 
 --------------------------------------------------------------------------------
 
+
 (source_file
-  (expression_statement
-    (for_expression
-      (identifier)
-      (string_literal)
-      (block
-        (expression_statement
-          (if_expression
-            (comparison_operator
-              (identifier)
-              (string_literal))
-            (block
-              (expression_statement
-                (identifier)))))
-        (expression_statement
-          (identifier)))))
-  (expression_statement
-    (for_expression
-      (pattern_list
-        (identifier)
-        (identifier))
-      (identifier)
-      (block
-        (expression_statement
-          (if_expression
-            (comparison_operator
-              (identifier)
-              (string_literal))
-            (block
-              (expression_statement
-                (identifier)))))
-        (expression_statement
-          (identifier))))))
+ (for_expression
+  (pattern
+   (identifier))
+  (string_literal)
+  (code_block
+   (if_expression
+    (comparison_operator
+     (function_call
+      (identifier))
+     (string_literal))
+    (code_block
+    (break_statement)))
+   (function_call
+    (identifier))))
+ (for_expression
+  (pattern
+   (pattern_list
+    (identifier)
+    (identifier)))
+  (function_call
+   (identifier))
+  (code_block
+   (if_expression
+    (comparison_operator
+     (function_call
+      (identifier))
+     (string_literal))
+    (code_block
+     (break_statement)))
+   (function_call
+    (identifier)))))
 
 ================================================================================
 Examples from the website
@@ -318,20 +294,339 @@ Examples from the website
 --------------------------------------------------------------------------------
 
 (source_file
- (block
-  (expression_statement
-   (let_declaration
-    (identifier)
-    (content_block)))
-  (expression_statement
-   (let_declaration
-    (identifier)
-    (content_block)))
-  (expression_statement
+ (code_block
+  (let_declaration
+   (identifier)
    (content_block))
-  (expression_statement
+  (let_declaration
+   (identifier)
+   (content_block))
+  (content_block)
+  (binary_operator
    (binary_operator
-    (binary_operator
-     (identifier)
-     (content_block))
+    (function_call
+     (identifier))
+    (content_block))
+   (function_call
     (identifier)))))
+
+================================================================================
+Method / fields // all wrong lol
+================================================================================
+
+Hello, #hello.name()
+Hello #hello()[1,2]
+Hello #hello(1, 2)[1]
+Hello #hello(1, 2).name
+Hello #hello(1, 2).name()
+Hello #hello(1, 2)
+Hello #hello[1]
+hello #hello[]
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (function_call
+    (identifier)
+    (function_call
+      (identifier)
+      (parameters)))
+  (function_call
+    (identifier)
+    (parameters))
+  (content_block)
+  (function_call
+    (identifier)
+    (parameters
+      (int_literal)
+      (int_literal)))
+  (content_block)
+  (function_call
+    (identifier)
+    (parameters
+      (int_literal)
+      (int_literal))
+    (function_call
+      (identifier)))
+  (function_call
+    (identifier)
+    (parameters
+      (int_literal)
+      (int_literal))
+    (function_call
+      (identifier)
+      (parameters)))
+  (function_call
+    (identifier)
+    (parameters
+      (int_literal)
+      (int_literal)))
+  (function_call
+    (identifier))
+  (content_block)
+  (function_call
+    (identifier))
+  (content_block))
+
+================================================================================
+Complex example
+================================================================================
+
+#let name = "Typst"
+This is #name's documentation.
+It explains #name.
+
+#let add(x, y) = x + y
+Sum is #add(2, 3).
+
+
+#for c in "ABC" [
+  #c is a letter.
+]
+
+#while true [
+    // comments work here
+]
+
+#let n = 2
+
+#while n < 1000 {
+    1 + 1;
+    random = 1 + 1;
+    n = (n * 2) - 1;
+    // true
+    // line comments work here
+    /* block comments work here */
+}
+
+#{
+    let x = 1; x + 2
+}
+
+#let n = 1
+#while n < 10 {
+     n = (n * 2) - 1;
+     (n,)
+}
+
+#let arr = (1, 2)
+
+--------------------------------------------------------------------------------
+
+(source_file
+ (let_declaration
+  (identifier)
+  (string_literal))
+ (function_call
+  (identifier))
+ (function_call
+  (identifier))
+ (let_declaration
+  (function
+   (identifier)
+   (parameters
+    (identifier)
+    (identifier)))
+  (binary_operator
+   (function_call
+    (identifier))
+   (function_call
+    (identifier))))
+ (function_call
+  (identifier)
+  (parameters
+   (int_literal)
+   (int_literal)))
+ (for_expression
+  (pattern
+   (identifier))
+  (string_literal)
+  (content_block
+   (function_call
+    (identifier))))
+    (while_expression
+     (boolean_literal)
+     (content_block
+      (line_comment)))
+    (let_declaration
+     (identifier)
+     (int_literal))
+    (while_expression
+     (comparison_operator
+      (function_call
+       (identifier))
+      (int_literal))
+     (code_block
+      (binary_operator
+       (int_literal)
+       (int_literal))
+      (assignment
+       (identifier)
+       (binary_operator
+        (int_literal)
+        (int_literal)))
+      (assignment
+       (identifier)
+       (binary_operator
+        (parenthesized_expression
+         (binary_operator
+          (function_call
+           (identifier))
+          (int_literal)))
+        (int_literal)))
+      (line_comment)
+      (line_comment)
+      (block_comment)))
+    (code_block
+     (let_declaration
+      (identifier)
+      (int_literal))
+     (binary_operator
+      (function_call
+       (identifier))
+      (int_literal)))
+    (let_declaration
+     (identifier)
+     (int_literal))
+    (while_expression
+     (comparison_operator
+      (function_call
+       (identifier))
+      (int_literal))
+     (code_block
+      (assignment
+       (identifier)
+       (binary_operator
+        (parenthesized_expression
+         (binary_operator
+          (function_call
+           (identifier))
+          (int_literal)))
+        (int_literal)))
+      (array
+       (identifier))))
+    (let_declaration
+     (identifier)
+     (array
+      (int_literal)
+      (int_literal))))
+
+================================================================================
+arrays vs parentheses
+================================================================================
+
+#(1, 2, 3)
+
+#(1,)
+
+#(n,)
+
+#()
+
+#let int = (1)
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (array
+    (int_literal)
+    (int_literal)
+    (int_literal))
+  (array
+    (int_literal))
+  (array
+    (identifier))
+  (array)
+  (let_declaration
+    (identifier)
+    (parenthesized_expression
+      (int_literal))))
+
+================================================================================
+Unamed functions
+================================================================================
+
+#it => [#it #it]
+#(x) => 1
+#(x         ,) => x + 1
+#(x:1,) => x + 1
+#(x, y) => x + y
+#{
+    (x, y) => not (-10 + x)
+    z => z + 1
+    let x = (x) => 1
+    type(x)
+
+    (c, d) => c + d
+}
+
+
+--------------------------------------------------------------------------------
+
+(source_file
+ (unnamed_function
+  (identifier)
+  (content_block
+   (function_call
+    (identifier))
+   (function_call
+    (identifier))))
+ (unnamed_function
+  (identifier)
+  (int_literal))
+ (unnamed_function
+  (identifier)
+  (binary_operator
+   (function_call
+    (identifier))
+   (int_literal)))
+ (unnamed_function
+  (asssigned_parameter
+   (identifier)
+   (int_literal))
+  (binary_operator
+   (function_call
+    (identifier))
+   (int_literal)))
+    (unnamed_function
+     (identifier)
+     (identifier)
+     (binary_operator
+      (function_call
+       (identifier))
+      (function_call
+       (identifier))))
+    (code_block
+     (unnamed_function
+      (identifier)
+      (identifier)
+      (not_operator
+       (parenthesized_expression
+        (binary_operator
+         (unary_operator
+          (int_literal))
+         (function_call
+          (identifier))))))
+     (unnamed_function
+      (identifier)
+      (binary_operator
+       (function_call
+        (identifier))
+       (int_literal)))
+     (let_declaration
+      (identifier)
+      (unnamed_function
+       (identifier)
+       (int_literal)))
+    (function_call
+     (identifier)
+     (parameters
+      (identifier)))
+    (unnamed_function
+     (identifier)
+     (identifier)
+     (binary_operator
+      (function_call
+       (identifier))
+      (function_call
+       (identifier))))))

@@ -38,27 +38,19 @@ function sep1(rule, separator) {
     return seq(rule, repeat(seq(separator, rule)))
 }
 
-const special = [
-    '\\',
-    '/',
-    '#',
-    '~',
-    '-',
-    '.',
-    ':',
-    '"',
-    '\'',
-    '*',
-    '_',
-    '`',
-    '$',
-    '=',
-    '<',
-    '>',
-    '@',
-];
+//  _non_special_token: $ => choice(
+//   $._literal, $.identifier, $.mutable_specifier, $.self, $.super, $.crate,
+//   alias(choice(...primitive_types), $.primitive_type),
+//   /[/_\-=->,;:::!=?.@*&#%^+<>|~]+/,
+//   '\'',
+//   'as', 'async', 'await', 'break', 'const', 'continue', 'default', 'enum', 'fn', 'for', 'if', 'impl',
+//   'let', 'loop', 'match', 'mod', 'pub', 'return', 'static', 'struct', 'trait', 'type',
+//   'union', 'unsafe', 'use', 'where', 'while'
+// ),
 
 const PREC = {
+    call: 9,
+    field: 8,
     negation: 7, // -	Negation	Unary	7
     no_effect: 7, // +	No effect (exists for symmetry)	Unary	7
     not: 7, // not	Not	Unary	7
@@ -92,18 +84,17 @@ module.exports = grammar({
     externals: $ => [
         $._string_content,
         $.block_comment,
+        // $.paragraph_break,
     ],
 
+    // inline: $ => [
+    //     $.break_statement,
+    //     $.continue_statement,
+    // ]
+
     supertypes: $ => [
-        // $.code_block,
-        // $.statement,
         $.expression,
-        // $._literal,
-        // $.markup_expression,
-        // $._simple_statement,
-        // $._compound_statement,
-        // $.pattern,
-        // $.parameter,
+        $._literal,
     ],
 
     rules: {
@@ -119,36 +110,38 @@ module.exports = grammar({
             $.block_comment
         ),
 
+        variable: $ => $.identifier,
+
         line_comment: $ => token(seq(
             '//', /[^\r\n]*/
         )),
 
         line_break: $ => /\\/,
 
+        // space | nbsp | shy | endash | emdash |
+        // ellipsis | quote | strong | emph | raw | link | math | heading |
+        // list | enum | desc | label | ref | markup-expr | comment
         _markup: $ => prec.left(choice(
             $._text,
             $.quote,
             $.line_break,
             $.escape_sequence,
             $._code_mode,
+            // $.paragraph_break
             // $.math_mode,
-            // $.content,
         )),
 
-        quote: $ => prec(-1,
-            seq(
-                /"/,
-                repeat(choice(
-                    $.escape_sequence,
-                    $._string_content
-                )),
-                token.immediate('"')
-
-            ),
+        // add support for '
+        quote: $ => seq(
+            token.immediate('"'),
+            repeat(choice(
+                $.escape_sequence,
+                $._string_content
+            )),
+            token.immediate('"')
         ),
 
         // eslint-disable-next-line no-useless-escape
-        // _text: $ => seq(/[^\s\\\{\}\$\[\]\(\)%,"`@:\~<>=\#_\^\-\+\/\*\.]+/),
         _text: $ => repeat1(choice(
             /[\w\d]+/,
             '/',
@@ -170,49 +163,225 @@ module.exports = grammar({
             '!',
         )),
 
-        // space | linebreak | text | escape | nbsp | shy | endash | emdash |
-        // ellipsis | quote | strong | emph | raw | link | math | heading |
-        // list | enum | desc | label | ref | markup-expr | comment
-
         _code_mode: $ => choice(
-            alias($.function_call, $.function),
             $._code_block,
             $.content_block,
         ),
 
-        function_call: $ => prec(2, seq(
-            token.immediate('#'),
-            $.identifier,
-            optional($.parameters),
-        )),
-
-        // rename this to _code_block and block to code_block
         _code_block: $ => prec(2, seq(
             token.immediate('#'),
             choice(
-                $.block,
-                $.expression_statement,
+                $.code_block,
+                $.content_block,
+                $._expression_statement,
+                $.function_call,
             )
         )),
 
+        code_block: $ => prec(PREC.assignment, (seq(
+            '{',
+            optional($._statements),
+            '}'
+        ))),
+
         content_block: $ => seq(
-            token.immediate('['),
-            repeat1($._markup),
-            token.immediate(']'),
+            '[',
+            optional(repeat1($._markup)),
+            ']',
         ),
 
-        _statements: $ => prec.right(repeat1(seq($.expression_statement, optional(';')))),
+        // group-expr ::= '(' expr ')'
+        parenthesized_expression: $ => prec.left(1, seq(
+            '(',
+            $.expression,
+            ')',
+        )),
 
-        expression_statement: $ => prec(2, choice(
+        // this is a hack around the langauge tbh
+        // probably a better way to do this, but i've spent too much time on this
+        array: $ => prec.left(2, seq(
+            '(',
+            optional(choice(
+                $._array,
+                $._weird_edge_case,
+            )),
+            ')'
+        )),
+
+        // matches (expression, expression, expression, ...)
+        _array: $ => prec(1, seq(
+            $.expression,
+            choice(
+                // matches (expression, ...)
+                seq(repeat1(seq(
+                        ',',
+                        $.expression
+                    )),
+                    optional(',')
+                ),
+                // matches (expression,)
+                ','
+            )
+        )),
+
+        // edge case | this is weird
+        // matches (n,)
+        // used to
+        // "join together into one larger array."
+        // TODO: remove after you fix functions
+        _weird_edge_case: $ => repeat1(seq(
+            $.identifier,
+            // need to work on this
+            optional(token.immediate(',')),
+        )),
+
+        _statements: $ => prec.left(repeat1(seq($._expression_statement, optional(token.immediate(';'))))),
+
+        _expression_statement: $ => prec(1, choice(
             $.let_declaration,
             $.if_expression,
             $.for_expression,
+            $.while_expression,
             $.expression,
+            $._control_flow,
         )),
 
-        _left_hand_side: $ => prec(1, choice(
+        _control_flow: $ => choice(
+            $.break_statement,
+            $.continue_statement,
+        ),
+
+        break_statement: $ => prec.left('break'),
+
+        continue_statement: $ => prec.left('continue'),
+
+        let_declaration: $ => prec(PREC.assignment, seq(
+            'let',
+            field('lhs', choice($.identifier, $.function)),
+            seq(
+                '=',
+                field('rhs', prec.right($.expression))
+            ),
+        )),
+
+        if_expression: $ => seq(
+            'if',
+            field('condition', $.expression),
+            field('consequence', choice($.content_block, $.code_block)),
+            optional(field('alternative', $.else_clause))
+        ),
+
+        else_clause: $ => seq(
+            'else',
+            choice(
+                choice($.code_block, $.content_block),
+                $.if_expression
+            )
+        ),
+
+        while_expression: $ => seq(
+            'while',
+            field('condition', $.expression),
+            field('body', choice($.code_block, $.content_block)),
+        ),
+
+        for_expression: $ => seq(
+            'for',
+            field('left', $.pattern),
+            'in',
+            field('value', $.expression),
+            field('body', choice($.code_block, $.content_block))
+        ),
+
+        // #set par(justify: true)
+        // #set page(
+        //   height: 100pt,
+        //   margin: 20pt,
+        //   footer: [
+        //     #set align(right)
+        //     #set text(8pt)
+        //     #counter(page).display(
+        //       "1 of I",
+        //       both: true,
+        //     )
+        //   ]
+        // )
+        //
+        // #lorem(48)
+
+        // #show list: it => "(" + it.children.map(v => v.body).join(", ") + ")"
+        // #show "once?": it => [#it #it]
+        unnamed_function: $ => prec(PREC.call, seq(
+            field('arguments', $._unnamed_arguments),
+            '=>',
+            field('body', prec.right($.expression))
+        )),
+
+        // this shares a lot of code as `array`. I wonder if there is a way to pass down variable
+        _unnamed_arguments: $ => prec(3, choice(
             $.identifier,
-            $.function,
+            seq(
+                '(',
+                choice(
+                    // matches (parameter)
+                    seq(
+                        $._parameter,
+                        // matches (parameter,)
+                        optional(',')
+                    ),
+                    // edge case
+                    $._weird_edge_case,
+                    prec.left(1, seq(
+                        $._parameter,
+                        // matches (one_para, parameter: [], ...','?)
+                        seq(repeat1(seq(
+                                ',',
+                                $._parameter
+                            )),
+                            optional(',')
+                        ),
+                    ))
+                ),
+                ')'
+            ),
+        )),
+
+        parameters: $ => seq(
+            '(',
+            optional($._parameters),
+            ')'
+        ),
+
+        _parameters: $ => seq(
+            commaSep1($._parameter),
+            optional(',')
+        ),
+
+        _parameter: $ => prec.left(seq(
+            optional('..'),
+            choice(
+                prec(1, $.asssigned_parameter),
+                prec(10, $.identifier), // bit of a hack to make sure that identifiers are parsed as parameters and not as functions
+                $.expression,
+                // needs to be fixed
+            )
+        )),
+
+        // dict-expr ::= '(' (':' | (pair (',' pair)* ','?)) ')'
+        // pair ::= (ident | str) ':' expr
+        asssigned_parameter: $ => seq(
+            field('name', $.identifier),
+            ':',
+            field('value', $._parameter)
+        ),
+
+        function: $ => prec.left(seq(
+            field('name', $.identifier),
+            field('parameters', $.parameters),
+        )),
+
+        pattern: $ => prec(1, choice(
+            $.identifier,
             $.pattern_list,
         )),
 
@@ -230,112 +399,116 @@ module.exports = grammar({
             )
         ),
 
-        // pattern: $ => choice(
-        //     $.identifier,
-        //     $.keyword_identifier,
-        //     $.subscript,
-        //     $.attribute,
-        //     $.list_splat_pattern,
-        //     $.tuple_pattern,
-        //     $.list_pattern
-        // ),
-
-        expression: $ => choice(
-            $.content_block,
-            $.identifier,
+        _literal: $ => choice(
             $.string_literal,
             $.int_literal,
             $.float_literal,
             $.boolean_literal,
-            $.none,
             $.numeric,
-            $.block,
+            $.none,
+        ),
+
+        // expr ::=
+        // literal | ident | block | group-expr | array-expr | dict-expr |
+        // unary-expr | binary-expr | field-access | func-call | method-call |
+        // func-expr | keyword-expr
+        expression: $ => choice(
+            $._literal,
+            $.identifier,
             $.content_block,
-            $.function,
+            $.code_block,
+            $.function_call,
+            $.parenthesized_expression,
+            $.array,
             $.unary_operator,
+            $.binary_operator,
+            $.unnamed_function,
             $.not_operator,
             $.boolean_operator,
             $.comparison_operator,
-            $.binary_operator,
             $.augmented_assignment,
+            $.assignment,
         ),
 
-        let_declaration: $ => prec.left(PREC.assignment, seq(
-            'let',
-            field('lhs', $._left_hand_side),
-            seq(
-                '=',
-                field('rhs', $.expression)
-            ),
-            optional($.block)
+        assignment: $ => prec(PREC.assignment, seq(
+            field('lhs', $.identifier),
+            '=',
+            field('rhs', prec.right($.expression))
         )),
 
-        if_expression: $ => prec.right(seq(
-            'if',
-            field('condition', $.expression),
-            field('consequence', choice($.content_block, $.block)),
-            optional(field('alternative', $.else_clause))
-        )),
-
-        // break_statement: $ => prec.left('break'),
-
-        else_clause: $ => seq(
-            'else',
-            choice(
-                choice($.block, $.content_block),
-                $.if_expression
-            )
-        ),
-
-        // while_expression: $ => seq(
-        //     optional(seq($.loop_label, ':')),
-        //     'while',
-        //     field('condition', $._condition),
-        //     field('body', $.block)
+        // _call_expresion: $ => choice(
+        //     $._function_call,
+        //     // #hello.a.()
+        //     $._field_access,
+        //     $._method_call,
         // ),
 
-        for_expression: $ => seq(
-            'for',
-            field('left', $._left_hand_side),
-            'in',
+        // // Call a function.
+        // #list([A], [B])
+        //
+        // // Named arguments and trailing
+        // // content blocks.
+        // #enum(start: 2)[A][B]
+        //
+        // // Version without parentheses.
+        // #list[A][B]
+        _function_call: $ => seq(
+            field('function', $.identifier),
+        ),
+
+        // _allowed_types: $ = choice(
+        //     $.module,
+        //     $.dictionary,
+        //     $.symbol,
+        //     $.content,
+        // ),
+
+        // #hello.a.c
+        // a dictionary that has the specified key,
+        // a symbols that has the specified modifier,
+        // a module containing the specified definition,
+        // content that has the specified field.
+        _field_access: $ => prec(PREC.field, seq(
             field('value', $.expression),
-            field('body', choice($.block, $.content_block))
-        ),
-
-        function: $ => prec(1, seq(
-            field('name', $.identifier),
-            field('parameters', $.parameters),
+            '.',
+            field('field', choice(
+                $._field_access,
+                $.identifier,
+            ))
         )),
 
-        parameters: $ => seq(
-            '(',
-            optional($._parameters),
-            ')'
-        ),
+        // this is not right, it combines the function call and the field access
+        function_call: $ => prec.right(PREC.call, seq(
+            // #type
+            field('function', $.identifier),
 
-        _parameters: $ => seq(
-            commaSep1($.parameter),
-            optional(',')
-        ),
-
-        parameter: $ => prec(1, choice(
-            $.identifier,
-            $.expression,
-            $.default_parameter,
-            // $.list_pattern,
+            // #type[]
+            optional(choice(
+                // #type(name())
+                // where name() is a function call
+                // also parses
+                // #list([A], [B])
+                // #enum(start: 2)[A][B]
+                seq(field('arguments', $.parameters), optional(
+                    seq(
+                        // #type.name().hello
+                        // #type.hello.
+                        token.immediate('.'),
+                        field('field', $.function_call)
+                    ))),
+                seq(
+                    // #type.name().hello
+                    // #type.hello.
+                    token.immediate('.'),
+                    field('field', $.function_call)
+                ),
+            )), optional(choice(
+                token.immediate('.'),
+                token.immediate("'"),
+                token.immediate('?'),
+                token.immediate('!'),
+            )),
         )),
-
-        default_parameter: $ => seq(
-            field('name', $.identifier),
-            ':',
-            field('value', $.expression)
-        ),
-
-        block: $ => prec(PREC.assignment, (seq(
-            '{',
-            optional($._statements),
-            '}'
-        ))),
 
         none: $ => 'none',
         // auto: $ => 'auto',
@@ -345,33 +518,7 @@ module.exports = grammar({
 
         // int ::= digit+
         // digit = '0' | ... | '9'
-        // TODO: allow underscores in numbers?
-        // could be a problem with the lexer as we use subscripts
         int_literal: $ => /\d+/,
-        // int: $ => token(choice(
-        //     seq(
-        //         choice('0x', '0X'),
-        //         repeat1(/[A-Fa-f0-9]+/),
-        //         // optional(/[Ll]/)
-        //     ),
-        //     seq(
-        //         choice('0o', '0O'),
-        //         repeat1(/[0-7]+/),
-        //         // optional(/[Ll]/)
-        //     ),
-        //     seq(
-        //         choice('0b', '0B'),
-        //         repeat1(/[0-1]+/),
-        //         optional(/[Ll]/)
-        //     ),
-        //     seq(
-        //         repeat1(/[0-9]+/),
-        //         // choice(
-        //         //     optional(/[Ll]/), // long numbers
-        //         //     optional(/[jJ]/) // complex numbers
-        //         // )
-        //     )
-        // )),
 
         // float ::= ((digit+ ('.' digit*)?) | ('.' digit+)) ('e' digit+)?
         // A floating-point number: `1.2`, `10e-4`.
@@ -398,26 +545,15 @@ module.exports = grammar({
         numeric: $ => prec(1, seq(choice($.float_literal, $.int_literal), $.unit)),
 
         // str ::= '"' .* '"'
-        string_literal: $ => choice(
-            seq(
-                /"/,
-                repeat(choice(
-                    $.escape_sequence,
-                    $._not_an_escape_sequence,
-                    $._string_content
-                )),
-                token.immediate('"')
+        string_literal: $ => seq(
+            /"/,
+            repeat(choice(
+                $.escape_sequence,
+                $._not_an_escape_sequence,
+                $._string_content
+            )),
+            token.immediate('"')
 
-            ),
-            seq(
-                /'/,
-                repeat(choice(
-                    $.escape_sequence,
-                    $._string_content
-                )),
-                token.immediate('\'')
-
-            )
         ),
 
         _not_an_escape_sequence: $ => token.immediate(
@@ -435,7 +571,6 @@ module.exports = grammar({
                         '/',
                         '~',
                         '-',
-                        '.',
                         ':',
                         '*',
                         '_',
@@ -447,8 +582,6 @@ module.exports = grammar({
                         '@',
                         ',',
                         ';',
-                        '?',
-                        '!',
                     ))
             )),
 
@@ -457,12 +590,12 @@ module.exports = grammar({
         // unary-expr ::= unary-op expr
         // unary-op ::= '+' | '-' | 'not'
         unary_operator: $ => prec(PREC.negation, seq(
-            field('operator', choice('+', '-', 'not')),
+            field('operator', choice('+', '-')),
             field('argument', $.expression)
         )),
 
         // 'not' expr
-        not_operator: $ => prec(PREC.logical_not, seq(
+        not_operator: $ => prec.left(PREC.logical_not, seq(
             'not',
             field('argument', $.expression)
         )),
@@ -547,7 +680,3 @@ module.exports = grammar({
         // ),
     }
 });
-// chars is a list of characters to exclude
-// function allBut (chars) {
-//     return new RegExp(`[^${chars.join('')}]+`);
-// }

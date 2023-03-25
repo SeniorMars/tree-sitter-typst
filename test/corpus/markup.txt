@@ -6,18 +6,22 @@ Code Block
 let x = 1
 }
 
+#[
+this is some text
+]
+
 --------------------------------------------------------------------------------
 
 (source_file
-  (block
-    (expression_statement
-      (let_declaration
-        (identifier)
-        (int_literal)))))
+ (code_block
+  (let_declaration
+    (identifier)
+   (int_literal)))
+ (content_block))
 
 
 ================================================================================
-Text
+Markup Text
 ================================================================================
 
 #let hello = "Hello, world!"
@@ -26,9 +30,8 @@ hello this is normal text! #hello is a variable!
 --------------------------------------------------------------------------------
 
 (source_file
-  (expression_statement
-    (let_declaration
-      (identifier)
-      (string_literal)))
-  (function
-    (identifier)))
+ (let_declaration
+  (identifier)
+  (string_literal))
+ (function_call
+  (identifier)))

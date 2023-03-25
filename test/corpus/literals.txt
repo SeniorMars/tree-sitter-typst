@@ -8,15 +8,12 @@ Integers
 --------------------------------------------------------------------------------
 
 (source_file
-(expression_statement
-(let_declaration
+ (let_declaration
+  (identifier)
+  (int_literal))
+ (let_declaration
   (identifier)
   (int_literal)))
-(expression_statement
-(let_declaration
-  (identifier)
-  (int_literal))))
-
 
 ================================================================================
 Floats
@@ -36,52 +33,40 @@ Floats
 
 --------------------------------------------------------------------------------
 
- (source_file
-  (expression_statement
+(source_file
+ (let_declaration
+  (identifier)
+  (float_literal))
+ (let_declaration
+  (identifier)
+  (float_literal))
+ (let_declaration
+  (identifier)
+  (float_literal))
+ (let_declaration
+  (identifier)
+  (float_literal))
+ (let_declaration
+  (identifier)
+  (float_literal))
+ (let_declaration
+  (identifier)
+  (float_literal))
+ (let_declaration
+  (identifier)
+  (float_literal))
     (let_declaration
-      (identifier)
-      (float_literal)))
-  (expression_statement
+     (identifier)
+     (float_literal))
     (let_declaration
-      (identifier)
-      (float_literal)))
-  (expression_statement
+     (identifier)
+     (float_literal))
     (let_declaration
-      (identifier)
-      (float_literal)))
-  (expression_statement
+     (identifier)
+     (float_literal))
     (let_declaration
-      (identifier)
-      (float_literal)))
-  (expression_statement
-    (let_declaration
-      (identifier)
-      (float_literal)))
-  (expression_statement
-    (let_declaration
-      (identifier)
-      (float_literal)))
-  (expression_statement
-    (let_declaration
-      (identifier)
-      (float_literal)))
-  (expression_statement
-    (let_declaration
-      (identifier)
-      (float_literal)))
-  (expression_statement
-    (let_declaration
-      (identifier)
-      (float_literal)))
-  (expression_statement
-    (let_declaration
-      (identifier)
-      (float_literal)))
-  (expression_statement
-    (let_declaration
-      (identifier)
-      (float_literal))))
-
+     (identifier)
+     (float_literal)))
 
 ================================================================================
 Numbers
@@ -96,26 +81,21 @@ Numbers
 --------------------------------------------------------------------------------
 
 (source_file
-  (expression_statement
-    (let_declaration
-      (identifier)
-      (int_literal)))
-  (expression_statement
-    (let_declaration
-      (identifier)
-      (int_literal)))
-  (expression_statement
-    (let_declaration
-      (identifier)
-      (float_literal)))
-  (expression_statement
-    (let_declaration
-      (identifier)
-      (int_literal)))
-  (expression_statement
-    (let_declaration
-      (identifier)
-      (float_literal))))
+  (let_declaration
+    (identifier)
+    (int_literal))
+  (let_declaration
+    (identifier)
+    (int_literal))
+  (let_declaration
+    (identifier)
+    (float_literal))
+  (let_declaration
+    (identifier)
+    (int_literal))
+  (let_declaration
+    (identifier)
+    (float_literal)))
 
 ================================================================================
 Numeric
@@ -134,60 +114,51 @@ Numeric
 --------------------------------------------------------------------------------
 
 (source_file
-  (expression_statement
-    (let_declaration
-      (identifier)
-      (numeric
-        (int_literal)
-        (unit))))
-  (expression_statement
-    (let_declaration
-      (identifier)
-      (numeric
-        (float_literal)
-        (unit))))
-  (expression_statement
-    (let_declaration
-      (identifier)
-      (numeric
-        (int_literal)
-        (unit))))
-  (expression_statement
-    (let_declaration
-      (identifier)
-      (numeric
-        (float_literal)
-        (unit))))
-  (expression_statement
-    (let_declaration
-      (identifier)
-      (numeric
-        (float_literal)
-        (unit))))
-  (expression_statement
-    (let_declaration
-      (identifier)
-      (numeric
-        (int_literal)
-        (unit))))
-  (expression_statement
-    (let_declaration
-      (identifier)
-      (numeric
-        (float_literal)
-        (unit))))
-  (expression_statement
-    (let_declaration
-      (identifier)
-      (numeric
-        (float_literal)
-        (unit))))
-  (expression_statement
-    (let_declaration
-      (identifier)
-      (numeric
-        (float_literal)
-        (unit)))))
+  (let_declaration
+    (identifier)
+    (numeric
+      (int_literal)
+      (unit)))
+  (let_declaration
+    (identifier)
+    (numeric
+      (float_literal)
+      (unit)))
+  (let_declaration
+    (identifier)
+    (numeric
+      (int_literal)
+      (unit)))
+  (let_declaration
+    (identifier)
+    (numeric
+      (float_literal)
+      (unit)))
+  (let_declaration
+    (identifier)
+    (numeric
+      (float_literal)
+      (unit)))
+  (let_declaration
+    (identifier)
+    (numeric
+      (int_literal)
+      (unit)))
+  (let_declaration
+    (identifier)
+    (numeric
+      (float_literal)
+      (unit)))
+  (let_declaration
+    (identifier)
+    (numeric
+      (float_literal)
+      (unit)))
+  (let_declaration
+    (identifier)
+    (numeric
+      (float_literal)
+      (unit))))
 
 ================================================================================
 Scientific Notation Floats
@@ -204,34 +175,27 @@ Scientific Notation Floats
 --------------------------------------------------------------------------------
 
 (source_file
-  (expression_statement
-    (let_declaration
-      (identifier)
-      (float_literal)))
-  (expression_statement
-    (let_declaration
-      (identifier)
-      (float_literal)))
-  (expression_statement
-    (let_declaration
-      (identifier)
-      (float_literal)))
-  (expression_statement
-    (let_declaration
-      (identifier)
-      (float_literal)))
-  (expression_statement
-    (let_declaration
-      (identifier)
-      (float_literal)))
-  (expression_statement
-    (let_declaration
-      (identifier)
-      (float_literal)))
-  (expression_statement
-    (let_declaration
-      (identifier)
-      (float_literal))))
+ (let_declaration
+  (identifier)
+  (float_literal))
+ (let_declaration
+  (identifier)
+  (float_literal))
+ (let_declaration
+  (identifier)
+  (float_literal))
+ (let_declaration
+  (identifier)
+  (float_literal))
+ (let_declaration
+  (identifier)
+  (float_literal))
+ (let_declaration
+  (identifier)
+  (float_literal))
+ (let_declaration
+  (identifier)
+  (float_literal)))
 
 ================================================================================
 Strings
@@ -245,22 +209,18 @@ Strings
 --------------------------------------------------------------------------------
 
 (source_file
-  (expression_statement
-    (let_declaration
-      (identifier)
-      (string_literal)))
-  (expression_statement
-    (let_declaration
-      (identifier)
-      (string_literal)))
-  (expression_statement
-    (let_declaration
-      (identifier)
-      (string_literal)))
-  (expression_statement
-    (let_declaration
-      (identifier)
-      (string_literal))))
+ (let_declaration
+  (identifier)
+  (string_literal))
+ (let_declaration
+  (identifier)
+  (string_literal))
+ (let_declaration
+  (identifier)
+   (string_literal))
+ (let_declaration
+  (identifier)
+  (string_literal)))
 
 ================================================================================
 Escape Sequences
@@ -274,30 +234,25 @@ Escape Sequences
 --------------------------------------------------------------------------------
 
 (source_file
-  (expression_statement
-    (let_declaration
-      (identifier)
-      (string_literal
-        (escape_sequence)
-        (escape_sequence)
-        (escape_sequence))))
-  (expression_statement
-    (let_declaration
-      (identifier)
-      (string_literal
-        (escape_sequence))))
-  (expression_statement
-    (let_declaration
-      (identifier)
-      (string_literal
-        (escape_sequence))))
-  (expression_statement
-    (let_declaration
-      (identifier)
-      (string_literal
-        (escape_sequence)
-        (escape_sequence)))))
-
+ (let_declaration
+  (identifier)
+  (string_literal
+   (escape_sequence)
+   (escape_sequence)
+   (escape_sequence)))
+ (let_declaration
+  (identifier)
+  (string_literal
+   (escape_sequence)))
+ (let_declaration
+  (identifier)
+  (string_literal
+   (escape_sequence)))
+ (let_declaration
+  (identifier)
+  (string_literal
+   (escape_sequence)
+   (escape_sequence))))
 
 ================================================================================
 Other Literals
@@ -310,18 +265,15 @@ Other Literals
 --------------------------------------------------------------------------------
 
 (source_file
-  (expression_statement
-    (let_declaration
-      (identifier)
-      (boolean_literal)))
-  (expression_statement
-    (let_declaration
-      (identifier)
-      (boolean_literal)))
-  (expression_statement
-    (let_declaration
-      (identifier)
-      (none))))
+  (let_declaration
+    (identifier)
+    (boolean_literal))
+  (let_declaration
+    (identifier)
+    (boolean_literal))
+  (let_declaration
+    (identifier)
+    (none)))
 
 ================================================================================
 Concatenated Strings
@@ -332,12 +284,92 @@ Concatenated Strings
 --------------------------------------------------------------------------------
 
 (source_file
-  (expression_statement
-    (let_declaration
-      (identifier)
+  (let_declaration
+    (identifier)
+    (binary_operator
       (binary_operator
-        (binary_operator
-          (string_literal)
-          (string_literal))
-        (string_literal)))))
+        (string_literal)
+        (string_literal))
+      (string_literal))))
 
+================================================================================
+Type docs
+================================================================================
+
+#1
+#none
+#false \
+#3.14 \
+#rect(width: 20pt)
+#rotate(10deg)[Hello there!]
+#scale(x: 150%)[
+  Scaled apart.
+]
+Left #h(1fr) Left-ish #h(2fr) Right
+#"hello world!" \
+#type([*Hello!*])
+#rect(width: 100% - 50pt)
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (int_literal)
+  (none)
+  (boolean_literal)
+  (line_break)
+  (float_literal)
+  (line_break)
+  (function_call
+    (identifier)
+    (parameters
+      (asssigned_parameter
+        (identifier)
+        (numeric
+          (int_literal)
+          (unit)))))
+  (function_call
+    (identifier)
+    (parameters
+      (numeric
+        (int_literal)
+        (unit))))
+  (content_block)
+  (function_call
+    (identifier)
+    (parameters
+      (asssigned_parameter
+        (identifier)
+        (numeric
+          (int_literal)
+          (unit)))))
+  (content_block)
+  (function_call
+    (identifier)
+    (parameters
+      (numeric
+        (int_literal)
+        (unit))))
+  (function_call
+    (identifier)
+    (parameters
+      (numeric
+        (int_literal)
+        (unit))))
+  (string_literal)
+  (line_break)
+  (function_call
+    (identifier)
+    (parameters
+      (content_block)))
+  (function_call
+    (identifier)
+    (parameters
+      (asssigned_parameter
+        (identifier)
+        (binary_operator
+          (numeric
+            (int_literal)
+            (unit))
+          (numeric
+            (int_literal)
+            (unit)))))))
