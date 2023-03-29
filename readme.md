@@ -7,23 +7,25 @@ DONE:
 
 - [ ] Code mode: `#` to enter code mode
 
-    - [ ] Need to fix `expr {+,-,*,/}= expr`
+    - [ ] Need to fix. I think it has something to do with prec
+        - `expr {+,-,*,/}= expr`
+        - assignment operator, i.e., `x = 1`
     - [x] any literal: `1`, `"hi"`, `true`, `false`, `none`, `auto`
     - [x] code block: `{ x = 1 }`
     - [x] content block: `[ hello ]`
     - [x] parenthesized expression: `(1 + 2)`
     - [x] array: `(1, 2, 3)`
-    - [ ] dictionary: `(a: "hi", b: 2)`
+    - [x] dictionary: `(a: "hi", b: 2)`
     - [x] unary operator: `-x`
     - [x] binary operator: `x + y`
     - [x] assignment: `x = 1`
     - [x] variable access: `x`
     - [ ] field access: `x.y`
     - [ ] method call: `x.flatten()`
-    - [ ] function call: `min(x, y)`
-    - [ ] unnamed function: `(x, y) => x + y`
+    - [x] named function: `let f(x) = 2 * x`
+    - [x] unnamed function: `(x, y) => x + y`
+    - [x] function call: `min(x, y)`
     - [x] let binding: `let x = 1`
-    - [ ] named function: `let f(x) = 2 * x`
     - [ ] set rule: `set text(14pt)`
     - [ ] set-if rule: `set text(..) if ..`
     - [ ] show-set rule: `show par: set block(..)`
@@ -144,10 +146,6 @@ keyword ::=
 'let' | 'set' | 'show' | 'if' | 'else' | 'for' | 'in' |
 'as' | 'while' | 'break' | 'continue' | 'return' | 'import' |
 'include' | 'from'
-
-// Groups and collections.
-dict-expr ::= '(' (':' | (pair (',' pair)* ','?)) ')'
-pair ::= (ident | str) ':' expr
 
 // Fields, functions, methods.
 field-access ::= expr '.' ident

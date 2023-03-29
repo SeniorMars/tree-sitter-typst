@@ -54,8 +54,4 @@ call.typ
   (paragraph_break)
   (line_comment)
   (line_comment)
-  (function_call
-    (identifier)
-    (arguments
-      (argument
-        (identifier)))))
+  (identifier))

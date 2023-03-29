@@ -611,7 +611,17 @@
   {
     "type": "dictionary",
     "named": true,
-    "fields": {}
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "pair",
+          "named": true
+        }
+      ]
+    }
   },
   {
     "type": "else_clause",
@@ -739,6 +749,11 @@
     }
   },
   {
+    "type": "identifier",
+    "named": true,
+    "fields": {}
+  },
+  {
     "type": "if_cause",
     "named": true,
     "fields": {
@@ -864,7 +879,7 @@
           }
         ]
       },
-      "params": {
+      "parameters": {
         "multiple": false,
         "required": false,
         "types": [
@@ -962,6 +977,36 @@
           },
           {
             "type": "int_literal",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "pair",
+    "named": true,
+    "fields": {
+      "key": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          },
+          {
+            "type": "string_literal",
+            "named": true
+          }
+        ]
+      },
+      "value": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "expression",
             "named": true
           }
         ]
@@ -1388,10 +1433,6 @@
   {
     "type": "fr",
     "named": false
-  },
-  {
-    "type": "identifier",
-    "named": true
   },
   {
     "type": "if",

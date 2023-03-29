@@ -8,14 +8,6 @@ function commaSep(space, rule) {
     return seq(rule, repeat(seq(optional(space), ',', optional(space), rule)))
 }
 
-function commaSep1(rule) {
-    return sep1(rule, ',')
-}
-
-function sep1(separator, rule) {
-    return seq(rule, repeat(seq(separator, rule)))
-}
-
 //  _non_special_token: $ => choice(
 //   'as', 'async', 'await', 'break', 'const', 'continue', 'default', 'enum', 'fn', 'for', 'if', 'impl',
 //   'let', 'loop', 'match', 'mod', 'pub', 'return', 'static', 'struct', 'trait', 'type',
@@ -96,6 +88,22 @@ module.exports = grammar({
             $.assignment_operators,
         ],
         [$._code_mode, $.expression],
+        [$._parameter, $.expression],
+        [$.pair, $.default_parameter],
+        // [
+        //     $.expression,
+        //     $.function_expression,
+        //     $._parameter,
+        //     $.default_parameter,
+        //     $.pair,
+        //     $.binary_operator,
+        //     $.boolean_expression,
+        //     $.comparison_expression,
+        //     $._in_expression,
+        //     $._not_in_expression,
+        //     $.assignment_expression,
+        //     $.assignment_operators,
+        // ]
     ],
 
     supertypes: $ => [
@@ -124,7 +132,7 @@ module.exports = grammar({
             // $.math_mode,
         )),
 
-        identifier: $ => /[_\p{XID_Start}][_\p{XID_Continue}]*/,
+        identifier: $ => prec(2, /[_\p{XID_Start}][_\p{XID_Continue}]*/),
 
         // this language uses whitespace to SOMETIMES separate tokens
         // thus, we need to be explicit about whitespace use
@@ -238,14 +246,19 @@ module.exports = grammar({
             optional(seq(
                 optional($._whitespace),
                 choice(
-                    seq($.expression, optional($._whitespace), ',', optional($._whitespace)),
-                    commaSep($._whitespace, $.expression),
-                )
+                    seq($.expression, ','),
+                    seq(
+                        commaSep($._whitespace, $.expression),
+                        optional($._whitespace),
+                        optional(',')
+                    ),
+                ),
+                optional($._whitespace),
             )),
             ')'
         )),
 
-        literal: $ => prec(1, choice(
+        literal: $ => prec(2, choice(
             $.string_literal,
             $.int_literal,
             $.float_literal,
@@ -261,7 +274,7 @@ module.exports = grammar({
         // func-expr | keyword-expr
         expression: $ => choice(
             $.literal,
-            $.identifier,
+            $.identifier, // check if a precedence of 2 is needed
             $.content_block,
             $.code_block,
             $.parenthesized_expression,
@@ -335,17 +348,17 @@ module.exports = grammar({
         break_statement: $ => prec.left('break'),
         continue_statement: $ => prec.left('continue'),
 
+        // let ident(params)? '=' expr
         let_declaration: $ => prec.left(PREC.assignment, seq(
             'let',
             $._whitespace,
             field('name', $.identifier),
-            optional(field('params', $.parameters)),
+            optional(field('parameters', $.parameters)),
             optional($._whitespace),
-            seq(
-                '=',
-                optional($._whitespace),
-                field('rhs', prec.right($.expression))
-            ),
+            '=',
+            optional($._whitespace),
+            field('rhs', $.expression),
+            optional($._whitespace),
         )),
 
         // set-expr ::= 'set' expr ('if' expr)?
@@ -428,63 +441,60 @@ module.exports = grammar({
             optional($._whitespace),
             '=>',
             optional($._whitespace),
-            field('body', prec.right($.expression))
+            // field('body', prec.right($.expression))
+            field('body', $.expression),
+            optional($._whitespace)
         )),
 
         // params ::= '(' (param (',' param)* ','?)? ')'
-        // params ::= param (',' param)* ','?
         parameters: $ => seq(
             '(',
-            optional($._parameters),
+            optional(seq(
+                optional($._whitespace),
+                commaSep($._whitespace, $._parameter),
+                optional(seq(optional($._whitespace), ',', optional($._whitespace)))
+            )),
             ')'
         ),
 
-        _parameters: $ => seq(
-            commaSep1($._parameter),
-            optional(',')
-        ),
-
         // param ::= ident (':' expr)?
-        _parameter: $ => prec(1, choice(
-            seq(
+        _parameter: $ => seq(
                 optional('..'),
                 choice(
                     field('name', $.identifier),
-                    $.default_parameter)),
-            '..',
-        )),
+                    $.default_parameter)
+        ),
 
-        default_parameter: $ => seq(
+        default_parameter: $ => prec(1, seq(
             field('name', $.identifier),
             optional($._whitespace),
             ':',
             optional($._whitespace),
             field('value', $.expression)
-        ),
+        )),
 
         // dict-expr ::= '(' (':' | (pair (',' pair)* ','?)) ')'
         dictionary: $ => seq(
             '(',
             choice(
-                // matches the empty dictionary
                 ':',
                 // matches (pair, pair, ...','?)
-                // seq(
-                //     commaSep1($._whitespace, $.pair),
-                //     optional(',')
-                // )
+                seq(
+                    commaSep($._whitespace, $.pair),
+                    optional(',')
+                )
             ),
             ')'
         ),
 
         // pair ::= (ident | str) ':' expr
-        pair: $ => seq(
+        pair: $ => prec(1, seq(
             field('key', choice($.string_literal, $.identifier)),
             optional($._whitespace),
             ':',
             optional($._whitespace),
-            field('value', $.expression)
-        ),
+            field('value', $.expression),
+        )),
 
         pattern: $ => prec.left(commaSep($._whitespace, $.identifier)),
 
@@ -513,12 +523,12 @@ module.exports = grammar({
         )),
 
         // args ::= ('(' (arg (',' arg)* ','?)? ')' content-block*) | content-block+
-        arguments: $ => prec.right(choice(
+        arguments: $ => prec.left(choice(
             repeat1($.content_block),
             seq(
                 '(',
                 optional(
-                    seq(commaSep1($._argument), optional(','))
+                    seq(commaSep($._whitespace, $._argument), optional(','))
                 ),
                 ')',
                 repeat($.content_block)
@@ -571,7 +581,7 @@ module.exports = grammar({
         unit: $ => choice('pt', 'mm', 'cm', 'in', 'deg', 'rad', 'em', 'fr', '%'),
 
         // numeric ::= float unit
-        numeric: $ => prec(2, seq(
+        numeric: $ => prec(3, seq(
             field('value', choice($.float_literal, $.int_literal)),
             field('unit', $.unit)
         )),
@@ -756,6 +766,7 @@ module.exports = grammar({
             '=',
             optional($._whitespace),
             field('right', choice($.expression, $.identifier)),
+            optional($._whitespace),
         )),
 
         // '+=' | '-=' | '*=' | '/='
@@ -776,6 +787,7 @@ module.exports = grammar({
                 field('operator', operator),
                 optional($._whitespace),
                 field('right', choice($.expression, $.identifier)),
+                optional($._whitespace),
             ))));
         },
 

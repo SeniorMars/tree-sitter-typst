@@ -37,11 +37,13 @@
         "eslint-plugin-promise": "^6.1.1",
         "tree-sitter-cli": "^0.20.7"
     },
-    "tree-sitter": [{
-        "scope": "source.typst",
-        "injection-regex": "typst",
-        "file-types": [
-            "typ"
-        ]
-    }]
+    "tree-sitter": [
+        {
+            "scope": "source.typst",
+            "injection-regex": "typst",
+            "file-types": [
+                "typ"
+            ]
+        }
+    ]
 }

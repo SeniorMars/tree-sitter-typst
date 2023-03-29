@@ -494,32 +494,167 @@ For loop
         (continue_statement)))))))
 
 ================================================================================
-Examples from the website
+Function creation
 ================================================================================
 
-#{
-  let a = [from];
-  let b = [world];
-  [what]
-  a + [ the ] + b
+#let hello() = {
+    "hello"
 }
+
+#{
+    let hello() = {
+        "hello"
+    }
+}
+
+#let hello(a, b) = {
+    a + b
+}
+
+#{
+    let hello(a, b) = {
+        a + b
+    }
+}
+
+#let hello(a, b, c: 1) = {
+    a + b + c
+}
+
+#{
+    let hello(a: (d + 3), b, c: 1) = {
+        a + b + c
+    }
+}
+
+#let another(a, ..b) = {
+    a + b
+}
+
+#let one(x) =  x * 2
+
+#let one(x) =  x * 2 random text // this should be an error in the compiler
+#let one(x) =  x * 2; random text // this should not be an error
+
+#{
+    let one(x) =  x * 2
+} random text
 
 --------------------------------------------------------------------------------
 
 (source_file
- (code_block
   (let_declaration
-   (identifier)
-   (content_block))
-  (let_declaration
-   (identifier)
-   (content_block))
-  (content_block)
-  (binary_operator
-   (binary_operator
     (identifier)
-    (content_block))
-   (identifier))))
+    (parameters)
+    (code_block
+      (string_literal)))
+  (paragraph_break)
+  (code_block
+    (let_declaration
+      (identifier)
+      (parameters)
+      (code_block
+        (string_literal))))
+  (paragraph_break)
+  (let_declaration
+    (identifier)
+    (parameters
+      (identifier)
+      (identifier))
+    (code_block
+      (binary_operator
+        (identifier)
+        (identifier))))
+  (paragraph_break)
+  (code_block
+    (let_declaration
+      (identifier)
+      (parameters
+        (identifier)
+        (identifier))
+      (code_block
+        (binary_operator
+          (identifier)
+          (identifier)))))
+  (paragraph_break)
+  (let_declaration
+    (identifier)
+    (parameters
+      (identifier)
+      (identifier)
+      (default_parameter
+        (identifier)
+        (int_literal)))
+    (code_block
+      (binary_operator
+        (binary_operator
+          (identifier)
+          (identifier))
+        (identifier))))
+  (paragraph_break)
+  (code_block
+    (let_declaration
+      (identifier)
+      (parameters
+        (default_parameter
+          (identifier)
+          (parenthesized_expression
+            (binary_operator
+              (identifier)
+              (int_literal))))
+        (identifier)
+        (default_parameter
+          (identifier)
+          (int_literal)))
+      (code_block
+        (binary_operator
+          (binary_operator
+            (identifier)
+            (identifier))
+          (identifier)))))
+  (paragraph_break)
+  (let_declaration
+    (identifier)
+    (parameters
+      (identifier)
+      (identifier))
+    (code_block
+      (binary_operator
+        (identifier)
+        (identifier))))
+  (paragraph_break)
+  (let_declaration
+    (identifier)
+    (parameters
+      (identifier))
+    (binary_operator
+      (identifier)
+      (int_literal)))
+  (paragraph_break)
+  (let_declaration
+    (identifier)
+    (parameters
+      (identifier))
+    (binary_operator
+      (identifier)
+      (int_literal)))
+  (line_comment)
+  (let_declaration
+    (identifier)
+    (parameters
+      (identifier))
+    (binary_operator
+      (identifier)
+      (int_literal)))
+  (line_comment)
+  (code_block
+    (let_declaration
+      (identifier)
+      (parameters
+        (identifier))
+      (binary_operator
+        (identifier)
+        (int_literal)))))
 
 ================================================================================
 Method / fields
@@ -650,7 +785,7 @@ Sum is #add(2, 3).
       (line_comment)
       (line_comment)
       (block_comment)))
-(paragraph_break)
+    (paragraph_break)
     (code_block
      (let_declaration
       (identifier)
@@ -658,7 +793,7 @@ Sum is #add(2, 3).
      (binary_operator
       (identifier)
       (int_literal)))
-(paragraph_break)
+    (paragraph_break)
     (let_declaration
      (identifier)
      (int_literal))
@@ -677,7 +812,7 @@ Sum is #add(2, 3).
         (int_literal)))
       (array
        (identifier))))
-(paragraph_break)
+    (paragraph_break)
     (let_declaration
      (identifier)
      (array
@@ -688,53 +823,26 @@ Sum is #add(2, 3).
 arrays vs parentheses
 ================================================================================
 
-#(n,)
-#let value = (1 + 3)
-#(a,b,c)
-
-#(1, 2, 3)
-
-#(1,)
-
-#let arr = (a, b, c)
-
 #()
-
+#let value = (1 + 3)
 #let int = ((1) + (2 + 3))
+
+#(a,b,c)
+#(n,)
+#(1, 2, 3)
+#(1,)
+#let arr = (a, b, c)
 
 --------------------------------------------------------------------------------
 
 (source_file
-  (array
-    (identifier))
+  (array)
   (let_declaration
     (identifier)
     (parenthesized_expression
       (binary_operator
         (int_literal)
         (int_literal))))
-  (array
-    (identifier)
-    (identifier)
-    (identifier))
-  (paragraph_break)
-  (array
-    (int_literal)
-    (int_literal)
-    (int_literal))
-  (paragraph_break)
-  (array
-    (int_literal))
-  (paragraph_break)
-  (let_declaration
-    (identifier)
-    (array
-      (identifier)
-      (identifier)
-      (identifier)))
-  (paragraph_break)
-  (array)
-  (paragraph_break)
   (let_declaration
     (identifier)
     (parenthesized_expression
@@ -744,7 +852,26 @@ arrays vs parentheses
         (parenthesized_expression
           (binary_operator
             (int_literal)
-            (int_literal)))))))
+            (int_literal))))))
+  (paragraph_break)
+  (array
+    (identifier)
+    (identifier)
+    (identifier))
+  (array
+    (identifier))
+  (array
+    (int_literal)
+    (int_literal)
+    (int_literal))
+  (array
+    (int_literal))
+  (let_declaration
+    (identifier)
+    (array
+      (identifier)
+      (identifier)
+      (identifier))))
 
 ================================================================================
 Unnamed functions
@@ -752,85 +879,105 @@ Unnamed functions
 
 #it => [#it #it]
 #(x) => 1
-#(x         ,) => x + 1
-#(x:1,) => x + 1
+#(x,     ) => x + 1
+#(      x,) => x + 1
 #(x, y) => x + y
+#(x:1,) => x + 1
+
+#(x) => 1 "this is a quote"
+
+#let x = 1 this should be an error
 #{
     (x, y) => not (-10 + x)
     z => z + 1
     let x = (x) => 1
-    type(x)
 
+    type(x)
     (c, d) => c + d
 }
 
 --------------------------------------------------------------------------------
 
 (source_file
- (function_expression
-  (identifier)
-  (content_block
-   (identifier)
-   (identifier)))
- (function_expression
-  (parameters
-   (identifier))
-  (int_literal))
- (function_expression
-  (parameters
-   (identifier))
-  (binary_operator
-   (identifier)
-   (int_literal)))
- (function_expression
-  (parameters
-   (default_parameter
-    (identifier)
-    (int_literal)))
-  (binary_operator
-   (identifier)
-   (int_literal)))
- (function_expression
-  (parameters
-   (identifier)
-   (identifier))
-  (binary_operator
-   (identifier)
-   (identifier)))
- (code_block
   (function_expression
-   (parameters
     (identifier)
-    (identifier))
-   (not_operator
-    (parenthesized_expression
-     (binary_operator
-      (unary_operator
-       (int_literal))
-      (identifier)))))
+    (content_block
+      (identifier)
+      (identifier)))
   (function_expression
-   (identifier)
-   (binary_operator
-    (identifier)
-    (int_literal)))
-  (let_declaration
-   (identifier)
-   (function_expression
     (parameters
-     (identifier))
-    (int_literal)))
-    (function_call
-     (identifier)
-     (arguments
-      (argument
-       (identifier))))
-    (function_expression
-     (parameters
+      (identifier))
+    (int_literal))
+  (function_expression
+    (parameters
+      (identifier))
+    (binary_operator
+      (identifier)
+      (int_literal)))
+  (function_expression
+    (parameters
+      (identifier))
+    (binary_operator
+      (identifier)
+      (int_literal)))
+  (function_expression
+    (parameters
       (identifier)
       (identifier))
-     (binary_operator
+    (binary_operator
       (identifier)
-      (identifier)))))
+      (identifier)))
+  (function_expression
+    (parameters
+      (default_parameter
+        (identifier)
+        (int_literal)))
+    (binary_operator
+      (identifier)
+      (int_literal)))
+  (paragraph_break)
+  (function_expression
+    (parameters
+      (identifier))
+    (int_literal))
+  (quote)
+  (let_declaration
+    (identifier)
+    (int_literal))
+  (code_block
+    (function_expression
+      (parameters
+        (identifier)
+        (identifier))
+      (not_operator
+        (parenthesized_expression
+          (binary_operator
+            (negation
+              (int_literal))
+            (identifier)))))
+    (function_expression
+      (identifier)
+      (binary_operator
+        (identifier)
+        (int_literal)))
+    (let_declaration
+      (identifier)
+      (function_expression
+        (parameters
+          (identifier))
+        (int_literal)))
+    (function_call
+      (identifier)
+      (arguments
+        (argument
+          (identifier))))
+    (function_expression
+      (parameters
+        (identifier)
+        (identifier))
+      (binary_operator
+        (identifier)
+        (identifier)))))
 
 ================================================================================
 Set expression
@@ -952,13 +1099,28 @@ While loop
 Errors I havent' handled yet
 ================================================================================
 
+// works
 #{
     let i = 1
     let j = 2
 }
+// works
+#{
+  let a = [from]
+  let b = [world]
+  [what]
+  a + [ the ] + b
+}
+// haven't handled this yet
+#{
+    for i in dict {
+        i
+        let j = i
+        j += 1
+    }
+}
 
 --------------------------------------------------------------------------------
-
 
 
 
@@ -995,24 +1157,79 @@ dictionary
 // Empty
 #(:)
 
-// unnamed function
-// #(x:1,) => x + 1
-
 // One pair
-// #(a: 1)
+#(a: 1)
 
-// // Two pairs and string key.
-// #let dict = (normal: 1, "spacy key": 2)
-// #dict // this should ideally be an identifier
-//
-// #test(dict.normal, 1)
-// #test(dict.at("spacy key"), 2)
-//
-// #let dict = (a: 3, c: 2, b: 1)
+// Two pairs and string key.
+#let dict = (normal: 1, "spacy key": 2)
+#dict
+
+#let dict = (a: 3, c: 2, b: 1)
+#let dict = (a: z, b: y, c: x)
 // #test("c" in dict, true)
 // #test("d" not in dict, true)
 // #test(dict.len(), 3)
 // #test(dict.values(), (3, 1, 2))
 // #test(dict.pairs().map(p => p.first() + str(p.last())).join(), "a3b1c2")
+// unnamed function
+// #(x:1,) => x + 1
+// #test(dict.normal, 1)
+// #test(dict.at("spacy key"), 2)
 
 --------------------------------------------------------------------------------
+
+(source_file
+  (line_comment)
+  (dictionary)
+  (paragraph_break)
+  (line_comment)
+  (dictionary
+    (pair
+      (identifier)
+      (int_literal)))
+  (paragraph_break)
+  (line_comment)
+  (let_declaration
+    (identifier)
+    (dictionary
+      (pair
+        (identifier)
+        (int_literal))
+      (pair
+        (string_literal)
+        (int_literal))))
+  (identifier)
+  (paragraph_break)
+  (let_declaration
+    (identifier)
+    (dictionary
+      (pair
+        (identifier)
+        (int_literal))
+      (pair
+        (identifier)
+        (int_literal))
+      (pair
+        (identifier)
+        (int_literal))))
+  (let_declaration
+    (identifier)
+    (dictionary
+      (pair
+        (identifier)
+        (identifier))
+      (pair
+        (identifier)
+        (identifier))
+      (pair
+        (identifier)
+        (identifier))))
+  (line_comment)
+  (line_comment)
+  (line_comment)
+  (line_comment)
+  (line_comment)
+  (line_comment)
+  (line_comment)
+  (line_comment)
+  (line_comment))
