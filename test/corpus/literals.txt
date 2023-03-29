@@ -321,50 +321,54 @@ Left #h(1fr) Left-ish #h(2fr) Right
   (line_break)
   (function_call
     (identifier)
-    (parameters
-      (asssigned_parameter
+    (arguments
+      (asssigned_argument
         (identifier)
         (numeric
           (int_literal)
           (unit)))))
   (function_call
     (identifier)
-    (parameters
-      (numeric
-        (int_literal)
-        (unit))))
-  (content_block)
+    (arguments
+      (argument
+        (numeric
+          (int_literal)
+          (unit)))
+      (content_block)))
   (function_call
     (identifier)
-    (parameters
-      (asssigned_parameter
+    (arguments
+      (asssigned_argument
         (identifier)
         (numeric
           (int_literal)
+          (unit)))
+      (content_block)))
+  (function_call
+    (identifier)
+    (arguments
+      (argument
+        (numeric
+          (int_literal)
           (unit)))))
-  (content_block)
   (function_call
     (identifier)
-    (parameters
-      (numeric
-        (int_literal)
-        (unit))))
-  (function_call
-    (identifier)
-    (parameters
-      (numeric
-        (int_literal)
-        (unit))))
+    (arguments
+      (argument
+        (numeric
+          (int_literal)
+          (unit)))))
   (string_literal)
   (line_break)
   (function_call
     (identifier)
-    (parameters
-      (content_block)))
+    (arguments
+      (argument
+        (content_block))))
   (function_call
     (identifier)
-    (parameters
-      (asssigned_parameter
+    (arguments
+      (asssigned_argument
         (identifier)
         (binary_operator
           (numeric
@@ -373,3 +377,18 @@ Left #h(1fr) Left-ish #h(2fr) Right
           (numeric
             (int_literal)
             (unit)))))))
+
+================================================================================
+Unicode
+================================================================================
+
+This should all parse correctly.
+
+✊
+👊
+👌
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (paragraph_break))

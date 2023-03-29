@@ -122,7 +122,6 @@ param ::= ident (':' expr)?
 let-expr ::= 'let' ident params? '=' expr
 set-expr ::= 'set' expr args
 show-expr ::= 'show' (ident ':')? expr 'as' expr
-wrap-expr ::= 'wrap' ident 'in' expr
 if-expr ::= 'if' expr block ('else' 'if' expr block)* ('else' block)?
 while-expr ::= 'while' expr block
 for-expr ::= 'for' for-pattern 'in' expr block

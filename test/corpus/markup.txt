@@ -17,6 +17,7 @@ this is some text
   (let_declaration
     (identifier)
    (int_literal)))
+ (paragraph_break)
  (content_block))
 
 
@@ -25,13 +26,58 @@ Markup Text
 ================================================================================
 
 #let hello = "Hello, world!"
-hello this is normal text! #hello is a variable!
+
+hello this is normal text! #hello is a variable.
+
+testing that emojis work: ✊😗
+
+
+
+#[hello world]
+
+
+checking for paragraph breaks
+#let what = 10
+
+name
 
 --------------------------------------------------------------------------------
+
 
 (source_file
  (let_declaration
   (identifier)
   (string_literal))
- (function_call
-  (identifier)))
+ (paragraph_break)
+ (identifier)
+ (paragraph_break)
+ (paragraph_break)
+ (content_block)
+ (paragraph_break)
+ (let_declaration
+  (identifier)
+  (int_literal))
+ (paragraph_break))
+
+================================================================================
+Set block markup
+================================================================================
+
+#set par(justify: true)
+#set page(
+  height: 100pt,
+  margin: 20pt,
+  footer: [
+    #set align(right)
+    #set text(8pt)
+    // #counter(page).display(
+    //   "1 of I",
+    //   both: true,
+    // )
+  ]
+)
+
+#lorem(48)
+
+--------------------------------------------------------------------------------
+

@@ -7,36 +7,37 @@ DONE:
 
 - [ ] Code mode: `#` to enter code mode
 
-    - [x] variable access: `x`
+    - [ ] Need to fix `expr {+,-,*,/}= expr`
     - [x] any literal: `1`, `"hi"`, `true`, `false`, `none`, `auto`
     - [x] code block: `{ x = 1 }`
-    - [x] content block: `[ *hello* ]`
+    - [x] content block: `[ hello ]`
     - [x] parenthesized expression: `(1 + 2)`
     - [x] array: `(1, 2, 3)`
     - [ ] dictionary: `(a: "hi", b: 2)`
     - [x] unary operator: `-x`
     - [x] binary operator: `x + y`
     - [x] assignment: `x = 1`
-    - [ ] I accidentally combined the next three :(. I have to redo
-        - [ ] field access: `x.y`
-        - [ ] method call: `x.flatten()`
-        - [ ] function call: `min(x, y)`
-    - [x] unnamed function: `(x, y) => x + y`
+    - [x] variable access: `x`
+    - [ ] field access: `x.y`
+    - [ ] method call: `x.flatten()`
+    - [ ] function call: `min(x, y)`
+    - [ ] unnamed function: `(x, y) => x + y`
     - [x] let binding: `let x = 1`
-    - [x] named function: `let f(x) = 2 * x`
+    - [ ] named function: `let f(x) = 2 * x`
     - [ ] set rule: `set text(14pt)`
     - [ ] set-if rule: `set text(..) if ..`
     - [ ] show-set rule: `show par: set block(..)`
     - [ ] show rule with function: `show par: set block(..)`
-    - [ ] show-everything rule: `show par: set block(..)`
+    - [ ] show-everything rule: `show: set block(..)`
+    - [ ] show rule with label `show <label>: set block()`
     - [x] conditional: `if x < 0 {0} else {x}`
     - [x] for loop: `for x in [1, 2, 3]`
     - [x] while loop: `while x < 10 {}`
     - [x] loop control flow: `break`, `continue`
-    - [ ] return from function: `return x`
-    - [ ] include module: `include "bar.typ"`
-    - [ ] import module: `import "bar.typ"`
-    - [ ] import items from module: `import "bar.typ": a, b, c`
+    - [x] return from function: `return x`
+    - [x] include module: `include "bar.typ"`
+    - [x] import module: `import "bar.typ"`
+    - [x] import items from module: `import "bar.typ": a, b, c`
     - [x] comment: `// hi` or `/* hi */`.
 
 - [ ] Math mode
@@ -45,10 +46,12 @@ DONE:
 
 - [ ] Markup mode
 
-    - [ ] paragraph break
+    - [ ] whitespace
+    - [x] paragraph break
     - [ ] strong emphasis
+    - [x] text (Unicode)
     - [ ] emphasis
-    - [x] raw text
+    - [ ] raw text
     - [ ] link
     - [ ] label
     - [ ] reference
@@ -104,7 +107,6 @@ ellipsis | quote | strong | emph | raw | link | math | heading |
 list | enum | desc | label | ref | markup-expr | comment
 
 // Markup nodes.
-space ::= unicode(White_Space)+
 nbsp ::= '~'
 shy ::= '-?'
 endash ::= '--'
@@ -132,14 +134,14 @@ literal | ident | block | group-expr | array-expr | dict-expr |
 unary-expr | binary-expr | field-access | func-call | method-call |
 func-expr | keyword-expr
 keyword-expr ::=
-let-expr | set-expr | show-expr | wrap-expr | if-expr |
+let-expr | set-expr | show-expr |  if-expr |
 while-expr | for-expr | import-expr | include-expr |
 break-expr | continue-expr | return-expr
 
 // Identifiers.
 keyword ::=
 'none' | 'auto' | 'true' | 'false' | 'not' | 'and' | 'or' |
-'let' | 'set' | 'show' | 'wrap' | 'if' | 'else' | 'for' | 'in' |
+'let' | 'set' | 'show' | 'if' | 'else' | 'for' | 'in' |
 'as' | 'while' | 'break' | 'continue' | 'return' | 'import' |
 'include' | 'from'
 
@@ -149,18 +151,5 @@ pair ::= (ident | str) ':' expr
 
 // Fields, functions, methods.
 field-access ::= expr '.' ident
-func-call ::= expr args
 method-call ::= expr '.' ident args
-args ::= ('(' (arg (',' arg)* ','?)? ')' content-block*) | content-block+
-arg ::= (ident ':')? expr
-func-expr ::= (params | ident '=>') expr
-
-// Keyword expressions.
-set-expr ::= 'set' expr args
-show-expr ::= 'show' (ident ':')? expr 'as' expr
-wrap-expr ::= 'wrap' ident 'in' expr
-import-expr ::= 'import' import-items 'from' expr
-import-items ::= '*' | (ident (',' ident)* ','?)
-include-expr ::= 'include' expr
-return-expr ::= 'return' expr?
 ```

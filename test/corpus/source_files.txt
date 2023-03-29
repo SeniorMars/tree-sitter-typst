@@ -32,7 +32,7 @@ call.typ
 
 // Omitted space.
 #let f() = {}
-#[#f()*Bold*]
+#[#hello() "hello"]
 
 // Don't parse this as a function.
 // this is wrong
@@ -43,17 +43,19 @@ call.typ
 (source_file
   (line_comment)
   (let_declaration
-    (function
-      (identifier)
-      (parameters))
+    (identifier)
+    (parameters)
     (code_block))
   (content_block
     (function_call
       (identifier)
-      (parameters)))
+      (arguments))
+    (quote))
+  (paragraph_break)
   (line_comment)
   (line_comment)
   (function_call
     (identifier)
-    (parameters
-      (identifier))))
+    (arguments
+      (argument
+        (identifier)))))

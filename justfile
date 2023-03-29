@@ -1,6 +1,11 @@
+set positional-arguments
 alias b := build
 alias g := gen
 alias t := test
+alias c := case
+
+case arg: build
+    tree-sitter test -f {{arg}}
 
 gen:
     tree-sitter generate
