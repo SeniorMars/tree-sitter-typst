@@ -220,6 +220,15 @@ Real World Example
   )
 }
 
+#let alert(body, fill: red) = {
+  rect(
+    fill: fill,
+    inset: 8pt,
+    radius: 4pt,
+    [Warning:\ #body],
+  )
+}
+
 #alert[Danger is imminent!]
 
 #alert(fill: blue)[
@@ -229,46 +238,63 @@ Real World Example
 --------------------------------------------------------------------------------
 
 (source_file
- (let_declaration
-  (function
-   (identifier)
-   (parameters
-    (identifier)
-    (asssigned_parameter
-     (identifier)
-     (identifier))))
-  (code_block
-   (function_call
+  (let_declaration
     (identifier)
     (parameters
-     (asssigned_parameter
       (identifier)
-      (identifier))
-     (asssigned_parameter
-      (identifier)
-      (numeric
-       (int_literal)
-       (unit)))
-     (asssigned_parameter
-      (identifier)
-      (numeric
-       (int_literal)
-       (unit)))
-     (content_block
-      (line_break)
+      (default_parameter
+        (identifier)
+        (identifier)))
+    (code_block
       (function_call
-       (identifier)))))))
-    (paragraph_break)
-    (function_call
-     (identifier))
-(content_block)
-    (function_call
-     (identifier)
-     (parameters
-      (asssigned_parameter
-       (identifier)
-       (identifier))))
-(content_block))
+        (identifier)
+        (arguments
+          (line_comment)
+          (line_comment)
+          (line_comment)
+          (line_comment)))))
+  (paragraph_break)
+  (let_declaration
+    (identifier)
+    (parameters
+      (identifier)
+      (default_parameter
+        (identifier)
+        (identifier)))
+    (code_block
+      (function_call
+        (identifier)
+        (arguments
+          (asssigned_argument
+            (identifier)
+            (identifier))
+          (asssigned_argument
+            (identifier)
+            (numeric
+              (int_literal)
+              (unit)))
+          (asssigned_argument
+            (identifier)
+            (numeric
+              (int_literal)
+              (unit)))
+          (argument
+            (content_block
+              (line_break)
+              (identifier)))))))
+  (paragraph_break)
+  (function_call
+    (identifier)
+    (arguments
+      (content_block)))
+  (paragraph_break)
+  (function_call
+    (identifier)
+    (arguments
+      (asssigned_argument
+        (identifier)
+        (identifier))
+      (content_block))))
 
 ================================================================================
 If expression
@@ -415,7 +441,6 @@ logical operators
 ================================================================================
 For loop
 ================================================================================
-
 
 #for letter in "abc nope" {
   if letter in "hello" {
@@ -660,22 +685,130 @@ Function creation
 Method / fields
 ================================================================================
 
-
 #emph[Hello] \
 #emoji.face \
 #"hello".len()
 
-// Hello, #hello.name()
-// Hello #hello()[1,2]
-// Hello #hello(1, 2)[1]
-// Hello #hello(1, 2).name
-// Hello #hello(1, 2).name()
-// Hello #hello(1, 2)
-// Hello #hello[1]
-// hello #hello[]
+Hello, #hello.name()
+Hello #hello()[1,2]
+Hello #hello(1, 2)[1]
+Hello #hello(1, 2).name
+Hello #hello(1, 2).name()
+Hello #hello(1, 2).name().result
+Hello #hello(1, 2)
+Hello #hello[1]
+hello #hello[]
+
+hello #hello hello
+hello #hello() hello
+hello #hello(1, 2).name hello
+hello #hello(1, 2).name() hello
+hello #hello. hello
 
 --------------------------------------------------------------------------------
 
+(source_file
+  (function_call
+    (identifier)
+    (arguments
+      (content_block)))
+  (line_break)
+  (field_access
+    (identifier)
+    (identifier))
+  (line_break)
+  (method_call
+    (string_literal)
+    (identifier)
+    (arguments))
+  (paragraph_break)
+  (method_call
+    (identifier)
+    (identifier)
+    (arguments))
+  (function_call
+    (identifier)
+    (arguments
+      (content_block)))
+  (function_call
+    (identifier)
+    (arguments
+      (argument
+        (int_literal))
+      (argument
+        (int_literal))
+      (content_block)))
+  (field_access
+    (function_call
+      (identifier)
+      (arguments
+        (argument
+          (int_literal))
+        (argument
+          (int_literal))))
+    (identifier))
+  (method_call
+    (function_call
+      (identifier)
+      (arguments
+        (argument
+          (int_literal))
+        (argument
+          (int_literal))))
+    (identifier)
+    (arguments))
+  (field_access
+    (method_call
+      (function_call
+        (identifier)
+        (arguments
+          (argument
+            (int_literal))
+          (argument
+            (int_literal))))
+      (identifier)
+      (arguments))
+    (identifier))
+  (function_call
+    (identifier)
+    (arguments
+      (argument
+        (int_literal))
+      (argument
+        (int_literal))))
+  (function_call
+    (identifier)
+    (arguments
+      (content_block)))
+  (function_call
+    (identifier)
+    (arguments
+      (content_block)))
+  (paragraph_break)
+  (identifier)
+  (function_call
+    (identifier)
+    (arguments))
+  (field_access
+    (function_call
+      (identifier)
+      (arguments
+        (argument
+          (int_literal))
+        (argument
+          (int_literal))))
+    (identifier))
+  (method_call
+    (function_call
+      (identifier)
+      (arguments
+        (argument
+          (int_literal))
+        (argument
+          (int_literal))))
+    (identifier)
+    (arguments))
+  (identifier))
 
 ================================================================================
 Complex example
@@ -689,133 +822,133 @@ It explains #name.
 Sum is #add(2, 3).
 
 
-// #for c in "ABC" [
-//   #c is a letter.
-// ]
-//
-// #while true [
-//     // comments work here
-// ]
-//
-// #let n = 2
-//
-// #while n < 1000 {
-//     1 + 1;
-//     random = 1 + 1;
-//     n = (n * 2) - 1;
-//     // true
-//     // line comments work here
-//     /* block comments work here */
-// }
-//
-// #{
-//     let x = 1; x + 2
-// }
-//
-// #let n = 1
-// #while n < 10 {
-//      n = (n * 2) - 1;
-//      (n,)
-// }
-//
-// #let arr = (1, 2)
+#for c in "ABC" [
+  #c is a letter.
+]
+
+#while true [
+    // comments work here
+]
+
+#let n = 2
+
+#while n < 1000 {
+    1 + 1;
+    random = 1 + 1;
+    n = (n * 2) - 1;
+    // true
+    // line comments work here
+    /* block comments work here */
+}
+
+#{
+    let x = 1; x + 2
+}
+
+#let n = 1
+#while n < 10 {
+     n = (n * 2) - 1;
+     (n,)
+}
+
+#let arr = (1, 2)
 
 --------------------------------------------------------------------------------
 
 (source_file
- (let_declaration
+  (let_declaration
+    (identifier)
+    (string_literal))
   (identifier)
-  (string_literal))
- (identifier)
- (identifier)
- (paragraph_break)
- (let_declaration
   (identifier)
-  (parameters
-   (identifier)
-   (identifier))
-  (binary_operator
-   (identifier)
-   (identifier)))
- (function_call
-  (identifier)
-  (arguments
-   (argument
-    (int_literal))
-   (argument
-    (int_literal))))
-(paragraph_break)
-    (for_expression
-     (pattern
+  (paragraph_break)
+  (let_declaration
+    (identifier)
+    (parameters
+      (identifier)
       (identifier))
-     (string_literal)
-     (content_block
+    (binary_operator
+      (identifier)
       (identifier)))
-(paragraph_break)
-    (while_expression
-     (boolean_literal)
-     (content_block
+  (function_call
+    (identifier)
+    (arguments
+      (argument
+        (int_literal))
+      (argument
+        (int_literal))))
+  (paragraph_break)
+  (for_expression
+    (pattern
+      (identifier))
+    (string_literal)
+    (content_block
+      (identifier)))
+  (paragraph_break)
+  (while_expression
+    (boolean_literal)
+    (content_block
       (line_comment)))
-(paragraph_break)
-    (let_declaration
-     (identifier)
-     (int_literal))
-(paragraph_break)
-    (while_expression
-     (comparison_expression
+  (paragraph_break)
+  (let_declaration
+    (identifier)
+    (int_literal))
+  (paragraph_break)
+  (while_expression
+    (comparison_expression
       (identifier)
       (int_literal))
-     (code_block
+    (code_block
       (binary_operator
-       (int_literal)
-       (int_literal))
-      (assignment
-       (identifier)
-       (binary_operator
         (int_literal)
-        (int_literal)))
-      (assignment
-       (identifier)
-       (binary_operator
-        (parenthesized_expression
-         (binary_operator
-          (identifier)
+        (int_literal))
+      (assignment_expression
+        (identifier)
+        (binary_operator
+          (int_literal)
           (int_literal)))
-        (int_literal)))
+      (assignment_expression
+        (identifier)
+        (binary_operator
+          (parenthesized_expression
+            (binary_operator
+              (identifier)
+              (int_literal)))
+          (int_literal)))
       (line_comment)
       (line_comment)
       (block_comment)))
-    (paragraph_break)
-    (code_block
-     (let_declaration
+  (paragraph_break)
+  (code_block
+    (let_declaration
       (identifier)
       (int_literal))
-     (binary_operator
+    (binary_operator
       (identifier)
       (int_literal)))
-    (paragraph_break)
-    (let_declaration
-     (identifier)
-     (int_literal))
-    (while_expression
-     (comparison_expression
+  (paragraph_break)
+  (let_declaration
+    (identifier)
+    (int_literal))
+  (while_expression
+    (comparison_expression
       (identifier)
       (int_literal))
-     (code_block
-      (assignment
-       (identifier)
-       (binary_operator
-        (parenthesized_expression
-         (binary_operator
-          (identifier)
+    (code_block
+      (assignment_expression
+        (identifier)
+        (binary_operator
+          (parenthesized_expression
+            (binary_operator
+              (identifier)
+              (int_literal)))
           (int_literal)))
-        (int_literal)))
       (array
-       (identifier))))
-    (paragraph_break)
-    (let_declaration
-     (identifier)
-     (array
+        (identifier))))
+  (paragraph_break)
+  (let_declaration
+    (identifier)
+    (array
       (int_literal)
       (int_literal))))
 
@@ -985,20 +1118,153 @@ Set expression
 
 #set text(red) if 1 == "hello"
 #set text(8pt)
-// set text(blue) if it.has("label") and it.label == "hello"
-
 #{
-set text(red) if 1 == "hello"
+  set text(red) if 1 == "hello"
+  set text(8pt)
+  set text(red) if 1 == "hello"
 }
 
 #set text(red) if 1 + 2 + 3 < 6
-// #set list(marker: n => if n == 1 [--] else [hello]) // content blocks support utf-8
-// #set table(fill: (x, y) => if calc.even(x + y) { rgb("aaa") })
-// // #set page(height: 50pt, margin: (bottom: 20pt, rest: 10pt)) // this is a dictionary
-// #set list(marker: [--])
+#set list(marker: n => if n == 1 [--] else [hello]) // content blocks support utf-8
+#set table(fill: (x, y) => if calc.even(x + y) { rgb("aaa") })
+#set page(height: 50pt, margin: (bottom: 20pt, rest: 10pt))
+#set list(marker: [--])
 
 --------------------------------------------------------------------------------
 
+(source_file
+  (set_expression
+    (function_call
+      (identifier)
+      (arguments
+        (argument
+          (identifier))))
+    (if_cause
+      (comparison_expression
+        (int_literal)
+        (string_literal))))
+  (set_expression
+    (function_call
+      (identifier)
+      (arguments
+        (argument
+          (numeric
+            (int_literal)
+            (unit))))))
+  (code_block
+    (set_expression
+      (function_call
+        (identifier)
+        (arguments
+          (argument
+            (identifier))))
+      (if_cause
+        (comparison_expression
+          (int_literal)
+          (string_literal))))
+    (set_expression
+      (function_call
+        (identifier)
+        (arguments
+          (argument
+            (numeric
+              (int_literal)
+              (unit))))))
+    (set_expression
+      (function_call
+        (identifier)
+        (arguments
+          (argument
+            (identifier))))
+      (if_cause
+        (comparison_expression
+          (int_literal)
+          (string_literal)))))
+  (paragraph_break)
+  (set_expression
+    (function_call
+      (identifier)
+      (arguments
+        (argument
+          (identifier))))
+    (if_cause
+      (comparison_expression
+        (binary_operator
+          (binary_operator
+            (int_literal)
+            (int_literal))
+          (int_literal))
+        (int_literal))))
+  (set_expression
+    (function_call
+      (identifier)
+      (arguments
+        (asssigned_argument
+          (identifier)
+          (function_expression
+            (identifier)
+            (if_expression
+              (comparison_expression
+                (identifier)
+                (int_literal))
+              (content_block)
+              (else_clause
+                (content_block))))))))
+  (line_comment)
+  (set_expression
+    (function_call
+      (identifier)
+      (arguments
+        (asssigned_argument
+          (identifier)
+          (function_expression
+            (parameters
+              (identifier)
+              (identifier))
+            (if_expression
+              (method_call
+                (identifier)
+                (identifier)
+                (arguments
+                  (argument
+                    (binary_operator
+                      (identifier)
+                      (identifier)))))
+              (code_block
+                (function_call
+                  (identifier)
+                  (arguments
+                    (argument
+                      (string_literal)))))))))))
+  (set_expression
+    (function_call
+      (identifier)
+      (arguments
+        (asssigned_argument
+          (identifier)
+          (numeric
+            (int_literal)
+            (unit)))
+        (asssigned_argument
+          (identifier)
+          (dictionary
+            (pair
+              (identifier)
+              (numeric
+                (int_literal)
+                (unit)))
+            (pair
+              (identifier)
+              (numeric
+                (int_literal)
+                (unit))))))))
+  (set_expression
+    (function_call
+      (identifier)
+      (arguments
+        (asssigned_argument
+          (identifier)
+          (content_block))))))
 
 ================================================================================
 Show expression
@@ -1009,22 +1275,154 @@ Show expression
 #show: "badly"
 #show par: set block()
 
-// #show link: it => underline(text(fill: rgb("283663"), it))
-// #show heading.where(level: 2): set text(10pt)
-// #show: rect.with(width: 100pt, height: 50pt, inset: 0pt, fill: rgb("aaa"))
-// #show <red>: set text(red)
+#show link: it => underline(text(fill: rgb("283663"), it))
+#show heading.where(level: 2): set text(10pt)
+#show: rect.with(width: 100pt, height: 50pt, inset: 0pt, fill: rgb("aaa"))
 
-// #set heading(numbering: "(I)")
-// #show heading: it => block[] // block[] is a function fix this.
-// #show heading: it => block[
-//   // #set align(center)
-//   // #set text(font: "Inria Serif")
-//   \~ #emph(it.body)
-//      #counter(heading).display() \~
-// ]
+#set heading(numbering: "(I)")
+#show heading: it => block[]
+#show heading: it => block[
+  #set align(center)
+  #set text(font: "Inria Serif")
+  \~ #emph(it.body)
+     #counter(heading).display() \~
+]
 
 --------------------------------------------------------------------------------
 
+(source_file
+  (show_expression
+    (string_literal)
+    (identifier))
+  (show_expression
+    (string_literal)
+    (string_literal))
+  (show_expression
+    (string_literal))
+  (show_expression
+    (identifier)
+    (set_expression
+      (function_call
+        (identifier)
+        (arguments))))
+  (paragraph_break)
+  (show_expression
+    (identifier)
+    (function_expression
+      (identifier)
+      (function_call
+        (identifier)
+        (arguments
+          (argument
+            (function_call
+              (identifier)
+              (arguments
+                (asssigned_argument
+                  (identifier)
+                  (function_call
+                    (identifier)
+                    (arguments
+                      (argument
+                        (string_literal)))))
+                (argument
+                  (identifier)))))))))
+  (show_expression
+    (method_call
+      (identifier)
+      (identifier)
+      (arguments
+        (asssigned_argument
+          (identifier)
+          (int_literal))))
+    (set_expression
+      (function_call
+        (identifier)
+        (arguments
+          (argument
+            (numeric
+              (int_literal)
+              (unit)))))))
+  (show_expression
+    (method_call
+      (identifier)
+      (identifier)
+      (arguments
+        (asssigned_argument
+          (identifier)
+          (numeric
+            (int_literal)
+            (unit)))
+        (asssigned_argument
+          (identifier)
+          (numeric
+            (int_literal)
+            (unit)))
+        (asssigned_argument
+          (identifier)
+          (numeric
+            (int_literal)
+            (unit)))
+        (asssigned_argument
+          (identifier)
+          (function_call
+            (identifier)
+            (arguments
+              (argument
+                (string_literal))))))))
+  (paragraph_break)
+  (set_expression
+    (function_call
+      (identifier)
+      (arguments
+        (asssigned_argument
+          (identifier)
+          (string_literal)))))
+  (show_expression
+    (identifier)
+    (function_expression
+      (identifier)
+      (function_call
+        (identifier)
+        (arguments
+          (content_block)))))
+  (show_expression
+    (identifier)
+    (function_expression
+      (identifier)
+      (function_call
+        (identifier)
+        (arguments
+          (content_block
+            (set_expression
+              (function_call
+                (identifier)
+                (arguments
+                  (argument
+                    (identifier)))))
+            (set_expression
+              (function_call
+                (identifier)
+                (arguments
+                  (asssigned_argument
+                    (identifier)
+                    (string_literal)))))
+            (escape_sequence)
+            (function_call
+              (identifier)
+              (arguments
+                (argument
+                  (field_access
+                    (identifier)
+                    (identifier)))))
+            (method_call
+              (function_call
+                (identifier)
+                (arguments
+                  (argument
+                    (identifier))))
+              (identifier)
+              (arguments))
+            (escape_sequence)))))))
 
 ================================================================================
 While loop
@@ -1122,7 +1520,43 @@ Errors I havent' handled yet
 
 --------------------------------------------------------------------------------
 
-
+(source_file
+  (line_comment)
+  (code_block
+    (let_declaration
+      (identifier)
+      (int_literal))
+    (let_declaration
+      (identifier)
+      (int_literal)))
+  (line_comment)
+  (code_block
+    (let_declaration
+      (identifier)
+      (content_block))
+    (let_declaration
+      (identifier)
+      (content_block))
+    (content_block)
+    (binary_operator
+      (binary_operator
+        (identifier)
+        (content_block))
+      (identifier)))
+  (line_comment)
+  (code_block
+    (for_expression
+      (pattern
+        (identifier))
+      (identifier)
+      (code_block
+        (identifier)
+        (let_declaration
+          (identifier)
+          (identifier))
+        (assignment_operators
+          (identifier)
+          (int_literal))))))
 
 ================================================================================
 include and import
@@ -1166,15 +1600,15 @@ dictionary
 
 #let dict = (a: 3, c: 2, b: 1)
 #let dict = (a: z, b: y, c: x)
-// #test("c" in dict, true)
-// #test("d" not in dict, true)
-// #test(dict.len(), 3)
-// #test(dict.values(), (3, 1, 2))
-// #test(dict.pairs().map(p => p.first() + str(p.last())).join(), "a3b1c2")
-// unnamed function
-// #(x:1,) => x + 1
-// #test(dict.normal, 1)
-// #test(dict.at("spacy key"), 2)
+#test("c" in dict, true)
+#test("d" not in dict, true)
+#test(dict.len(), 3)
+#test(dict.values(), (3, 1, 2))
+#test(dict.pairs().map(p => p.first() + str(p.last())).join(), "a3b1c2")
+unnamed function
+#(x:1,) => x + 1
+#test(dict.normal, 1)
+#test(dict.at("spacy key"), 2)
 
 --------------------------------------------------------------------------------
 
@@ -1224,12 +1658,156 @@ dictionary
       (pair
         (identifier)
         (identifier))))
-  (line_comment)
-  (line_comment)
-  (line_comment)
-  (line_comment)
-  (line_comment)
-  (line_comment)
-  (line_comment)
-  (line_comment)
-  (line_comment))
+  (function_call
+    (identifier)
+    (arguments
+      (argument
+        (collection_expression
+          (string_literal)
+          (identifier)))
+      (argument
+        (boolean_literal))))
+  (function_call
+    (identifier)
+    (arguments
+      (argument
+        (collection_expression
+          (string_literal)
+          (identifier)))
+      (argument
+        (boolean_literal))))
+  (function_call
+    (identifier)
+    (arguments
+      (argument
+        (method_call
+          (identifier)
+          (identifier)
+          (arguments)))
+      (argument
+        (int_literal))))
+  (function_call
+    (identifier)
+    (arguments
+      (argument
+        (method_call
+          (identifier)
+          (identifier)
+          (arguments)))
+      (argument
+        (array
+          (int_literal)
+          (int_literal)
+          (int_literal)))))
+  (function_call
+    (identifier)
+    (arguments
+      (argument
+        (method_call
+          (method_call
+            (method_call
+              (identifier)
+              (identifier)
+              (arguments))
+            (identifier)
+            (arguments
+              (argument
+                (binary_operator
+                  (function_expression
+                    (identifier)
+                    (method_call
+                      (identifier)
+                      (identifier)
+                      (arguments)))
+                  (function_call
+                    (identifier)
+                    (arguments
+                      (argument
+                        (method_call
+                          (identifier)
+                          (identifier)
+                          (arguments)))))))))
+          (identifier)
+          (arguments)))
+      (argument
+        (string_literal))))
+  (function_expression
+    (parameters
+      (default_parameter
+        (identifier)
+        (int_literal)))
+    (binary_operator
+      (identifier)
+      (int_literal)))
+  (function_call
+    (identifier)
+    (arguments
+      (argument
+        (field_access
+          (identifier)
+          (identifier)))
+      (argument
+        (int_literal))))
+  (function_call
+    (identifier)
+    (arguments
+      (argument
+        (method_call
+          (identifier)
+          (identifier)
+          (arguments
+            (argument
+              (string_literal)))))
+      (argument
+        (int_literal)))))
+
+================================================================================
+Expressions which may not parse correctly
+================================================================================
+
+#set text(blue) if it.has("label") and it.label == "hello"
+#set text(blue) if it.has("label") and (it.label == "hello")
+// #show <red>: set text(red)
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (set_expression
+    (function_call
+      (identifier)
+      (arguments
+        (argument
+          (identifier))))
+    (if_cause
+      (comparison_expression
+        (field_access
+          (boolean_expression
+            (method_call
+              (identifier)
+              (identifier)
+              (arguments
+                (argument
+                  (string_literal))))
+            (identifier))
+          (identifier))
+        (string_literal))))
+  (set_expression
+    (function_call
+      (identifier)
+      (arguments
+        (argument
+          (identifier))))
+    (if_cause
+      (boolean_expression
+        (method_call
+          (identifier)
+          (identifier)
+          (arguments
+            (argument
+              (string_literal))))
+        (parenthesized_expression
+          (comparison_expression
+            (field_access
+              (identifier)
+              (identifier))
+            (string_literal)))))))

@@ -1,15 +1,12 @@
 # A tree-sitter parser for the typst file format
 
-Note: this language uses parentheses for so many things that it's hard to parse, and it's not like
-lisp where everything a tree :(
+This language is soooo hard to parse... whitespace, parenthesizes for everything, and Unicode :(
+
 
 DONE:
 
-- [ ] Code mode: `#` to enter code mode
+- [x] Code mode: `#` to enter code mode
 
-    - [ ] Need to fix. I think it has something to do with prec
-        - `expr {+,-,*,/}= expr`
-        - assignment operator, i.e., `x = 1`
     - [x] any literal: `1`, `"hi"`, `true`, `false`, `none`, `auto`
     - [x] code block: `{ x = 1 }`
     - [x] content block: `[ hello ]`
@@ -20,18 +17,17 @@ DONE:
     - [x] binary operator: `x + y`
     - [x] assignment: `x = 1`
     - [x] variable access: `x`
-    - [ ] field access: `x.y`
-    - [ ] method call: `x.flatten()`
+    - [x] field access: `x.y`
+    - [x] method call: `x.flatten()`
     - [x] named function: `let f(x) = 2 * x`
     - [x] unnamed function: `(x, y) => x + y`
     - [x] function call: `min(x, y)`
     - [x] let binding: `let x = 1`
-    - [ ] set rule: `set text(14pt)`
-    - [ ] set-if rule: `set text(..) if ..`
-    - [ ] show-set rule: `show par: set block(..)`
-    - [ ] show rule with function: `show par: set block(..)`
-    - [ ] show-everything rule: `show: set block(..)`
-    - [ ] show rule with label `show <label>: set block()`
+    - [x] set rule: `set text(14pt)`
+    - [x] set-if rule: `set text(..) if ..`
+    - [x] show-set rule: `show par: set block(..)`
+    - [x] show rule with function: `show par: set block(..)`
+    - [x] show-everything rule: `show: set block(..)`
     - [x] conditional: `if x < 0 {0} else {x}`
     - [x] for loop: `for x in [1, 2, 3]`
     - [x] while loop: `while x < 10 {}`
@@ -70,6 +66,64 @@ DONE:
     - [x] code expression
     - [x] character escape
     - [x] comment.
+
+
+NOTE:
+
+There is ambiguously in labels for code mode. I searched through the docs and I'm not sure what to
+put its precedence; thus we see here how these two statements are parsed:
+
+```typst
+#set text(blue) if it.has("label") and it.label == <label>
+#set text(blue) if it.has("label") and (it.label == <label>)
+```
+
+```treesitter
+
+(source_file
+  (set_expression
+    (function_call
+      (identifier)
+      (arguments
+        (argument
+          (identifier))))
+    (if_cause
+      (comparison_expression
+        (field_access
+          (boolean_expression
+            (method_call
+              (identifier)
+              (identifier)
+              (arguments
+                (argument
+                  (string_literal))))
+            (identifier))
+          (identifier))
+        (label))))
+  (set_expression
+    (function_call
+      (identifier)
+      (arguments
+        (argument
+          (identifier))))
+    (if_cause
+      (boolean_expression
+        (method_call
+          (identifier)
+          (identifier)
+          (arguments
+            (argument
+              (string_literal))))
+        (parenthesized_expression
+          (comparison_expression
+            (field_access
+              (identifier)
+              (identifier))
+            (label)))))))
+```
+
+
+While it may be clear that it should be number two, I'm not completely sure.
 
 ---
 

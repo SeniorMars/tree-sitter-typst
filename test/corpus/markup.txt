@@ -60,8 +60,46 @@ name
  (paragraph_break))
 
 ================================================================================
-Set block markup
+Set block markup and spacing
 ================================================================================
+
+#set par(justify: true)
+#set par(justify: true      )
+#set par(
+justify: true      )
+
+#set par(
+    // hello
+    // hello
+    // hello
+    // hello
+justify: true      )
+
+#set par(
+justify: true
+)
+
+#set par(
+// hello new line
+height: 10,
+// hello new line
+// hello new line
+// hello new line
+width: 10
+// does this work?
+)
+
+#set par(
+height: 10
+// hello comment
+// hello comment
+// hello comment
+)
+
+#set par(
+height: 10,
+width: 10,
+)
 
 #set par(justify: true)
 #set page(
@@ -70,10 +108,10 @@ Set block markup
   footer: [
     #set align(right)
     #set text(8pt)
-    // #counter(page).display(
-    //   "1 of I",
-    //   both: true,
-    // )
+    #counter(page).display(
+      "1 of I",
+      both: true,
+    )
   ]
 )
 
@@ -81,3 +119,141 @@ Set block markup
 
 --------------------------------------------------------------------------------
 
+(source_file
+  (set_expression
+    (function_call
+      (identifier)
+      (arguments
+        (asssigned_argument
+          (identifier)
+          (boolean_literal)))))
+  (set_expression
+    (function_call
+      (identifier)
+      (arguments
+        (asssigned_argument
+          (identifier)
+          (boolean_literal)))))
+  (set_expression
+    (function_call
+      (identifier)
+      (arguments
+        (asssigned_argument
+          (identifier)
+          (boolean_literal)))))
+  (paragraph_break)
+  (set_expression
+    (function_call
+      (identifier)
+      (arguments
+        (line_comment)
+        (line_comment)
+        (line_comment)
+        (line_comment)
+        (asssigned_argument
+          (identifier)
+          (boolean_literal)))))
+  (paragraph_break)
+  (set_expression
+    (function_call
+      (identifier)
+      (arguments
+        (asssigned_argument
+          (identifier)
+          (boolean_literal)))))
+  (paragraph_break)
+  (set_expression
+    (function_call
+      (identifier)
+      (arguments
+        (line_comment)
+        (asssigned_argument
+          (identifier)
+          (int_literal))
+        (line_comment)
+        (line_comment)
+        (line_comment)
+        (asssigned_argument
+          (identifier)
+          (int_literal))
+        (line_comment))))
+  (paragraph_break)
+  (set_expression
+    (function_call
+      (identifier)
+      (arguments
+        (asssigned_argument
+          (identifier)
+          (int_literal))
+        (line_comment)
+        (line_comment)
+        (line_comment))))
+  (paragraph_break)
+  (set_expression
+    (function_call
+      (identifier)
+      (arguments
+        (asssigned_argument
+          (identifier)
+          (int_literal))
+        (asssigned_argument
+          (identifier)
+          (int_literal)))))
+  (paragraph_break)
+  (set_expression
+    (function_call
+      (identifier)
+      (arguments
+        (asssigned_argument
+          (identifier)
+          (boolean_literal)))))
+  (set_expression
+    (function_call
+      (identifier)
+      (arguments
+        (asssigned_argument
+          (identifier)
+          (numeric
+            (int_literal)
+            (unit)))
+        (asssigned_argument
+          (identifier)
+          (numeric
+            (int_literal)
+            (unit)))
+        (asssigned_argument
+          (identifier)
+          (content_block
+            (set_expression
+              (function_call
+                (identifier)
+                (arguments
+                  (argument
+                    (identifier)))))
+            (set_expression
+              (function_call
+                (identifier)
+                (arguments
+                  (argument
+                    (numeric
+                      (int_literal)
+                      (unit))))))
+            (method_call
+              (function_call
+                (identifier)
+                (arguments
+                  (argument
+                    (identifier))))
+              (identifier)
+              (arguments
+                (argument
+                  (string_literal))
+                (asssigned_argument
+                  (identifier)
+                  (boolean_literal)))))))))
+  (paragraph_break)
+  (function_call
+    (identifier)
+    (arguments
+      (argument
+        (int_literal)))))

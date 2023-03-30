@@ -4,42 +4,70 @@
 /* eslint-disable indent */
 /* eslint-disable semi */
 /* eslint-disable no-undef */
-function commaSep(space, rule) {
-    return seq(rule, repeat(seq(optional(space), ',', optional(space), rule)))
+
+// very ugly code that allows you to use comma seperated values with comments and newlines
+// this took me some time to come up with.
+function commaSep(space, rule, lineComment) {
+    return seq(
+        repeat(seq(optional(space), lineComment, '\n', optional(space))),
+        optional(space),
+        optional(seq(
+            rule,
+            repeat(seq(
+                ',',
+                optional(seq(
+                    space,
+                    repeat(
+                        alias(
+                            /\p{White_Space}*\/\/.*/,
+                            lineComment,
+                        )))),
+                optional(space),
+                rule,
+            )),
+            optional(','),
+            optional(seq(
+                space,
+                repeat(
+                    alias(
+                        /\p{White_Space}*\/\/.*/,
+                        lineComment,
+                    )),
+                optional(space),
+            )),
+        )))
 }
 
-//  _non_special_token: $ => choice(
-//   'as', 'async', 'await', 'break', 'const', 'continue', 'default', 'enum', 'fn', 'for', 'if', 'impl',
-//   'let', 'loop', 'match', 'mod', 'pub', 'return', 'static', 'struct', 'trait', 'type',
-//   'union', 'unsafe', 'use', 'where', 'while'
-// ),
+function commaSepLine(space, rule) {
+    return seq(rule, repeat(seq(optional(space), ',', optional(space), rule)))
+}
 
 const PREC = {
     call: 9,
     field: 8,
-    negation: 7, // -	Negation	Unary	7
-    no_effect: 7, // +	No effect (exists for symmetry)	Unary	7
-    not: 7, // not	Not	Unary	7
-    multiplication: 6, // *	Multiplication	Binary	6
-    division: 6, // /	Division	Binary	6
-    addition: 5, // +	Addition	Binary	5
-    subtraction: 5, // -	Subtraction	Binary	5
-    check_equality: 4, // ==	Check equality	Binary	4
-    check_inequality: 4, // !=	Check inequality	Binary	4
-    check_less_than: 4, // <	Check less-than	Binary	4
-    check_less_than_or_equal: 4, // <=	Check less-than or equal	Binary	4
-    check_greater_than: 4, // >	Check greater-than	Binary	4
-    check_greater_than_or_equal: 4, // >=	Check greater-than or equal	Binary	4
-    check_if_in_collection: 4, // in	Check if in collection	Binary	4
-    check_if_not_in_collection: 4, // not in	Check if not in collection	Binary	4
-    logical_not: 3, // not	Logical "not"	Unary	3
-    and: 3, // and	Short-circuiting logical "and"	Binary	3
-    or: 2, // or	Short-circuiting logical "or	Binary	2
-    assignment: 1, // =	Assignment	Binary	1
-    add_assignment: 1, // +=	Add-Assignment	Binary	1
-    subtraction_assignment: 1, // -=	Subtraction-Assignment	Binary	1
-    multiplication_assignment: 1, // *=	Multiplication-Assignment	Binary	1
-    division_assignment: 1, // /=	Division-Assignment	Binary	1
+    negation: 7, // -   Negation    Unary   7
+    no_effect: 7, // +  No effect (exists for symmetry) Unary   7
+    not: 7, // not  Not Unary   7
+    multiplication: 6, // * Multiplication  Binary  6
+    division: 6, // /   Division    Binary  6
+    addition: 5, // +   Addition    Binary  5
+    subtraction: 5, // -    Subtraction Binary  5
+    check_equality: 4, // ==    Check equality  Binary  4
+    check_inequality: 4, // !=  Check inequality    Binary  4
+    check_less_than: 4, // <    Check less-than Binary  4
+    check_less_than_or_equal: 4, // <=  Check less-than or equal    Binary  4
+    check_greater_than: 4, // > Check greater-than  Binary  4
+    check_greater_than_or_equal: 4, // >=   Check greater-than or equal Binary  4
+    check_if_in_collection: 4, // in    Check if in collection  Binary  4
+    check_if_not_in_collection: 4, // not in    Check if not in collection  Binary  4
+    logical_not: 3, // not  Logical "not"   Unary   3
+    and: 3, // and  Short-circuiting logical "and"  Binary  3
+    or: 2, // or    Short-circuiting logical "or    Binary  2
+    assignment: 1, // = Assignment  Binary  1
+    add_assignment: 1, // +=    Add-Assignment  Binary  1
+    subtraction_assignment: 1, // -=    Subtraction-Assignment  Binary  1
+    multiplication_assignment: 1, // *= Multiplication-Assignment   Binary  1
+    division_assignment: 1, // /=   Division-Assignment Binary  1
 }
 
 module.exports = grammar({
@@ -88,22 +116,10 @@ module.exports = grammar({
             $.assignment_operators,
         ],
         [$._code_mode, $.expression],
+        [$.code_block, $.expression],
         [$._parameter, $.expression],
         [$.pair, $.default_parameter],
-        // [
-        //     $.expression,
-        //     $.function_expression,
-        //     $._parameter,
-        //     $.default_parameter,
-        //     $.pair,
-        //     $.binary_operator,
-        //     $.boolean_expression,
-        //     $.comparison_expression,
-        //     $._in_expression,
-        //     $._not_in_expression,
-        //     $.assignment_expression,
-        //     $.assignment_operators,
-        // ]
+        [$.array],
     ],
 
     supertypes: $ => [
@@ -197,6 +213,7 @@ module.exports = grammar({
             '#',
             choice($.expression, $.identifier),
             optional(choice(
+                '.',
                 '\n',
                 $._whitespace
 
@@ -210,17 +227,11 @@ module.exports = grammar({
                     $._whitespace,
                     seq(
                         optional($._whitespace),
-                        $.expression,
-                        // choice($.expression, $.identifier),
+                        choice($.expression, $.identifier),
                         optional(';'),
                         optional('\n'),
                         optional($._whitespace),
                     ),
-                    // seq(
-                    //     $._whitespace,
-                    //     $.expression,
-                    //     $._whitespace,
-                    // )
                 )
             )),
             '}'
@@ -247,11 +258,7 @@ module.exports = grammar({
                 optional($._whitespace),
                 choice(
                     seq($.expression, ','),
-                    seq(
-                        commaSep($._whitespace, $.expression),
-                        optional($._whitespace),
-                        optional(',')
-                    ),
+                    commaSep($._whitespace, $.expression, $.line_comment),
                 ),
                 optional($._whitespace),
             )),
@@ -282,9 +289,9 @@ module.exports = grammar({
             $.dictionary,
             $.unary_expression,
             $.binary_expression,
-            // $.field_access,
+            $.field_access,
             $.function_call,
-            // $.method_call,
+            $.method_call,
             $.function_expression,
             $.keyword_expression,
         ),
@@ -327,10 +334,7 @@ module.exports = grammar({
             optional($._whitespace),
             ':',
             optional($._whitespace),
-            choice(
-                commaSep($._whitespace, $.identifier),
-                '*',
-            )
+            choice(commaSepLine($._whitespace, $.identifier), '*')
         )),
 
         _control_flow: $ => choice(
@@ -357,7 +361,7 @@ module.exports = grammar({
             optional($._whitespace),
             '=',
             optional($._whitespace),
-            field('rhs', $.expression),
+            field('rhs', choice($.expression, $.identifier)),
             optional($._whitespace),
         )),
 
@@ -366,16 +370,13 @@ module.exports = grammar({
             'set',
             $._whitespace,
             field('name', $.expression),
-            optional(seq(
-                optional($._whitespace),
-                $.if_cause
-            )),
+            optional(choice($.if_cause, $._whitespace))
         )),
 
         if_cause: $ => seq(
-            'if',
-            $._whitespace,
-            field('condition', prec.right($.expression)),
+            /\p{White_Space}*if\p{White_Space}+/,
+            field('condition', $.expression),
+            optional($._whitespace),
         ),
 
         // Label: show <intro>: ..
@@ -441,28 +442,23 @@ module.exports = grammar({
             optional($._whitespace),
             '=>',
             optional($._whitespace),
-            // field('body', prec.right($.expression))
             field('body', $.expression),
             optional($._whitespace)
         )),
 
         // params ::= '(' (param (',' param)* ','?)? ')'
-        parameters: $ => seq(
+        parameters: $ => prec.left(seq(
             '(',
-            optional(seq(
-                optional($._whitespace),
-                commaSep($._whitespace, $._parameter),
-                optional(seq(optional($._whitespace), ',', optional($._whitespace)))
-            )),
+            optional(commaSep($._whitespace, $._parameter, $.line_comment)),
             ')'
-        ),
+        )),
 
         // param ::= ident (':' expr)?
         _parameter: $ => seq(
-                optional('..'),
-                choice(
-                    field('name', $.identifier),
-                    $.default_parameter)
+            optional('..'),
+            choice(
+                field('name', $.identifier),
+                $.default_parameter)
         ),
 
         default_parameter: $ => prec(1, seq(
@@ -470,7 +466,8 @@ module.exports = grammar({
             optional($._whitespace),
             ':',
             optional($._whitespace),
-            field('value', $.expression)
+            field('value', $.expression),
+            optional($._whitespace)
         )),
 
         // dict-expr ::= '(' (':' | (pair (',' pair)* ','?)) ')'
@@ -479,10 +476,7 @@ module.exports = grammar({
             choice(
                 ':',
                 // matches (pair, pair, ...','?)
-                seq(
-                    commaSep($._whitespace, $.pair),
-                    optional(',')
-                )
+                commaSep($._whitespace, $.pair, $.line_comment)
             ),
             ')'
         ),
@@ -494,23 +488,22 @@ module.exports = grammar({
             ':',
             optional($._whitespace),
             field('value', $.expression),
+            optional($._whitespace)
         )),
 
-        pattern: $ => prec.left(commaSep($._whitespace, $.identifier)),
+        pattern: $ => prec.left(commaSepLine($._whitespace, $.identifier)),
 
         // // Fields, functions, methods.
         // field-access ::= expr '.' ident
-        // method-call ::= expr '.' ident args
-        // DOESN'T WORK
-        field_access: $ => prec.right(1, seq(
-            field('value', $.expression),
+        field_access: $ => prec(1, seq(
+            field('value', choice($.expression, $.identifier)),
             '.',
             field('field', $.identifier),
         )),
 
-        // isssue here
-        method_call: $ => prec(1, seq(
-            field('value', $.expression),
+        // method-call ::= expr '.' ident args
+        method_call: $ => prec(2, seq(
+            field('value', choice($.expression, $.identifier)),
             '.',
             field('method', $.identifier),
             field('arguments', $.arguments),
@@ -527,9 +520,7 @@ module.exports = grammar({
             repeat1($.content_block),
             seq(
                 '(',
-                optional(
-                    seq(commaSep($._whitespace, $._argument), optional(','))
-                ),
+                optional(commaSep($._whitespace, $._argument, $.line_comment)),
                 ')',
                 repeat($.content_block)
             ),
@@ -546,7 +537,8 @@ module.exports = grammar({
             optional($._whitespace),
             ':',
             optional($._whitespace),
-            field('value', $.expression)
+            field('value', $.expression),
+            optional($._whitespace),
         ),
 
         none: $ => 'none',
@@ -653,7 +645,8 @@ module.exports = grammar({
         postitive: $ => prec(PREC.no_effect, seq(
             field('operator', '+'),
             optional($._whitespace),
-            field('argument', $.expression)
+            field('argument', $.expression),
+            optional($._whitespace),
         )),
 
         // 'not' expr
@@ -661,13 +654,15 @@ module.exports = grammar({
             field('operator', 'not'),
             $._whitespace,
             field('argument', choice($.expression, $.identifier)),
+            optional($._whitespace),
         )),
 
         // '-' expr
         negation: $ => prec(PREC.negation, seq(
             field('operator', '-'),
             optional($._whitespace),
-            field('argument', $.expression)
+            field('argument', $.expression),
+            optional($._whitespace),
         )),
 
         // binary-op ::=
@@ -678,9 +673,9 @@ module.exports = grammar({
             $.binary_operator,
             $.boolean_expression,
             $.comparison_expression,
-            $.assignment_operators,
-            $.collection_expression,
             $.assignment_expression,
+            $.collection_expression,
+            $.assignment_operators,
         ),
 
         binary_operator: $ => {
@@ -696,6 +691,7 @@ module.exports = grammar({
                 field('operator', operator),
                 optional($._whitespace),
                 field('right', choice($.expression, $.identifier)),
+                optional($._whitespace),
             ))));
         },
 
@@ -704,12 +700,14 @@ module.exports = grammar({
                 ['and', PREC.and],
                 ['or', PREC.or],
             ];
+
             return choice(...table.map(([operator, precedence]) => prec.left(precedence, seq(
                 field('left', choice($.expression, $.identifier)),
                 optional($._whitespace),
                 field('operator', operator),
                 optional($._whitespace),
                 field('right', choice($.expression, $.identifier)),
+                optional($._whitespace),
             ))));
         },
 
@@ -722,12 +720,14 @@ module.exports = grammar({
                 ['>', PREC.check_greater_than],
                 ['>=', PREC.check_greater_than_or_equal],
             ];
+
             return choice(...table.map(([operator, precedence]) => prec.left(precedence, seq(
                 field('left', choice($.expression, $.identifier)),
                 optional($._whitespace),
                 field('operator', operator),
                 optional($._whitespace),
                 field('right', choice($.expression, $.identifier)),
+                optional($._whitespace),
             ))));
         },
 
@@ -744,6 +744,7 @@ module.exports = grammar({
             field('operator', 'in'),
             $._whitespace,
             field('right', choice($.expression, $.identifier)),
+            optional($._whitespace),
         )),
 
         // expr 'not' 'in' expr
@@ -757,6 +758,7 @@ module.exports = grammar({
             )),
             $._whitespace,
             field('right', choice($.expression, $.identifier)),
+            optional($._whitespace),
         )),
 
         // comparison ::= expr comparison_operator expr
@@ -778,10 +780,7 @@ module.exports = grammar({
                 ['/=', PREC.division_assignment],
             ];
 
-            // NOTE: I had to give this a precedence of 2, otherwise it would
-            //      conflict with the binary operators. Which I didn't know how to fix
-            //      but this works...
-            return choice(...table.map(([operator, precedence]) => prec.left(2, seq(
+            return choice(...table.map(([operator, precedence]) => prec.left(precedence, seq(
                 field('left', choice($.expression, $.identifier)),
                 optional($._whitespace),
                 field('operator', operator),

@@ -68,6 +68,10 @@
         "named": true
       },
       {
+        "type": "field_access",
+        "named": true
+      },
+      {
         "type": "function_call",
         "named": true
       },
@@ -85,6 +89,10 @@
       },
       {
         "type": "literal",
+        "named": true
+      },
+      {
+        "type": "method_call",
         "named": true
       },
       {
@@ -218,6 +226,10 @@
         {
           "type": "content_block",
           "named": true
+        },
+        {
+          "type": "line_comment",
+          "named": true
         }
       ]
     }
@@ -232,6 +244,10 @@
       "types": [
         {
           "type": "expression",
+          "named": true
+        },
+        {
+          "type": "line_comment",
           "named": true
         }
       ]
@@ -617,6 +633,10 @@
       "required": false,
       "types": [
         {
+          "type": "line_comment",
+          "named": true
+        },
+        {
           "type": "pair",
           "named": true
         }
@@ -644,6 +664,32 @@
           "named": true
         }
       ]
+    }
+  },
+  {
+    "type": "field_access",
+    "named": true,
+    "fields": {
+      "field": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      },
+      "value": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "expression",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
@@ -902,6 +948,42 @@
     }
   },
   {
+    "type": "method_call",
+    "named": true,
+    "fields": {
+      "arguments": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "arguments",
+            "named": true
+          }
+        ]
+      },
+      "method": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      },
+      "value": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "expression",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
     "type": "negation",
     "named": true,
     "fields": {
@@ -1034,6 +1116,10 @@
       "types": [
         {
           "type": "default_parameter",
+          "named": true
+        },
+        {
+          "type": "line_comment",
           "named": true
         }
       ]
