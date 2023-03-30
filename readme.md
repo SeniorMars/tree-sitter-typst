@@ -1,6 +1,6 @@
 # A tree-sitter parser for the typst file format
 
-This language is soooo hard to parse... whitespace, parenthesizes for everything, and Unicode :(
+This language is soooo hard to parse… whitespace, parenthesizes for everything, and Unicode :(
 
 
 DONE:
@@ -45,15 +45,18 @@ DONE:
 
 - [ ] Markup mode
 
-    - [x] Whitespace (unicode)
+    - [x] Whitespace (Unicode)
     - [x] paragraph break
-    - [ ] strong emphasis
     - [x] text (Unicode)
-    - [ ] emphasis
+    - [x] emphasis
+        - [x] strong
+        - [x] italic
+    - [x] label
+    - [x] reference
     - [ ] raw text
+        - [ ] inline
+        - [ ] block
     - [ ] link
-    - [ ] label
-    - [ ] reference
     - [ ] heading
     - [ ] bullet list
     - [ ] numbered list
@@ -101,9 +104,8 @@ indentation rules for lists, as EBNF cannot handle context-sensitive constructs.
 // Markup.
 markup ::= markup-node*
 markup-node ::=
-space | linebreak | text | escape | nbsp | shy | endash | emdash |
-ellipsis | quote | strong | emph | raw | link | math | heading |
-list | enum | desc | label | ref | markup-expr | comment
+space | nbsp | shy | endash | emdash | ellipsis | quote | 
+strong | emph | raw | link | math | heading | list | enum | desc
 
 // Markup nodes.
 nbsp ::= '~'
@@ -113,7 +115,6 @@ emdash = '---'
 ellipsis ::= '...'
 quote ::= "'" | '"'
 strong ::= '*' markup '*'
-emph ::= '_' markup '_'
 raw ::= '`' (raw | .*) '`'
 link ::= 'http' 's'? '://' (!space)*
 math ::= ('$' .* '$') | ('$[' .* ']$')
@@ -121,8 +122,4 @@ heading ::= '='+ space markup
 list ::= '-' space markup
 enum ::= digit* '.' space markup
 desc ::= '/' space markup ':' space markup
-label ::= '<' ident '>'
-ref ::= '@' ident
-markup-expr ::= block | ('#' hash-expr)
-hash-expr ::= ident | func-call | keyword-expr
 ```

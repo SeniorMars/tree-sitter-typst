@@ -1,0 +1,304 @@
+================================================================================
+Mandelbrot
+================================================================================
+
+#set par(leading:0em)
+
+#let mandelbrot() = {
+  let red = 0
+  let green = 0
+  let blue = 0
+
+  let width = 164
+  let height = 250
+  let max_iter = 256
+  let cxmin = -2.0
+  let cxmax = 1.0
+  let cymin = -1.5
+  let cymax = 1.5
+  let scalex = ((cxmax - cxmin) / width)
+  let scaley = ((cymax - cymin) / height)
+
+  let zx;
+  let zy;
+
+  let zx2;
+  let zy2;
+
+  let yidx = 0
+  while yidx < height {
+      let cy = cymin + yidx * scaley
+      let xidx = 0
+      while xidx < width {
+          let cx = cxmin + xidx * scalex
+
+
+          zx = 0.0;
+          zy = 0.0;
+          zx2 = zx * zx;
+          zy2 = zy * zy;
+
+          let iter = 0
+
+          while iter < max_iter and (zx2 + zy2) < 4.0 {
+              zy = 2.0 * zx * zy + cy
+                  zx = zx2 - zy2 + cx
+                  zx2 = zx * zx
+                  zy2 = zy * zy
+                  iter += 1
+          }
+
+
+          red = calc.mod(iter, 4) * 64
+          green = calc.mod(iter, 8) * 32
+          blue = calc.mod(iter, 16) * 16
+
+          [#box(fill: rgb(red, green, blue), height: 0.25em, width:0.25em)]
+
+          xidx += 1
+      }
+      [\ ]
+      yidx += 1
+  }
+}
+
+#mandelbrot()
+
+--------------------------------------------------------------------------------
+
+(source_file
+(set_expression
+(function_call
+  (identifier)
+  (arguments
+    (asssigned_argument
+      (identifier)
+      (numeric
+        (int_literal)
+        (unit))))))
+(paragraph_break)
+(let_declaration
+(identifier)
+(parameters)
+(code_block
+  (let_declaration
+    (identifier)
+    (int_literal))
+  (let_declaration
+    (identifier)
+    (int_literal))
+  (let_declaration
+    (identifier)
+    (int_literal))
+  (let_declaration
+    (identifier)
+    (int_literal))
+  (let_declaration
+    (identifier)
+    (int_literal))
+  (let_declaration
+    (identifier)
+    (int_literal))
+  (let_declaration
+    (identifier)
+    (negation
+      (float_literal)))
+  (let_declaration
+    (identifier)
+    (float_literal))
+  (let_declaration
+    (identifier)
+    (negation
+      (float_literal)))
+  (let_declaration
+    (identifier)
+    (float_literal))
+  (let_declaration
+    (identifier)
+    (parenthesized_expression
+      (binary_operator
+        (parenthesized_expression
+          (binary_operator
+            (identifier)
+            (identifier)))
+        (identifier))))
+  (let_declaration
+    (identifier)
+    (parenthesized_expression
+      (binary_operator
+        (parenthesized_expression
+          (binary_operator
+            (identifier)
+            (identifier)))
+        (identifier))))
+  (let_declaration
+    (identifier))
+  (let_declaration
+    (identifier))
+  (let_declaration
+    (identifier))
+  (let_declaration
+    (identifier))
+  (let_declaration
+    (identifier)
+    (int_literal))
+  (while_expression
+    (comparison_expression
+      (identifier)
+      (identifier))
+    (code_block
+      (let_declaration
+        (identifier)
+        (binary_operator
+          (binary_operator
+            (identifier)
+            (identifier))
+          (identifier)))
+      (let_declaration
+        (identifier)
+        (int_literal))
+      (while_expression
+        (comparison_expression
+          (identifier)
+          (identifier))
+        (code_block
+          (let_declaration
+            (identifier)
+            (binary_operator
+              (binary_operator
+                (identifier)
+                (identifier))
+              (identifier)))
+          (assignment_expression
+            (identifier)
+            (float_literal))
+          (assignment_expression
+            (identifier)
+            (float_literal))
+          (assignment_expression
+            (identifier)
+            (binary_operator
+              (identifier)
+              (identifier)))
+          (assignment_expression
+            (identifier)
+            (binary_operator
+              (identifier)
+              (identifier)))
+          (let_declaration
+            (identifier)
+            (int_literal))
+          (while_expression
+            (comparison_expression
+              (boolean_expression
+                (comparison_expression
+                  (identifier)
+                  (identifier))
+                (parenthesized_expression
+                  (binary_operator
+                    (identifier)
+                    (identifier))))
+              (float_literal))
+            (code_block
+              (assignment_expression
+                (identifier)
+                (binary_operator
+                  (binary_operator
+                    (binary_operator
+                      (float_literal)
+                      (identifier))
+                    (identifier))
+                  (identifier)))
+              (assignment_expression
+                (identifier)
+                (binary_operator
+                  (binary_operator
+                    (identifier)
+                    (identifier))
+                  (identifier)))
+              (assignment_expression
+                (identifier)
+                (binary_operator
+                  (identifier)
+                  (identifier)))
+              (assignment_expression
+                (identifier)
+                (binary_operator
+                  (identifier)
+                  (identifier)))
+              (assignment_operators
+                (identifier)
+                (int_literal))))
+          (assignment_expression
+            (identifier)
+            (binary_operator
+              (method_call
+                (identifier)
+                (identifier)
+                (arguments
+                  (argument
+                    (identifier))
+                  (argument
+                    (int_literal))))
+              (int_literal)))
+          (assignment_expression
+            (identifier)
+            (binary_operator
+              (method_call
+                (identifier)
+                (identifier)
+                (arguments
+                  (argument
+                    (identifier))
+                  (argument
+                    (int_literal))))
+              (int_literal)))
+          (assignment_expression
+            (identifier)
+            (binary_operator
+              (method_call
+                (identifier)
+                (identifier)
+                (arguments
+                  (argument
+                    (identifier))
+                  (argument
+                    (int_literal))))
+              (int_literal)))
+          (content_block
+            (function_call
+              (identifier)
+              (arguments
+                (asssigned_argument
+                  (identifier)
+                  (function_call
+                    (identifier)
+                    (arguments
+                      (argument
+                        (identifier))
+                      (argument
+                        (identifier))
+                      (argument
+                        (identifier)))))
+                (asssigned_argument
+                  (identifier)
+                  (numeric
+                    (float_literal)
+                    (unit)))
+                (asssigned_argument
+                  (identifier)
+                  (numeric
+                    (float_literal)
+                    (unit))))))
+          (assignment_operators
+            (identifier)
+            (int_literal))))
+      (content_block
+        (line_break))
+      (assignment_operators
+        (identifier)
+        (int_literal))))))
+(paragraph_break)
+(function_call
+(identifier)
+(arguments)))

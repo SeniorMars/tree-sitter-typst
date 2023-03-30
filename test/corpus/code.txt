@@ -672,6 +672,7 @@ Function creation
       (identifier)
       (int_literal)))
   (line_comment)
+  (paragraph_break)
   (code_block
     (let_declaration
       (identifier)
@@ -1074,6 +1075,7 @@ Unnamed functions
       (identifier))
     (int_literal))
   (quote)
+  (paragraph_break)
   (let_declaration
     (identifier)
     (int_literal))
@@ -1765,9 +1767,8 @@ unnamed function
 Expressions which may not parse correctly
 ================================================================================
 
-#set text(blue) if it.has("label") and it.label == "hello"
-#set text(blue) if it.has("label") and (it.label == "hello")
-// #show <red>: set text(red)
+#set text(blue) if it.has("label") and it.label == <hello>
+#show <red>: set text(red)
 
 --------------------------------------------------------------------------------
 
@@ -1790,25 +1791,12 @@ Expressions which may not parse correctly
                   (string_literal))))
             (identifier))
           (identifier))
-        (string_literal))))
-  (set_expression
-    (function_call
-      (identifier)
-      (arguments
-        (argument
-          (identifier))))
-    (if_cause
-      (boolean_expression
-        (method_call
-          (identifier)
-          (identifier)
-          (arguments
-            (argument
-              (string_literal))))
-        (parenthesized_expression
-          (comparison_expression
-            (field_access
-              (identifier)
-              (identifier))
-            (string_literal))))))
-  (line_comment))
+        (label))))
+  (show_expression
+    (label)
+    (set_expression
+      (function_call
+        (identifier)
+        (arguments
+          (argument
+            (identifier)))))))

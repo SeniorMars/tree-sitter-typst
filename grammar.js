@@ -129,6 +129,9 @@ module.exports = grammar({
         [$._parameter, $.expression],
         [$.pair, $.default_parameter],
         [$.array],
+        [$.emphasis, $._text],
+        [$.strong, $._text]
+        // [$._markup, $.emphasis]
     ],
 
     supertypes: $ => [
@@ -154,7 +157,10 @@ module.exports = grammar({
             $.quote,
             $.line_break,
             $.escape_sequence,
-            // $.math_mode,
+            $.label,
+            $.reference,
+            $.emphasis,
+            $.strong,
         )),
 
         identifier: $ => prec(2, /[_\p{XID_Start}][_\p{XID_Continue}]*/),
@@ -177,24 +183,38 @@ module.exports = grammar({
         line_break: $ => /\\/,
 
         _paragraph_break: $ => seq(
-            // text should probably be switched to a markup
-            choice($._text, $._code_mode),
-
+            choice($._markup, $._code_mode),
             alias(
-                token.immediate(
-                    seq(
-                        '\n',
-                        repeat1('\n')
-                    )
-                ),
+                token.immediate(seq('\n', repeat1('\n'))),
                 $.paragraph_break
             )
         ),
 
         // add support for '
         quote: $ => alias($.string_literal, 'quote'),
+        label: $ => seq('<', $.identifier, '>'),
+        reference: $ => seq('@', $.identifier),
+        emphasis: $ => seq(
+            optional($._whitespace),
+            '_',
+            repeat($._markup),
+            token.immediate(
+                '_',
+                $._whitespace
+            ),
+        ),
 
-        _text: $ => repeat1(choice(
+        strong: $ => seq(
+            optional($._whitespace),
+            '*',
+            repeat($._markup),
+            token.immediate(
+                '*',
+                $._whitespace
+            ),
+        ),
+
+        _text: $ => prec.left(repeat1(choice(
             /\p{Letter}/,
             /\p{Number}/,
             /\p{Mark}/,
@@ -216,7 +236,7 @@ module.exports = grammar({
             ':',
             '%',
             '.', // this should be removed
-        )),
+        ))),
 
         _code_mode: $ => seq(
             '#',
@@ -281,8 +301,8 @@ module.exports = grammar({
             $.boolean_literal,
             $.numeric,
             $.none,
+            $.label
             // $.raw,
-            // $.label
         ),
 
         // expr ::=
@@ -363,16 +383,20 @@ module.exports = grammar({
         continue_statement: $ => prec.left('continue'),
 
         // let ident(params)? '=' expr
-        let_declaration: $ => prec.left(PREC.assignment, seq(
+        let_declaration: $ => prec.left(1, seq(
             'let',
             $._whitespace,
             field('name', $.identifier),
-            optional(field('parameters', $.parameters)),
-            optional($._whitespace),
-            '=',
-            optional($._whitespace),
-            field('rhs', choice($.expression, $.identifier)),
-            optional($._whitespace),
+            choice(seq(
+                optional(field('parameters', $.parameters)),
+                optional($._whitespace),
+                '=',
+                optional($._whitespace),
+                field('rhs', choice($.expression, $.identifier)),
+                optional($._whitespace),
+            ),
+                ';'
+            )
         )),
 
         // set-expr ::= 'set' expr ('if' expr)?

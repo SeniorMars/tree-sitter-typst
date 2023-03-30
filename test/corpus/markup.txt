@@ -257,3 +257,30 @@ width: 10,
     (arguments
       (argument
         (int_literal)))))
+
+================================================================================
+Styling
+================================================================================
+
+"hello world"this works
+
+"this is a quote with a \" inside"
+
+"this is a quote with a \ inside"
+
+Tweet at us \#ad <hashtag>
+
+this should work <a_b_c>
+
+Now citing @charlie _italic_ hello
+
+_itatlic with a space_ now normal
+_itatlic with an_underscore in the middle_ now normal
+_itatlic with an\_ underscore in the middle_ now normal
+
+*something* is bold
+*_hello_* is bold and italic
+_*hello*_ is bold and italic
+
+
+--------------------------------------------------------------------------------
