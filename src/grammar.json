@@ -681,41 +681,33 @@
       }
     },
     "literal": {
-      "type": "PREC",
-      "value": 2,
-      "content": {
-        "type": "CHOICE",
-        "members": [
-          {
-            "type": "SYMBOL",
-            "name": "string_literal"
-          },
-          {
-            "type": "SYMBOL",
-            "name": "int_literal"
-          },
-          {
-            "type": "SYMBOL",
-            "name": "float_literal"
-          },
-          {
-            "type": "SYMBOL",
-            "name": "boolean_literal"
-          },
-          {
-            "type": "SYMBOL",
-            "name": "numeric"
-          },
-          {
-            "type": "SYMBOL",
-            "name": "none"
-          },
-          {
-            "type": "SYMBOL",
-            "name": "auto"
-          }
-        ]
-      }
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "SYMBOL",
+          "name": "string_literal"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "int_literal"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "float_literal"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "boolean_literal"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "numeric"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "none"
+        }
+      ]
     },
     "expression": {
       "type": "CHOICE",
@@ -2944,7 +2936,7 @@
     },
     "numeric": {
       "type": "PREC",
-      "value": 3,
+      "value": 1,
       "content": {
         "type": "SEQ",
         "members": [
@@ -3154,7 +3146,7 @@
       ]
     },
     "postitive": {
-      "type": "PREC",
+      "type": "PREC_LEFT",
       "value": 7,
       "content": {
         "type": "SEQ",
@@ -3203,8 +3195,8 @@
       }
     },
     "not_operator": {
-      "type": "PREC",
-      "value": 7,
+      "type": "PREC_LEFT",
+      "value": 3,
       "content": {
         "type": "SEQ",
         "members": [
@@ -3253,7 +3245,7 @@
       }
     },
     "negation": {
-      "type": "PREC",
+      "type": "PREC_LEFT",
       "value": 7,
       "content": {
         "type": "SEQ",
@@ -4558,7 +4550,7 @@
       }
     },
     "assignment_expression": {
-      "type": "PREC_LEFT",
+      "type": "PREC_RIGHT",
       "value": 1,
       "content": {
         "type": "SEQ",
@@ -4644,7 +4636,7 @@
       "type": "CHOICE",
       "members": [
         {
-          "type": "PREC_LEFT",
+          "type": "PREC_RIGHT",
           "value": 1,
           "content": {
             "type": "SEQ",
@@ -4731,7 +4723,7 @@
           }
         },
         {
-          "type": "PREC_LEFT",
+          "type": "PREC_RIGHT",
           "value": 1,
           "content": {
             "type": "SEQ",
@@ -4818,7 +4810,7 @@
           }
         },
         {
-          "type": "PREC_LEFT",
+          "type": "PREC_RIGHT",
           "value": 1,
           "content": {
             "type": "SEQ",
@@ -4905,7 +4897,7 @@
           }
         },
         {
-          "type": "PREC_LEFT",
+          "type": "PREC_RIGHT",
           "value": 1,
           "content": {
             "type": "SEQ",
@@ -5008,15 +5000,7 @@
     [
       "expression",
       "function_expression",
-      "binary_operator",
-      "boolean_expression",
-      "comparison_expression",
-      "_in_expression",
-      "_not_in_expression",
-      "assignment_expression",
-      "assignment_operators"
-    ],
-    [
+      "not_operator",
       "binary_operator",
       "boolean_expression",
       "comparison_expression",
@@ -5028,7 +5012,25 @@
     [
       "expression",
       "function_expression",
+      "binary_operator",
+      "boolean_expression",
+      "comparison_expression",
+      "_in_expression",
+      "_not_in_expression",
+      "assignment_expression",
+      "assignment_operators"
+    ],
+    [
       "not_operator",
+      "binary_operator",
+      "boolean_expression",
+      "comparison_expression",
+      "_in_expression",
+      "_not_in_expression",
+      "assignment_expression",
+      "assignment_operators"
+    ],
+    [
       "binary_operator",
       "boolean_expression",
       "comparison_expression",

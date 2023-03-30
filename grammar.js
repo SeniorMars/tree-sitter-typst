@@ -47,7 +47,6 @@ const PREC = {
     field: 8,
     negation: 7, // -   Negation    Unary   7
     no_effect: 7, // +  No effect (exists for symmetry) Unary   7
-    not: 7, // not  Not Unary   7
     multiplication: 6, // * Multiplication  Binary  6
     division: 6, // /   Division    Binary  6
     addition: 5, // +   Addition    Binary  5
@@ -86,15 +85,7 @@ module.exports = grammar({
         [
             $.expression,
             $.function_expression,
-            $.binary_operator,
-            $.boolean_expression,
-            $.comparison_expression,
-            $._in_expression,
-            $._not_in_expression,
-            $.assignment_expression,
-            $.assignment_operators,
-        ],
-        [
+            $.not_operator,
             $.binary_operator,
             $.boolean_expression,
             $.comparison_expression,
@@ -106,7 +97,25 @@ module.exports = grammar({
         [
             $.expression,
             $.function_expression,
+            $.binary_operator,
+            $.boolean_expression,
+            $.comparison_expression,
+            $._in_expression,
+            $._not_in_expression,
+            $.assignment_expression,
+            $.assignment_operators,
+        ],
+        [
             $.not_operator,
+            $.binary_operator,
+            $.boolean_expression,
+            $.comparison_expression,
+            $._in_expression,
+            $._not_in_expression,
+            $.assignment_expression,
+            $.assignment_operators,
+        ],
+        [
             $.binary_operator,
             $.boolean_expression,
             $.comparison_expression,
@@ -265,15 +274,16 @@ module.exports = grammar({
             ')'
         )),
 
-        literal: $ => prec(2, choice(
+        literal: $ => choice(
             $.string_literal,
             $.int_literal,
             $.float_literal,
             $.boolean_literal,
             $.numeric,
             $.none,
-            $.auto,
-        )),
+            // $.raw,
+            // $.label
+        ),
 
         // expr ::=
         // literal | ident | block | group-expr | array-expr | dict-expr |
@@ -573,7 +583,7 @@ module.exports = grammar({
         unit: $ => choice('pt', 'mm', 'cm', 'in', 'deg', 'rad', 'em', 'fr', '%'),
 
         // numeric ::= float unit
-        numeric: $ => prec(3, seq(
+        numeric: $ => prec(1, seq(
             field('value', choice($.float_literal, $.int_literal)),
             field('unit', $.unit)
         )),
@@ -642,7 +652,7 @@ module.exports = grammar({
         ),
 
         // no-effect ::= '+' expr
-        postitive: $ => prec(PREC.no_effect, seq(
+        postitive: $ => prec.left(PREC.no_effect, seq(
             field('operator', '+'),
             optional($._whitespace),
             field('argument', $.expression),
@@ -650,7 +660,7 @@ module.exports = grammar({
         )),
 
         // 'not' expr
-        not_operator: $ => prec(PREC.not, seq(
+        not_operator: $ => prec.left(PREC.logical_not, seq(
             field('operator', 'not'),
             $._whitespace,
             field('argument', choice($.expression, $.identifier)),
@@ -658,7 +668,7 @@ module.exports = grammar({
         )),
 
         // '-' expr
-        negation: $ => prec(PREC.negation, seq(
+        negation: $ => prec.left(PREC.negation, seq(
             field('operator', '-'),
             optional($._whitespace),
             field('argument', $.expression),
@@ -762,7 +772,7 @@ module.exports = grammar({
         )),
 
         // comparison ::= expr comparison_operator expr
-        assignment_expression: $ => prec.left(PREC.assignment, seq(
+        assignment_expression: $ => prec.right(PREC.assignment, seq(
             field('left', choice($.expression, $.identifier)),
             optional($._whitespace),
             '=',
@@ -780,7 +790,7 @@ module.exports = grammar({
                 ['/=', PREC.division_assignment],
             ];
 
-            return choice(...table.map(([operator, precedence]) => prec.left(precedence, seq(
+            return choice(...table.map(([operator, precedence]) => prec.right(precedence, seq(
                 field('left', choice($.expression, $.identifier)),
                 optional($._whitespace),
                 field('operator', operator),

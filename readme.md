@@ -5,9 +5,10 @@ This language is soooo hard to parse... whitespace, parenthesizes for everything
 
 DONE:
 
-- [x] Code mode: `#` to enter code mode
+- [O] Code mode: `#` to enter code mode
 
     - [x] any literal: `1`, `"hi"`, `true`, `false`, `none`, `auto`
+    - [ ] raw and labels are literals
     - [x] code block: `{ x = 1 }`
     - [x] content block: `[ hello ]`
     - [x] parenthesized expression: `(1 + 2)`
@@ -44,7 +45,7 @@ DONE:
 
 - [ ] Markup mode
 
-    - [ ] whitespace
+    - [x] Whitespace (unicode)
     - [x] paragraph break
     - [ ] strong emphasis
     - [x] text (Unicode)
@@ -66,64 +67,6 @@ DONE:
     - [x] code expression
     - [x] character escape
     - [x] comment.
-
-
-NOTE:
-
-There is ambiguously in labels for code mode. I searched through the docs and I'm not sure what to
-put its precedence; thus we see here how these two statements are parsed:
-
-```typst
-#set text(blue) if it.has("label") and it.label == <label>
-#set text(blue) if it.has("label") and (it.label == <label>)
-```
-
-```treesitter
-
-(source_file
-  (set_expression
-    (function_call
-      (identifier)
-      (arguments
-        (argument
-          (identifier))))
-    (if_cause
-      (comparison_expression
-        (field_access
-          (boolean_expression
-            (method_call
-              (identifier)
-              (identifier)
-              (arguments
-                (argument
-                  (string_literal))))
-            (identifier))
-          (identifier))
-        (label))))
-  (set_expression
-    (function_call
-      (identifier)
-      (arguments
-        (argument
-          (identifier))))
-    (if_cause
-      (boolean_expression
-        (method_call
-          (identifier)
-          (identifier)
-          (arguments
-            (argument
-              (string_literal))))
-        (parenthesized_expression
-          (comparison_expression
-            (field_access
-              (identifier)
-              (identifier))
-            (label)))))))
-```
-
-
-While it may be clear that it should be number two, I'm not completely sure.
 
 ---
 
@@ -182,26 +125,4 @@ label ::= '<' ident '>'
 ref ::= '@' ident
 markup-expr ::= block | ('#' hash-expr)
 hash-expr ::= ident | func-call | keyword-expr
-
-// Code and expressions.
-code ::= (expr (separator expr)* separator?)?
-expr ::=
-literal | ident | block | group-expr | array-expr | dict-expr |
-unary-expr | binary-expr | field-access | func-call | method-call |
-func-expr | keyword-expr
-keyword-expr ::=
-let-expr | set-expr | show-expr |  if-expr |
-while-expr | for-expr | import-expr | include-expr |
-break-expr | continue-expr | return-expr
-
-// Identifiers.
-keyword ::=
-'none' | 'auto' | 'true' | 'false' | 'not' | 'and' | 'or' |
-'let' | 'set' | 'show' | 'if' | 'else' | 'for' | 'in' |
-'as' | 'while' | 'break' | 'continue' | 'return' | 'import' |
-'include' | 'from'
-
-// Fields, functions, methods.
-field-access ::= expr '.' ident
-method-call ::= expr '.' ident args
 ```

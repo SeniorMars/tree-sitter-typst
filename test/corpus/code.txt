@@ -1810,4 +1810,5 @@ Expressions which may not parse correctly
             (field_access
               (identifier)
               (identifier))
-            (string_literal)))))))
+            (string_literal))))))
+  (line_comment))

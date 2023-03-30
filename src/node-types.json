@@ -160,10 +160,6 @@
     "named": true,
     "subtypes": [
       {
-        "type": "auto",
-        "named": true
-      },
-      {
         "type": "boolean_literal",
         "named": true
       },
@@ -1471,10 +1467,6 @@
   {
     "type": "and",
     "named": false
-  },
-  {
-    "type": "auto",
-    "named": true
   },
   {
     "type": "block_comment",
