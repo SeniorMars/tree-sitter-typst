@@ -11,11 +11,11 @@
     let
       defaultPackage = pkgs: pkgs.callPackage (nixpkgs + "/pkgs/development/tools/parsing/tree-sitter/grammar.nix") { } {
         language = "typst";
-        source = ./.;
+        src = ./.;
         inherit (pkgs.tree-sitter) version;
       };
     in
-    (flake-utils.lib.eachDefaultSystem
+    (let pkgs = import nixpkgs { }; in { defaultPackage = defaultPackage pkgs; }) // (flake-utils.lib.eachDefaultSystem
       (system:
         let pkgs = import nixpkgs { inherit system; }; in
         {
@@ -27,5 +27,5 @@
               tree-sitter
             ];
           };
-        })) // (let pkgs = import nixpkgs { }; in { defaultPackage = defaultPackage pkgs; });
+        }));
 }
