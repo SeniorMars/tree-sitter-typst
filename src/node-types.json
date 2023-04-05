@@ -220,7 +220,7 @@
           "named": true
         },
         {
-          "type": "asssigned_argument",
+          "type": "assigned_argument",
           "named": true
         },
         {
@@ -251,6 +251,32 @@
           "named": true
         }
       ]
+    }
+  },
+  {
+    "type": "assigned_argument",
+    "named": true,
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      },
+      "value": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "expression",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
@@ -316,32 +342,6 @@
         ]
       },
       "right": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "expression",
-            "named": true
-          }
-        ]
-      }
-    }
-  },
-  {
-    "type": "asssigned_argument",
-    "named": true,
-    "fields": {
-      "name": {
-        "multiple": false,
-        "required": true,
-        "types": [
-          {
-            "type": "identifier",
-            "named": true
-          }
-        ]
-      },
-      "value": {
         "multiple": false,
         "required": true,
         "types": [

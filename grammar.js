@@ -563,10 +563,10 @@ module.exports = grammar({
         // arg ::= (ident ':')? expr
         _argument: $ => choice(
             alias($.expression, $.argument),
-            $.asssigned_argument
+            $.assigned_argument
         ),
 
-        asssigned_argument: $ => seq(
+        assigned_argument: $ => seq(
             field('name', $.identifier),
             optional($._whitespace),
             ':',

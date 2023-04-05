@@ -2790,11 +2790,11 @@
         },
         {
           "type": "SYMBOL",
-          "name": "asssigned_argument"
+          "name": "assigned_argument"
         }
       ]
     },
-    "asssigned_argument": {
+    "assigned_argument": {
       "type": "SEQ",
       "members": [
         {
