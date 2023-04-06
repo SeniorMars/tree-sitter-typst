@@ -69,6 +69,11 @@ const PREC = {
     subtraction_assignment: 1, // -=    Subtraction-Assignment  Binary  1
     multiplication_assignment: 1, // *= Multiplication-Assignment   Binary  1
     division_assignment: 1, // /=   Division-Assignment Binary  1
+
+    // precedence for math-mode operators
+    superscript: 6,
+    subscript: 6,
+    fraction: 5,
 }
 
 module.exports = grammar({
@@ -81,6 +86,9 @@ module.exports = grammar({
         $._string_content,
         $.block_comment,
     ],
+
+    // does this mess anything up?
+    //word: $ => $.identifier,
 
     // WHITESPACE IS SO HARD TO HANDLE
     conflicts: $ => [
@@ -132,7 +140,7 @@ module.exports = grammar({
         [$.pair, $.default_parameter],
         [$.array],
         [$.emphasis, $._text],
-        [$.strong, $._text]
+        [$.strong, $._text],
         // [$._markup, $.emphasis]
     ],
 
@@ -143,6 +151,7 @@ module.exports = grammar({
         $.comment,
         $.unary_expression,
         $.binary_expression,
+        $.math_expression
     ],
 
     rules: {
@@ -156,6 +165,7 @@ module.exports = grammar({
             $._whitespace,
             $._paragraph_break,
             $._code_mode,
+            $._math_mode,
             $.quote,
             $.line_break,
             $.escape_sequence,
@@ -165,7 +175,7 @@ module.exports = grammar({
             $.strong,
         )),
 
-        identifier: $ => prec(2, /[_\p{XID_Start}][_\p{XID_Continue}-]*/),
+        identifier: $ => /[_\p{XID_Start}][_\p{XID_Continue}-]*/,
 
         // this language uses whitespace to SOMETIMES separate tokens
         // thus, we need to be explicit about whitespace use
@@ -856,6 +866,125 @@ module.exports = grammar({
                 optional($._whitespace),
             ))));
         },
+
+        
+        // Math syntax
+        // most of the math syntax is just a subset of the code syntax, that has different identifier rules
+        _math_mode: $ => seq(
+            "$",
+            repeat1(choice($.math_expression, $._whitespace)),
+            "$"
+        ),
+
+        
+        math_expression: $ => choice(
+            $.math_letter,
+            $.math_number,
+            $.math_identifier,
+            $.math_shorthand,
+            $.string_literal,
+            
+            $.math_binary_operator,
+            /*
+            $.math_function_call,
+            $.math_method_call,
+            $.math_field_access
+            // todo: figure out a correct spec for how code is allowed in math
+            $._code_mode*/
+        ),
+
+        // single letters, italicized.
+        math_letter: $ => /\p{Letter}/,
+        
+        // numbers. TODO: scientific notation is not a valid number in math mode.
+        math_number: $ => choice($.int_literal, $.float_literal),
+        // within math mode, we can access all variables like #v
+        // but variables/properties that can be written only using math identifiers --
+        // ie, each part has only numbers and letters, and has at least 2 chars --
+        // can be accessed directly! what a crazy language...
+        math_identifier: $ => prec.right(1, /\p{Letter}[\p{Letter}\p{Number}]+/),
+        // math shorthand refers to symbols which are not simply variables.
+        // for example, -> is shorthand for an arrow.
+        // But we can actually consider single math symbols, such as *, as shorthands.
+        // for example, $*$ does not actually output an asterisk, it outputs a centered star.
+        
+        // TODO: this is non-exhaustive. either make a list of all shorthands, or write a general heuristic.
+        math_shorthand: $ => choice(
+            "+", "*", "-", // note that "/" is NOT a math symbol
+            ">", ">=", "<", "<=",
+            "->", "-->", "=>", "==",
+            "[", "]", "{", "}", ",",
+            // todo these should be separated because they have extra logic
+            prec(1, choice("(", ")"))
+        ),
+        
+        // do we need a combined supersubscript?
+        math_binary_operator: $ => choice(
+            $.superscript,
+            $.subscript,
+            $.fraction
+        ),
+
+        superscript: $ => prec.right(PREC.superscript, seq(
+            $.math_expression,
+            optional($._whitespace),
+            "^",
+            optional($._whitespace),
+            $.math_expression
+
+        )),
+        
+        subscript: $ => prec.right(PREC.subscript, seq(
+            $.math_expression,
+            optional($._whitespace),
+            "_",
+            optional($._whitespace),
+            $.math_expression
+        )),
+
+        
+        fraction: $ => prec.left(PREC.fraction, seq(
+            $.math_expression, 
+            optional($._whitespace),
+            "/",
+            optional($._whitespace),
+            $.math_expression
+        )),
+        /*
+        math_paren_expr: $ => choice(
+            prec.right(2, seq("(", repeat($.math_expression), ")")),
+            prec(1, $.math_expression)
+        ),
+        /*
+
+        // should all these alias to their normal versions?
+        math_field_access: $ => prec(PREC.field, seq(
+            field('value', $.math_identifier),
+            '.',
+            field('field', $.math_identifier),
+        )),
+
+        math_method_call: $ => prec.right(PREC.fieldcall, seq(
+            field('value', $.math_identifier),
+            '.',
+            field('method', $.math_identifier),
+            field('arguments', $.arguments),
+        )),
+
+        math_function_call: $ => prec.right(PREC.call, seq(
+            field('name', $.math_identifier),
+            field('arguments', $.arguments),
+        )),
+
+        // Math arguments are special because there's a semicolon syntax, and you can't have content blocks
+        math_arguments: $ => prec.right(seq(
+            '(',
+            // todo: allow semicolons
+            // todo: make a new version of argument that uses math mode rules
+            //optional(commaSep($._whitespace, $._argument, $.line_comment)),
+            ')'
+        )),*/
+
 
     }
 });
