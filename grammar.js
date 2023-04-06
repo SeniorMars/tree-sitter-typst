@@ -545,7 +545,7 @@ module.exports = grammar({
 
         // func-call ::= expr args
         function_call: $ => prec.left(1, seq(
-            field('name', $.identifier),
+            field('name', choice($.expression, $.identifier)),
             field('arguments', $.arguments),
         )),
 
