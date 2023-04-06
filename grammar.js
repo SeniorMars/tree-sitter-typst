@@ -165,7 +165,7 @@ module.exports = grammar({
             $.strong,
         )),
 
-        identifier: $ => prec(2, /[_\p{XID_Start}][_\p{XID_Continue}]*/),
+        identifier: $ => prec(2, /[_\p{XID_Start}][_\p{XID_Continue}-]*/),
 
         // this language uses whitespace to SOMETIMES separate tokens
         // thus, we need to be explicit about whitespace use
@@ -386,7 +386,7 @@ module.exports = grammar({
         continue_statement: $ => prec.left('continue'),
 
         // let ident(params)? '=' expr
-        let_declaration: $ => prec.left(1, seq(
+        let_declaration: $ => prec.right(1, seq(
             'let',
             $._whitespace,
             field('name', $.identifier),
@@ -561,6 +561,8 @@ module.exports = grammar({
         // field-access ::= expr '.' ident
         field_access: $ => prec(PREC.field, seq(
             field('value', choice($.expression, $.identifier)),
+            // Note that actually there should be optional whitespce after the dot as well, but it has to not include newlines
+            //optional($._whitespace),
             '.',
             field('field', $.identifier),
         )),
@@ -568,6 +570,7 @@ module.exports = grammar({
         // method-call ::= expr '.' ident args
         method_call: $ => prec.right(PREC.fieldcall, seq(
             field('value', choice($.expression, $.identifier)),
+            //optional($._whitespace),
             '.',
             field('method', $.identifier),
             field('arguments', $.arguments),
