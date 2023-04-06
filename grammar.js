@@ -301,6 +301,7 @@ module.exports = grammar({
             $.boolean_literal,
             $.numeric,
             $.none,
+            $.auto,
             $.label
             // $.raw,
         ),
@@ -404,14 +405,19 @@ module.exports = grammar({
             'set',
             $._whitespace,
             field('name', $.expression),
-            optional(choice($.if_cause, $._whitespace))
+            optional($._whitespace),
+            // make this a field?
+            optional($.if_clause)
         )),
 
-        if_cause: $ => seq(
-            /\p{White_Space}*if\p{White_Space}+/,
-            field('condition', $.expression),
-            optional($._whitespace),
-        ),
+        if_clause: $ => prec.left(1, seq(
+            'if',
+            // either if(abc) or if abc
+            choice(
+                seq($._whitespace, field('condition', $.expression)),
+                seq(optional($._whitespace), field('condition', $.parenthesized_expression))
+            )
+        )),
 
         // Label: show <intro>: ..
         // show heading.where(level: 1):
@@ -429,30 +435,47 @@ module.exports = grammar({
             field('body', prec.right($.expression))
         ),
 
-        if_expression: $ => prec.left(1, seq(
+        if_expression: $ => prec.right(1, seq(
             'if',
-            $._whitespace,
-            field('condition', choice($.expression, $.identifier)),
+            // either if cond, or if(cond)
+            choice(
+                seq($._whitespace,
+                    field('condition', $.expression)),
+                seq(optional($._whitespace),
+                    field('condition', $.parenthesized_expression))),
+
+            // in order to differentiate between "if a[0] [Hello]" and "if a [0] [Hello]",
+            // content blocks must have a space before
+            choice(
+                seq($._whitespace,
+                    field('consequence', $.content_block)),
+                seq(optional($._whitespace),
+                    field('consequence', $.code_block))),
             optional($._whitespace),
-            field('consequence', choice($.content_block, $.code_block)),
             optional(field('alternative', $.else_clause))
         )),
 
         else_clause: $ => seq(
-            /\p{White_Space}*else/,
-            optional($._whitespace),
+            'else',
+            optional($._whitespace), 
             choice(
-                choice($.code_block, $.content_block),
+                field('consequence', choice($.code_block, $.content_block)),
                 $.if_expression
             )
         ),
 
         while_expression: $ => prec(1, seq(
             'while',
-            $._whitespace,
-            field('condition', choice($.expression, $.identifier)),
-            optional($._whitespace),
-            field('body', choice($.code_block, $.content_block)),
+            choice(
+                seq($._whitespace,
+                    field('condition', $.expression)),
+                seq(optional($._whitespace),
+                    field('condition', $.parenthesized_expression))),
+            choice(
+                seq($._whitespace,
+                    field('body', $.content_block)),
+                seq(optional($._whitespace),
+                    field('body', $.code_block)))
         )),
 
         for_expression: $ => prec(1, seq(

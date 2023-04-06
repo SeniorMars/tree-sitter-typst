@@ -160,6 +160,10 @@
     "named": true,
     "subtypes": [
       {
+        "type": "auto",
+        "named": true
+      },
+      {
         "type": "boolean_literal",
         "named": true
       },
@@ -662,19 +666,26 @@
   {
     "type": "else_clause",
     "named": true,
-    "fields": {},
+    "fields": {
+      "consequence": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "code_block",
+            "named": true
+          },
+          {
+            "type": "content_block",
+            "named": true
+          }
+        ]
+      }
+    },
     "children": {
       "multiple": false,
-      "required": true,
+      "required": false,
       "types": [
-        {
-          "type": "code_block",
-          "named": true
-        },
-        {
-          "type": "content_block",
-          "named": true
-        },
         {
           "type": "if_expression",
           "named": true
@@ -863,7 +874,7 @@
     "fields": {}
   },
   {
-    "type": "if_cause",
+    "type": "if_clause",
     "named": true,
     "fields": {
       "condition": {
@@ -1324,7 +1335,7 @@
       "required": false,
       "types": [
         {
-          "type": "if_cause",
+          "type": "if_clause",
           "named": true
         }
       ]
@@ -1629,6 +1640,10 @@
     "named": false
   },
   {
+    "type": "auto",
+    "named": true
+  },
+  {
     "type": "block_comment",
     "named": true
   },
@@ -1646,6 +1661,10 @@
   },
   {
     "type": "deg",
+    "named": false
+  },
+  {
+    "type": "else",
     "named": false
   },
   {
