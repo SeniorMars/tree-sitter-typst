@@ -390,15 +390,16 @@ module.exports = grammar({
             'let',
             $._whitespace,
             field('name', $.identifier),
-            choice(seq(
+            choice(prec(1, seq(
                 optional(field('parameters', $.parameters)),
                 optional($._whitespace),
                 '=',
                 optional($._whitespace),
                 field('rhs', choice($.expression, $.identifier)),
                 optional($._whitespace),
-            ),
-                ';'
+            )),
+                ';',
+                $._whitespace
             )
         )),
 
@@ -493,6 +494,10 @@ module.exports = grammar({
         )),
 
         // func-expr ::= (params | ident) '=>' expr
+        // TODO: even with high prec, this doesn't work right.
+        // I also tried setting prec.dynamic and it didn't change anything.
+        // minimal example: #y => a + b + c + d + e
+        // will usually be parsed as (y => a + b) + ...
         function_expression: $ => prec.right(PREC.lambda, seq(
             choice(
                 field('name', $.identifier),
