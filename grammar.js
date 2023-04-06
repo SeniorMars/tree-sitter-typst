@@ -43,7 +43,9 @@ function commaSepLine(space, rule) {
 }
 
 const PREC = {
-    call: 9,
+    lambda: 11,
+    call: 10,
+    fieldcall: 9,
     field: 8,
     negation: 7, // -   Negation    Unary   7
     no_effect: 7, // +  No effect (exists for symmetry) Unary   7
@@ -491,7 +493,7 @@ module.exports = grammar({
         )),
 
         // func-expr ::= (params | ident) '=>' expr
-        function_expression: $ => prec(PREC.call, seq(
+        function_expression: $ => prec.right(PREC.lambda, seq(
             choice(
                 field('name', $.identifier),
                 field('params', $.parameters)
@@ -504,11 +506,11 @@ module.exports = grammar({
         )),
 
         // params ::= '(' (param (',' param)* ','?)? ')'
-        parameters: $ => prec.left(seq(
+        parameters: $ => seq(
             '(',
             optional(commaSep($._whitespace, $._parameter, $.line_comment)),
             ')'
-        )),
+        ),
 
         // param ::= ident (':' expr)?
         _parameter: $ => seq(
@@ -552,14 +554,14 @@ module.exports = grammar({
 
         // // Fields, functions, methods.
         // field-access ::= expr '.' ident
-        field_access: $ => prec(1, seq(
+        field_access: $ => prec(PREC.field, seq(
             field('value', choice($.expression, $.identifier)),
             '.',
             field('field', $.identifier),
         )),
 
         // method-call ::= expr '.' ident args
-        method_call: $ => prec(2, seq(
+        method_call: $ => prec.right(PREC.fieldcall, seq(
             field('value', choice($.expression, $.identifier)),
             '.',
             field('method', $.identifier),
@@ -567,13 +569,13 @@ module.exports = grammar({
         )),
 
         // func-call ::= expr args
-        function_call: $ => prec.left(1, seq(
+        function_call: $ => prec.right(PREC.call, seq(
             field('name', choice($.expression, $.identifier)),
             field('arguments', $.arguments),
         )),
 
         // args ::= ('(' (arg (',' arg)* ','?)? ')' content-block*) | content-block+
-        arguments: $ => prec.left(choice(
+        arguments: $ => prec.right(choice(
             repeat1($.content_block),
             seq(
                 '(',
