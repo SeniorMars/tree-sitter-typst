@@ -872,17 +872,20 @@ module.exports = grammar({
         // most of the math syntax is just a subset of the code syntax, that has different identifier rules
         _math_mode: $ => seq(
             "$",
-            repeat1(choice($.math_expression, $._whitespace)),
+            // this is gramatically equivalent to repeat(choice($.math_expression, $._whitespace))
+            // except that treesitter gets confused if you do that!
+            optional($._whitespace),
+            repeat(seq($.math_expression, optional($._whitespace))),
             "$"
         ),
 
         
         math_expression: $ => choice(
             $.math_letter,
-            $.math_number,
-            $.math_identifier,
-            $.math_shorthand,
-            $.string_literal,
+            //$.math_number,
+            //$.math_identifier,
+            //$.math_shorthand,
+            //$.string_literal,
             
             $.math_binary_operator,
             /*
@@ -895,29 +898,6 @@ module.exports = grammar({
 
         // single letters, italicized.
         math_letter: $ => /\p{Letter}/,
-        
-        // numbers. TODO: scientific notation is not a valid number in math mode.
-        math_number: $ => choice($.int_literal, $.float_literal),
-        // within math mode, we can access all variables like #v
-        // but variables/properties that can be written only using math identifiers --
-        // ie, each part has only numbers and letters, and has at least 2 chars --
-        // can be accessed directly! what a crazy language...
-        math_identifier: $ => prec.right(1, /\p{Letter}[\p{Letter}\p{Number}]+/),
-        // math shorthand refers to symbols which are not simply variables.
-        // for example, -> is shorthand for an arrow.
-        // But we can actually consider single math symbols, such as *, as shorthands.
-        // for example, $*$ does not actually output an asterisk, it outputs a centered star.
-        
-        // TODO: this is non-exhaustive. either make a list of all shorthands, or write a general heuristic.
-        math_shorthand: $ => choice(
-            "+", "*", "-", // note that "/" is NOT a math symbol
-            ">", ">=", "<", "<=",
-            "->", "-->", "=>", "==",
-            "[", "]", "{", "}", ",",
-            // todo these should be separated because they have extra logic
-            prec(1, choice("(", ")"))
-        ),
-        
         // do we need a combined supersubscript?
         math_binary_operator: $ => choice(
             $.superscript,
@@ -948,8 +928,34 @@ module.exports = grammar({
             optional($._whitespace),
             "/",
             optional($._whitespace),
-            $.math_expression
+            $.math_expression,
+            // because fraction is left-associative in typst,
+            // we have to explicitly include the optional whitespace
+            optional($._whitespace),
         )),
+        /*
+        // numbers. TODO: scientific notation is not a valid number in math mode.
+        math_number: $ => choice($.int_literal, $.float_literal),
+        // within math mode, we can access all variables like #v
+        // but variables/properties that can be written only using math identifiers --
+        // ie, each part has only numbers and letters, and has at least 2 chars --
+        // can be accessed directly! what a crazy language...
+        math_identifier: $ => prec.right(1, /\p{Letter}[\p{Letter}\p{Number}]+/),
+        // math shorthand refers to symbols which are not simply variables.
+        // for example, -> is shorthand for an arrow.
+        // But we can actually consider single math symbols, such as *, as shorthands.
+        // for example, $*$ does not actually output an asterisk, it outputs a centered star.
+        
+        // TODO: this is non-exhaustive. either make a list of all shorthands, or write a general heuristic.
+        math_shorthand: $ => choice(
+            "+", "*", "-", // note that "/" is NOT a math symbol
+            ">", ">=", "<", "<=",
+            "->", "-->", "=>", "==",
+            "[", "]", "{", "}", ",",
+            // todo these should be separated because they have extra logic
+            prec(1, choice("(", ")"))
+        ),
+        
         /*
         math_paren_expr: $ => choice(
             prec.right(2, seq("(", repeat($.math_expression), ")")),
