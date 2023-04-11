@@ -202,7 +202,27 @@
         "named": true
       },
       {
+        "type": "math_bracket_expr",
+        "named": true
+      },
+      {
+        "type": "math_identifier",
+        "named": true
+      },
+      {
         "type": "math_letter",
+        "named": true
+      },
+      {
+        "type": "math_number",
+        "named": true
+      },
+      {
+        "type": "math_shorthand",
+        "named": true
+      },
+      {
+        "type": "string_literal",
         "named": true
       }
     ]
@@ -593,6 +613,10 @@
           "named": true
         },
         {
+          "type": "equation",
+          "named": true
+        },
+        {
           "type": "escape_sequence",
           "named": true
         },
@@ -606,10 +630,6 @@
         },
         {
           "type": "line_break",
-          "named": true
-        },
-        {
-          "type": "math_expression",
           "named": true
         },
         {
@@ -724,6 +744,10 @@
           "named": true
         },
         {
+          "type": "equation",
+          "named": true
+        },
+        {
           "type": "escape_sequence",
           "named": true
         },
@@ -740,10 +764,6 @@
           "named": true
         },
         {
-          "type": "math_expression",
-          "named": true
-        },
-        {
           "type": "paragraph_break",
           "named": true
         },
@@ -757,6 +777,21 @@
         },
         {
           "type": "strong",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "equation",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "math_expression",
           "named": true
         }
       ]
@@ -1092,7 +1127,96 @@
     }
   },
   {
+    "type": "math_bracket_expr",
+    "named": true,
+    "fields": {
+      "left": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": "[",
+            "named": false
+          },
+          {
+            "type": "{",
+            "named": false
+          },
+          {
+            "type": "|",
+            "named": false
+          }
+        ]
+      },
+      "right": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "]",
+            "named": false
+          },
+          {
+            "type": "|",
+            "named": false
+          },
+          {
+            "type": "}",
+            "named": false
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "math_expression",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "math_identifier",
+    "named": true,
+    "fields": {}
+  },
+  {
     "type": "math_letter",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "math_number",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "float_literal",
+          "named": true
+        },
+        {
+          "type": "int_literal",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "math_shorthand",
     "named": true,
     "fields": {}
   },
@@ -1440,6 +1564,10 @@
           "named": true
         },
         {
+          "type": "equation",
+          "named": true
+        },
+        {
           "type": "escape_sequence",
           "named": true
         },
@@ -1453,10 +1581,6 @@
         },
         {
           "type": "line_break",
-          "named": true
-        },
-        {
-          "type": "math_expression",
           "named": true
         },
         {
@@ -1506,6 +1630,10 @@
           "named": true
         },
         {
+          "type": "equation",
+          "named": true
+        },
+        {
           "type": "escape_sequence",
           "named": true
         },
@@ -1519,10 +1647,6 @@
         },
         {
           "type": "line_break",
-          "named": true
-        },
-        {
-          "type": "math_expression",
           "named": true
         },
         {
@@ -1614,6 +1738,10 @@
     "named": false
   },
   {
+    "type": "!",
+    "named": false
+  },
+  {
     "type": "!=",
     "named": false
   },
@@ -1666,7 +1794,15 @@
     "named": false
   },
   {
+    "type": "-->",
+    "named": false
+  },
+  {
     "type": "-=",
+    "named": false
+  },
+  {
+    "type": "->",
     "named": false
   },
   {

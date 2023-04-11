@@ -74,6 +74,7 @@ const PREC = {
     superscript: 6,
     subscript: 6,
     fraction: 5,
+    bracket: 0
 }
 
 module.exports = grammar({
@@ -140,7 +141,7 @@ module.exports = grammar({
         [$.pair, $.default_parameter],
         [$.array],
         [$.emphasis, $._text],
-        [$.strong, $._text],
+        [$.strong, $._text]
         // [$._markup, $.emphasis]
     ],
 
@@ -165,7 +166,7 @@ module.exports = grammar({
             $._whitespace,
             $._paragraph_break,
             $._code_mode,
-            $._math_mode,
+            $.equation,
             $.quote,
             $.line_break,
             $.escape_sequence,
@@ -870,7 +871,7 @@ module.exports = grammar({
         
         // Math syntax
         // most of the math syntax is just a subset of the code syntax, that has different identifier rules
-        _math_mode: $ => seq(
+        equation: $ => seq(
             "$",
             // this is gramatically equivalent to repeat(choice($.math_expression, $._whitespace))
             // except that treesitter gets confused if you do that!
@@ -882,12 +883,13 @@ module.exports = grammar({
         
         math_expression: $ => choice(
             $.math_letter,
-            //$.math_number,
-            //$.math_identifier,
-            //$.math_shorthand,
-            //$.string_literal,
+            $.math_number,
+            $.math_identifier,
+            $.math_shorthand,
+            $.string_literal,
             
             $.math_binary_operator,
+            $.math_bracket_expr
             /*
             $.math_function_call,
             $.math_method_call,
@@ -897,9 +899,44 @@ module.exports = grammar({
         ),
 
         // single letters, italicized.
-        math_letter: $ => /\p{Letter}/,
-        // do we need a combined supersubscript?
+        math_letter: $ => token(/\p{Letter}/),
+        
+        // numbers. TODO: scientific notation is not a valid number in math mode.
+        math_number: $ => choice($.int_literal, $.float_literal),
+        // within math mode, we can access all variables like #v
+        // but variables/properties that can be written only using math identifiers --
+        // ie, each part has only numbers and letters, and has at least 2 chars --
+        // can be accessed directly! what a crazy language...
+        math_identifier: $ => prec.right(1, /\p{Letter}[\p{Letter}\p{Number}]+/),
+        // math shorthand refers to symbols which are not simply variables.
+        // for example, -> is shorthand for an arrow.
+        // But we can actually consider single math symbols, such as *, as shorthands.
+        // for example, $*$ does not actually output an asterisk, it outputs a centered star.
+        
+        // TODO: this is non-exhaustive. either make a list of all shorthands, or write a general heuristic.
+        math_shorthand: $ => choice(
+            "+", "*", "-", // note that "/" is NOT a math symbol
+            "=", "!=", "!",
+            ">", ">=", "<", "<=",
+            "->", "-->", "=>", "==",
+            ",", ":", ";",
+            // these brackets have negative prec() because we want them to be parsed as math_bracket_expr if possible
+            prec(-1, choice("[", "]", "{", "}", "(", ")", "|"))
+        ),
+
         math_binary_operator: $ => choice(
+            // TODO:
+            // Typst sets intuitive, but difficult to parse, associativity rules for math operators.
+            // In particular, a^b_c means (a^b)_c, which makes sense.
+            // Unfortunately, a^b^c means a^(b^c), which also makes sense.
+            // One solution would be to add a special subsuperscript rule,
+            // but I'm not sure how to alias it so that it actually appears as superscript and subscript rules.
+            // another option is to redefine superscript and subscript as something like
+            // superscript = choice(superscript, seq(subscript, ^, expression0))
+            // There's an additional problem on top of this
+            // in the current implementation, the associativity of these operators depends on whitespace!
+            // I think this is because the presence of whitespace prevents the parser from doing a lookahead.
+            // I don't really understand why the code mode binary operators work correctly, but these ones don't.
             $.superscript,
             $.subscript,
             $.fraction
@@ -911,7 +948,6 @@ module.exports = grammar({
             "^",
             optional($._whitespace),
             $.math_expression
-
         )),
         
         subscript: $ => prec.right(PREC.subscript, seq(
@@ -931,30 +967,23 @@ module.exports = grammar({
             $.math_expression,
             // because fraction is left-associative in typst,
             // we have to explicitly include the optional whitespace
-            optional($._whitespace),
+            optional($._whitespace)
         )),
-        /*
-        // numbers. TODO: scientific notation is not a valid number in math mode.
-        math_number: $ => choice($.int_literal, $.float_literal),
-        // within math mode, we can access all variables like #v
-        // but variables/properties that can be written only using math identifiers --
-        // ie, each part has only numbers and letters, and has at least 2 chars --
-        // can be accessed directly! what a crazy language...
-        math_identifier: $ => prec.right(1, /\p{Letter}[\p{Letter}\p{Number}]+/),
-        // math shorthand refers to symbols which are not simply variables.
-        // for example, -> is shorthand for an arrow.
-        // But we can actually consider single math symbols, such as *, as shorthands.
-        // for example, $*$ does not actually output an asterisk, it outputs a centered star.
-        
-        // TODO: this is non-exhaustive. either make a list of all shorthands, or write a general heuristic.
-        math_shorthand: $ => choice(
-            "+", "*", "-", // note that "/" is NOT a math symbol
-            ">", ">=", "<", "<=",
-            "->", "-->", "=>", "==",
-            "[", "]", "{", "}", ",",
-            // todo these should be separated because they have extra logic
-            prec(1, choice("(", ")"))
-        ),
+
+        // in math mode, we can have whatever brackets we want!
+        // if the brackets are not balanced, they just appear as normal symbols.
+        math_bracket_expr: $ => {
+            const table = [["|", "|"], ["[", "]"], ["{", "}"], ["(", ")"]];
+
+            return choice(...table.map(([left, right]) => prec.right(PREC.bracket, seq(
+                field('left', left),
+                optional($._whitespace),
+                repeat1(seq($.math_expression, optional($._whitespace))),
+                // yep, that's right! closing brackets are optional in typst math mode.
+                optional(field('right', right))
+            ))));
+
+        }
         
         /*
         math_paren_expr: $ => choice(
