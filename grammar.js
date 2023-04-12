@@ -919,15 +919,26 @@ module.exports = grammar({
         // But we can actually consider single math symbols, such as *, as shorthands.
         // for example, $*$ does not actually output an asterisk, it outputs a centered star.
         // TODO: this is non-exhaustive. either make a list of all shorthands, or write a general heuristic.
-        math_shorthand: $ => choice(
-            "+", "*", "-", // note that "/" is NOT a math symbol
-            "=", "!=", "!", ":=", "...",
-            ">", ">=", "<", "<=",
-            "->", "-->", "=>", "==",
-            // these brackets have negative prec() because we want them to be parsed as math_bracket_expr if possible
-            prec(-1, choice("[", "]", "{", "}", "(", ")", "|")),
-            prec(-1, choice(",", ";", ":", "."))
-        ),
+        math_shorthand: $ => {
+
+            const always = [
+                "+", "*", "-", // note that "/" is NOT a math symbol
+                "=", "!=", "!", ":=", "...",
+                ">", ">=", "<", "<=",
+                "->", "-->", "=>", "=="
+            ];
+            const sometimes = [
+                // sometimes parsed as math_bracket_expr
+                "[", "]", "{", "}", "(", ")", "|", 
+                // sometimes parsed as delimiters
+                ",", ";", ":", "."
+            ];
+            return choice(
+                choice(...always),
+                prec(-1, choice(...sometimes)),
+                prec(1, choice(...sometimes.map(c => "\\" + c)))
+            );
+        },
 
         math_binary_operator: $ => choice(
             // TODO:
