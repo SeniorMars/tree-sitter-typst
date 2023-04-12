@@ -879,7 +879,6 @@ module.exports = grammar({
             repeat(seq($.math_expression, optional($._whitespace))),
             "$"
         ),
-
         
         math_expression: $ => choice(
             $.math_letter,
@@ -887,15 +886,18 @@ module.exports = grammar({
             $.math_identifier,
             $.math_shorthand,
             $.string_literal,
+
+            $.math_alignment,
+            $.math_nobreak,
             
             $.math_binary_operator,
-            $.math_bracket_expr
-            /*
+            $.math_bracket_expr,
+            
             $.math_function_call,
             $.math_method_call,
             $.math_field_access
             // todo: figure out a correct spec for how code is allowed in math
-            $._code_mode*/
+            //$._code_mode
         ),
 
         // single letters, italicized.
@@ -908,20 +910,23 @@ module.exports = grammar({
         // ie, each part has only numbers and letters, and has at least 2 chars --
         // can be accessed directly! what a crazy language...
         math_identifier: $ => prec.right(1, /\p{Letter}[\p{Letter}\p{Number}]+/),
+
+        math_alignment: $ => token("&"),
+        math_nobreak: $ => token("\\\n"),
+
         // math shorthand refers to symbols which are not simply variables.
         // for example, -> is shorthand for an arrow.
         // But we can actually consider single math symbols, such as *, as shorthands.
         // for example, $*$ does not actually output an asterisk, it outputs a centered star.
-        
         // TODO: this is non-exhaustive. either make a list of all shorthands, or write a general heuristic.
         math_shorthand: $ => choice(
             "+", "*", "-", // note that "/" is NOT a math symbol
-            "=", "!=", "!",
+            "=", "!=", "!", ":=",
             ">", ">=", "<", "<=",
             "->", "-->", "=>", "==",
-            ",", ":", ";",
             // these brackets have negative prec() because we want them to be parsed as math_bracket_expr if possible
-            prec(-1, choice("[", "]", "{", "}", "(", ")", "|"))
+            prec(-1, choice("[", "]", "{", "}", "(", ")", "|")),
+            prec(-1, choice(",", ";", ":"))
         ),
 
         math_binary_operator: $ => choice(
@@ -983,43 +988,53 @@ module.exports = grammar({
                 optional(field('right', right))
             ))));
 
-        }
+        },
         
-        /*
-        math_paren_expr: $ => choice(
-            prec.right(2, seq("(", repeat($.math_expression), ")")),
-            prec(1, $.math_expression)
-        ),
-        /*
-
         // should all these alias to their normal versions?
         math_field_access: $ => prec(PREC.field, seq(
-            field('value', $.math_identifier),
+            choice($.math_identifier, $.math_field_access),
             '.',
-            field('field', $.math_identifier),
+            $.math_identifier
         )),
 
         math_method_call: $ => prec.right(PREC.fieldcall, seq(
-            field('value', $.math_identifier),
+            field('value', $.math_field_access),
             '.',
             field('method', $.math_identifier),
-            field('arguments', $.arguments),
+            field('arguments', $.math_arguments),
         )),
 
         math_function_call: $ => prec.right(PREC.call, seq(
             field('name', $.math_identifier),
-            field('arguments', $.arguments),
+            field('arguments', $.math_arguments),
         )),
 
+        // Matches a comma-separated list of math expressions.
+        math_array: $ => {
+            // not sure if we should alias this to argument
+            let expr = alias(repeat1(seq(
+                $.math_expression, 
+                optional($._whitespace))),
+
+                $.argument);
+
+            return prec.left(seq(
+                expr, repeat(prec.left(seq(
+                    ',',
+                    optional($._whitespace),
+                    expr)))));
+        },
+
         // Math arguments are special because there's a semicolon syntax, and you can't have content blocks
-        math_arguments: $ => prec.right(seq(
+        math_arguments: $ => prec.left(seq(
             '(',
-            // todo: allow semicolons
-            // todo: make a new version of argument that uses math mode rules
-            //optional(commaSep($._whitespace, $._argument, $.line_comment)),
+            optional($._whitespace),
+            optional($.math_array),
+            repeat(prec.left(seq(
+                ';',
+                optional($._whitespace),
+                optional($.math_array)))),
             ')'
-        )),*/
-
-
+        )),
     }
 });

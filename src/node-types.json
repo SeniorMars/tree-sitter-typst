@@ -198,6 +198,10 @@
     "named": true,
     "subtypes": [
       {
+        "type": "math_alignment",
+        "named": true
+      },
+      {
         "type": "math_binary_operator",
         "named": true
       },
@@ -206,11 +210,27 @@
         "named": true
       },
       {
+        "type": "math_field_access",
+        "named": true
+      },
+      {
+        "type": "math_function_call",
+        "named": true
+      },
+      {
         "type": "math_identifier",
         "named": true
       },
       {
         "type": "math_letter",
+        "named": true
+      },
+      {
+        "type": "math_method_call",
+        "named": true
+      },
+      {
+        "type": "math_nobreak",
         "named": true
       },
       {
@@ -244,6 +264,21 @@
         "named": true
       }
     ]
+  },
+  {
+    "type": "argument",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "math_expression",
+          "named": true
+        }
+      ]
+    }
   },
   {
     "type": "arguments",
@@ -1104,6 +1139,36 @@
     }
   },
   {
+    "type": "math_arguments",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "math_array",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "math_array",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "argument",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "math_binary_operator",
     "named": true,
     "fields": {},
@@ -1187,6 +1252,51 @@
     }
   },
   {
+    "type": "math_field_access",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "math_field_access",
+          "named": true
+        },
+        {
+          "type": "math_identifier",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "math_function_call",
+    "named": true,
+    "fields": {
+      "arguments": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "math_arguments",
+            "named": true
+          }
+        ]
+      },
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "math_identifier",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
     "type": "math_identifier",
     "named": true,
     "fields": {}
@@ -1195,6 +1305,42 @@
     "type": "math_letter",
     "named": true,
     "fields": {}
+  },
+  {
+    "type": "math_method_call",
+    "named": true,
+    "fields": {
+      "arguments": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "math_arguments",
+            "named": true
+          }
+        ]
+      },
+      "method": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "math_identifier",
+            "named": true
+          }
+        ]
+      },
+      "value": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "math_field_access",
+            "named": true
+          }
+        ]
+      }
+    }
   },
   {
     "type": "math_number",
@@ -1826,6 +1972,10 @@
     "named": false
   },
   {
+    "type": ":=",
+    "named": false
+  },
+  {
     "type": ";",
     "named": false
   },
@@ -1967,6 +2117,14 @@
   },
   {
     "type": "line_comment",
+    "named": true
+  },
+  {
+    "type": "math_alignment",
+    "named": true
+  },
+  {
+    "type": "math_nobreak",
     "named": true
   },
   {
