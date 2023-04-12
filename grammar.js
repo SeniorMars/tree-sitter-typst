@@ -989,6 +989,8 @@ module.exports = grammar({
         // in math mode, we can have whatever brackets we want!
         // if the brackets are not balanced, they just appear as normal symbols.
         math_bracket_expr: $ => {
+            // TODO: Add || . || as a bracket
+            // Probably need to add token() somewhere to make it work
             const table = [["|", "|"], ["[", "]"], ["{", "}"], ["(", ")"]];
 
             return choice(...table.map(([left, right]) => prec.right(PREC.bracket, seq(
@@ -1020,6 +1022,15 @@ module.exports = grammar({
             field('arguments', $.math_arguments),
         )),
 
+        _math_assigned_argument: $ => prec(1, seq(
+            field('key', $.math_identifier),
+            ':',
+            optional($._whitespace),
+            field('value', repeat1(seq(
+                $.math_expression, 
+                optional($._whitespace))))
+        )),
+
         // Matches a comma-separated list of math expressions.
         math_array: $ => {
             // not sure if we should alias this to argument
@@ -1030,13 +1041,19 @@ module.exports = grammar({
                 $.argument);
 
             return prec.left(seq(
-                expr, repeat(prec.left(seq(
+                choice(expr, alias($._math_assigned_argument, $.assigned_argument)),
+                repeat(prec.left(seq(
                     ',',
                     optional($._whitespace),
                     expr)))));
         },
 
         // Math arguments are special because there's a semicolon syntax, and you can't have content blocks
+        // TODO: What's the spec for named arguments?
+        // mat(1, 2; delim: "|", 3, 4) sets the delim.
+        // mat(1, 2; delim: "|"; 3, 4) sets the delim but adds an extra empty row in the middle,
+        // mat(1, 2, delim: "|"; 3, 4) throws an error!
+        // seems like named arguments have to be the first in their row
         math_arguments: $ => prec.left(seq(
             '(',
             optional($._whitespace),

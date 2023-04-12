@@ -330,9 +330,19 @@
     "type": "assigned_argument",
     "named": true,
     "fields": {
+      "key": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "math_identifier",
+            "named": true
+          }
+        ]
+      },
       "name": {
         "multiple": false,
-        "required": true,
+        "required": false,
         "types": [
           {
             "type": "identifier",
@@ -341,11 +351,15 @@
         ]
       },
       "value": {
-        "multiple": false,
+        "multiple": true,
         "required": true,
         "types": [
           {
             "type": "expression",
+            "named": true
+          },
+          {
+            "type": "math_expression",
             "named": true
           }
         ]
@@ -1163,6 +1177,10 @@
       "types": [
         {
           "type": "argument",
+          "named": true
+        },
+        {
+          "type": "assigned_argument",
           "named": true
         }
       ]
