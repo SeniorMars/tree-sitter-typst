@@ -5356,7 +5356,7 @@
         },
         {
           "type": "SYMBOL",
-          "name": "math_nobreak"
+          "name": "math_break"
         },
         {
           "type": "SYMBOL",
@@ -5415,11 +5415,11 @@
         "value": "&"
       }
     },
-    "math_nobreak": {
+    "math_break": {
       "type": "TOKEN",
       "content": {
         "type": "STRING",
-        "value": "\\\n"
+        "value": "\\"
       }
     },
     "math_shorthand": {
@@ -5452,6 +5452,10 @@
         {
           "type": "STRING",
           "value": ":="
+        },
+        {
+          "type": "STRING",
+          "value": "..."
         },
         {
           "type": "STRING",
@@ -5539,6 +5543,10 @@
               {
                 "type": "STRING",
                 "value": ":"
+              },
+              {
+                "type": "STRING",
+                "value": "."
               }
             ]
           }
@@ -6014,8 +6022,17 @@
             "value": "."
           },
           {
-            "type": "SYMBOL",
-            "name": "math_identifier"
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "SYMBOL",
+                "name": "math_identifier"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "math_letter"
+              }
+            ]
           }
         ]
       }

@@ -210,6 +210,10 @@
         "named": true
       },
       {
+        "type": "math_break",
+        "named": true
+      },
+      {
         "type": "math_field_access",
         "named": true
       },
@@ -227,10 +231,6 @@
       },
       {
         "type": "math_method_call",
-        "named": true
-      },
-      {
-        "type": "math_nobreak",
         "named": true
       },
       {
@@ -1266,6 +1266,10 @@
         {
           "type": "math_identifier",
           "named": true
+        },
+        {
+          "type": "math_letter",
+          "named": true
         }
       ]
     }
@@ -1960,6 +1964,10 @@
     "named": false
   },
   {
+    "type": "...",
+    "named": false
+  },
+  {
     "type": "/",
     "named": false
   },
@@ -2124,7 +2132,7 @@
     "named": true
   },
   {
-    "type": "math_nobreak",
+    "type": "math_break",
     "named": true
   },
   {

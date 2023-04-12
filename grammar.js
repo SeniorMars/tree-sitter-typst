@@ -888,14 +888,14 @@ module.exports = grammar({
             $.string_literal,
 
             $.math_alignment,
-            $.math_nobreak,
+            $.math_break,
             
             $.math_binary_operator,
             $.math_bracket_expr,
             
             $.math_function_call,
             $.math_method_call,
-            $.math_field_access
+            $.math_field_access,
             // todo: figure out a correct spec for how code is allowed in math
             //$._code_mode
         ),
@@ -912,7 +912,7 @@ module.exports = grammar({
         math_identifier: $ => prec.right(1, /\p{Letter}[\p{Letter}\p{Number}]+/),
 
         math_alignment: $ => token("&"),
-        math_nobreak: $ => token("\\\n"),
+        math_break: $ => token("\\"),
 
         // math shorthand refers to symbols which are not simply variables.
         // for example, -> is shorthand for an arrow.
@@ -921,12 +921,12 @@ module.exports = grammar({
         // TODO: this is non-exhaustive. either make a list of all shorthands, or write a general heuristic.
         math_shorthand: $ => choice(
             "+", "*", "-", // note that "/" is NOT a math symbol
-            "=", "!=", "!", ":=",
+            "=", "!=", "!", ":=", "...",
             ">", ">=", "<", "<=",
             "->", "-->", "=>", "==",
             // these brackets have negative prec() because we want them to be parsed as math_bracket_expr if possible
             prec(-1, choice("[", "]", "{", "}", "(", ")", "|")),
-            prec(-1, choice(",", ";", ":"))
+            prec(-1, choice(",", ";", ":", "."))
         ),
 
         math_binary_operator: $ => choice(
@@ -994,7 +994,7 @@ module.exports = grammar({
         math_field_access: $ => prec(PREC.field, seq(
             choice($.math_identifier, $.math_field_access),
             '.',
-            $.math_identifier
+            choice($.math_identifier, $.math_letter)
         )),
 
         math_method_call: $ => prec.right(PREC.fieldcall, seq(
