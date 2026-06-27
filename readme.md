@@ -85,6 +85,7 @@ Editor queries live under `queries/typst/`:
 - `tags.scm`: headings, labels, functions, variables, imports, and calls
 - `folds.scm`: foldable blocks and sections
 - `indents.scm`: Neovim indentation captures
+- `images.scm`: Snacks.nvim image and Typst math captures
 
 `npm run test:queries` compiles every query and verifies that every declared
 capture is exercised by the audit fixture.

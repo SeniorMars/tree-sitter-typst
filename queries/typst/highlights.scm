@@ -29,8 +29,16 @@
 ; Cross-mode punctuation.
 (embedded_code "#" @punctuation.special)
 (equation "$" @punctuation.special)
-(content_block ["[" "]"] @punctuation.bracket)
-(code_block ["{" "}"] @punctuation.bracket)
+
+[
+  "(" ")" "[" "]" "{" "}"
+] @punctuation.bracket
+
+[
+  "," ":" ";"
+] @punctuation.delimiter
+
+"." @punctuation.delimiter
 
 ; Code keywords and builtins
 [
@@ -48,6 +56,7 @@
 (boolean) @constant.builtin.boolean
 (integer) @constant.numeric.integer
 (float) @constant.numeric.float
+(numeric) @constant.numeric
 (unit) @constant.numeric
 (string) @string
 (string_escape) @string.escape
@@ -101,6 +110,7 @@
 (wildcard_import "*" @operator)
 
 ; Math
+(equation) @markup.math
 (math_identifier) @constant
 (math_text) @constant.character
 (math_number) @constant.numeric
@@ -123,5 +133,11 @@
 ; Attachments are captured at their structural node instead of trying to match
 ; arbitrary descendants. This handles subscript, superscript, and grouped prime
 ; forms consistently (open issue #46).
+(math_attachment base: (math_text) @variable)
+(math_attachment base: (math_identifier) @variable)
+(math_attachment subscript: (math_text) @variable)
+(math_attachment subscript: (math_identifier) @variable)
+(math_attachment superscript: (math_text) @variable)
+(math_attachment superscript: (math_identifier) @variable)
 (math_attachment ["_" "^"] @operator)
 (math_attachment primes: (math_primes) @operator)

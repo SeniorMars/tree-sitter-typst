@@ -25,6 +25,7 @@ See https://typst.app/docs/. and @audit[Audit].
 [bracketed text]
 
 ` + "```typc\nlet raw_value = 1\nraw_value + 2\n```\n" + String.raw`
+` + "```typ\n#let injected = true\n```\n" + String.raw`
 
 #let f(x, y: 1, ..rest) = x + y
 #let (_, head, tail: renamed, ..others) = (1, 2)
@@ -32,6 +33,7 @@ See https://typst.app/docs/. and @audit[Audit].
 #(left, target.value) = pair
 #set text(size: 11pt)
 #show heading: it => emph(it.body)
+#image("diagram.png")
 #import "module.typ": (nested.item as renamed, other)
 #import mod_name as mod
 #include "chapter.typ"
@@ -64,6 +66,13 @@ function queryFiles() {
     .map((name) => join(queryDir.pathname, name));
 }
 
+function nodeQueryText(queryText) {
+  return queryText
+    .split("\n")
+    .filter((line) => !/^\s*\(#(?:offset|set)!/.test(line))
+    .join("\n");
+}
+
 function parseSource(source) {
   const tree = parser.parse(source);
   assert.equal(tree.rootNode.hasError, false, tree.rootNode.toString());
@@ -71,12 +80,18 @@ function parseSource(source) {
 }
 
 function queryCaptures(name, source) {
-  const query = new Parser.Query(language, readFileSync(join(queryDir.pathname, name), "utf8"));
+  const query = new Parser.Query(
+    language,
+    nodeQueryText(readFileSync(join(queryDir.pathname, name), "utf8")),
+  );
   return query.captures(parseSource(source).rootNode);
 }
 
 function queryCapturesFrom(dir, name, source) {
-  const query = new Parser.Query(language, readFileSync(join(dir.pathname, name), "utf8"));
+  const query = new Parser.Query(
+    language,
+    nodeQueryText(readFileSync(join(dir.pathname, name), "utf8")),
+  );
   return query.captures(parseSource(source).rootNode);
 }
 
@@ -130,7 +145,7 @@ const tree = parseSource(auditSource);
 
 for (const file of queryFiles()) {
   const text = readFileSync(file, "utf8");
-  const query = new Parser.Query(language, text);
+  const query = new Parser.Query(language, nodeQueryText(text));
   const declared = captureNames(text);
   const seen = new Set(query.captures(tree.rootNode).map((capture) => capture.name));
   const missing = declared.filter((name) => !seen.has(name));
