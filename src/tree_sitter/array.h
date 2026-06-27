@@ -197,6 +197,7 @@ extern "C" {
 static inline void _array__erase(void* self_contents, uint32_t *size,
                                 size_t element_size, uint32_t index) {
   assert(index < *size);
+  if (index >= *size) return;
   char *contents = (char *)self_contents;
   memmove(contents + index * element_size, contents + (index + 1) * element_size,
           (*size - index - 1) * element_size);
