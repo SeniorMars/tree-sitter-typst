@@ -204,20 +204,20 @@ $(a+b)$
     (equation
       body: (math
         (math_fraction
-          numerator: (math_text)
+          numerator: (math_letter)
           denominator: (math_group
             open: (math_delimiter)
             body: (math
+              (math_letter)
               (math_text)
-              (math_text)
-              (math_text))
+              (math_letter))
             close: (math_delimiter)))))
     (equation
       body: (math
         (math_delimited
           open: (math_delimiter)
           body: (math
+            (math_letter)
             (math_text)
-            (math_text)
-            (math_text))
+            (math_letter))
           close: (math_delimiter))))))

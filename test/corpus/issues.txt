@@ -10,7 +10,7 @@ $a$
   (content
     (equation
       body: (math
-        (math_text)))))
+        (math_letter)))))
 
 ==================
 Hidden hash marker

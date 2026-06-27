@@ -87,6 +87,10 @@ Editor queries live under `queries/typst/`:
 - `indents.scm`: Neovim indentation captures
 - `images.scm`: Snacks.nvim image and Typst math captures
 
+The main highlight query follows Neovim's current tree-sitter capture
+conventions. The Helix integration keeps a separate highlight query adapted to
+Helix theme scopes instead of copying Neovim captures verbatim.
+
 `npm run test:queries` compiles every query and verifies that every declared
 capture is exercised by the audit fixture.
 
@@ -204,6 +208,9 @@ It includes:
   and Tinymist language-server configuration
 - `queries/`: Helix query files for highlights, injections, indentation, and
   folds
+
+Helix highlights intentionally use Helix capture conventions and theme scopes,
+while the main `queries/typst/highlights.scm` targets Neovim conventions.
 
 Copy or merge the integration into your Helix config:
 

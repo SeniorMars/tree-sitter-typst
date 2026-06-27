@@ -160,6 +160,10 @@
         "named": true
       },
       {
+        "type": "math_letter",
+        "named": true
+      },
+      {
         "type": "math_number",
         "named": true
       },
@@ -1807,10 +1811,6 @@
         {
           "type": "line_comment",
           "named": true
-        },
-        {
-          "type": "math_space",
-          "named": true
         }
       ]
     }
@@ -2615,7 +2615,7 @@
     "fields": {},
     "children": {
       "multiple": true,
-      "required": true,
+      "required": false,
       "types": [
         {
           "type": "_math_expression",
@@ -2627,10 +2627,6 @@
         },
         {
           "type": "line_comment",
-          "named": true
-        },
-        {
-          "type": "math_space",
           "named": true
         }
       ]
@@ -2667,11 +2663,11 @@
             "named": true
           },
           {
-            "type": "math_primes",
+            "type": "math_letter",
             "named": true
           },
           {
-            "type": "math_text",
+            "type": "math_primes",
             "named": true
           },
           {
@@ -2719,10 +2715,6 @@
         },
         {
           "type": "math_sequence",
-          "named": true
-        },
-        {
-          "type": "math_space",
           "named": true
         },
         {
@@ -2872,10 +2864,6 @@
         {
           "type": "line_comment",
           "named": true
-        },
-        {
-          "type": "math_space",
-          "named": true
         }
       ]
     }
@@ -2955,10 +2943,6 @@
         },
         {
           "type": "line_comment",
-          "named": true
-        },
-        {
-          "type": "math_space",
           "named": true
         }
       ]
@@ -3106,10 +3090,6 @@
         {
           "type": "line_comment",
           "named": true
-        },
-        {
-          "type": "math_space",
-          "named": true
         }
       ]
     }
@@ -3160,10 +3140,6 @@
         {
           "type": "line_comment",
           "named": true
-        },
-        {
-          "type": "math_space",
-          "named": true
         }
       ]
     }
@@ -3203,10 +3179,6 @@
         },
         {
           "type": "line_comment",
-          "named": true
-        },
-        {
-          "type": "math_space",
           "named": true
         }
       ]
@@ -3284,10 +3256,6 @@
         {
           "type": "line_comment",
           "named": true
-        },
-        {
-          "type": "math_space",
-          "named": true
         }
       ]
     }
@@ -3310,10 +3278,6 @@
         },
         {
           "type": "line_comment",
-          "named": true
-        },
-        {
-          "type": "math_space",
           "named": true
         }
       ]
@@ -5057,6 +5021,10 @@
     "named": true
   },
   {
+    "type": "math_letter",
+    "named": true
+  },
+  {
     "type": "math_number",
     "named": true
   },
@@ -5066,10 +5034,6 @@
   },
   {
     "type": "math_shorthand",
-    "named": true
-  },
-  {
-    "type": "math_space",
     "named": true
   },
   {

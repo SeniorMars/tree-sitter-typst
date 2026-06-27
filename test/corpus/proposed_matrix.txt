@@ -411,7 +411,7 @@ Text #let x = [*hi*]; #x and $f(#x)$
     (equation
       body: (math
         (math_application
-          function: (math_text)
+          function: (math_letter)
           argument: (math_delimited
             open: (math_delimiter)
             body: (math
@@ -978,15 +978,15 @@ $x>=(y)/z$
   (content
     (equation
       body: (math
-        (math_text)
+        (math_letter)
         (math_shorthand)
         (math_fraction
           numerator: (math_delimited
             open: (math_delimiter)
             body: (math
-              (math_text))
+              (math_letter))
             close: (math_delimiter))
-          denominator: (math_text))))))
+          denominator: (math_letter))))))
 
 ==================
 math_group_vs_display
@@ -1002,22 +1002,22 @@ $(a+b)$
     (equation
       body: (math
         (math_fraction
-          numerator: (math_text)
+          numerator: (math_letter)
           denominator: (math_group
             open: (math_delimiter)
             body: (math
+              (math_letter)
               (math_text)
-              (math_text)
-              (math_text))
+              (math_letter))
             close: (math_delimiter)))))
     (equation
       body: (math
         (math_delimited
           open: (math_delimiter)
           body: (math
+            (math_letter)
             (math_text)
-            (math_text)
-            (math_text))
+            (math_letter))
           close: (math_delimiter))))))
 
 ==================
@@ -1036,22 +1036,20 @@ $floor(x) x(y) f[a]$
           function: (math_identifier)
           arguments: (math_arguments
             (math_sequence
-              (math_text))))
-        (math_space)
+              (math_letter))))
         (math_application
-          function: (math_text)
+          function: (math_letter)
           argument: (math_delimited
             open: (math_delimiter)
             body: (math
-              (math_text))
+              (math_letter))
             close: (math_delimiter)))
-        (math_space)
         (math_application
-          function: (math_text)
+          function: (math_letter)
           argument: (math_delimited
             open: (math_delimiter)
             body: (math
-              (math_text))
+              (math_letter))
             close: (math_delimiter)))))))
 
 ==================
@@ -1069,12 +1067,10 @@ $mat(, a; b,)$
         (math_call
           function: (math_identifier)
           arguments: (math_arguments
-            (math_space)
             (math_sequence
-              (math_text))
-            (math_space)
+              (math_letter))
             (math_sequence
-              (math_text))))))))
+              (math_letter))))))))
 
 ==================
 math_spaced_argument_separator
@@ -1092,11 +1088,9 @@ $mat(a , b)$
           function: (math_identifier)
           arguments: (math_arguments
             (math_sequence
-              (math_text))
-            (math_space)
-            (math_space)
+              (math_letter))
             (math_sequence
-              (math_text))))))))
+              (math_letter))))))))
 
 ==================
 math_named_and_spread_args
@@ -1111,19 +1105,17 @@ $f(size: #12pt, ..#args)$
     (equation
       body: (math
         (math_application
-          function: (math_text)
+          function: (math_letter)
           argument: (math_delimited
             open: (math_delimiter)
             body: (math
               (math_identifier)
               (math_text)
-              (math_space)
               (embedded_code
                 body: (numeric
                   value: (integer)
                   unit: (unit)))
               (math_text)
-              (math_space)
               (math_text)
               (math_text)
               (embedded_code
@@ -1143,13 +1135,12 @@ $a_1^2' a'^2_1$
     (equation
       body: (math
         (math_attachment
-          base: (math_text)
+          base: (math_letter)
           subscript: (math_number)
           superscript: (math_number)
           primes: (math_primes))
-        (math_space)
         (math_attachment
-          base: (math_text)
+          base: (math_letter)
           primes: (math_primes)
           superscript: (math_number)
           subscript: (math_number))))))
@@ -1166,7 +1157,7 @@ $x^$
   (content
     (equation
       body: (math
-        (math_text))
+        (math_letter))
       (ERROR))))
 
 ==================

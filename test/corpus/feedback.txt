@@ -384,7 +384,7 @@ Immediate expression semicolon
       body: (identifier))))
 
 ==================
-Single math XID codepoint is text
+Single math XID codepoint is letter
 ==================
 
 $x$
@@ -395,7 +395,7 @@ $x$
   (content
     (equation
       body: (math
-        (math_text)))))
+        (math_letter)))))
 
 ==================
 Generic math text run is split
@@ -439,11 +439,11 @@ $f(x)$
     (equation
       body: (math
         (math_application
-          function: (math_text)
+          function: (math_letter)
           argument: (math_delimited
             open: (math_delimiter)
             body: (math
-              (math_text))
+              (math_letter))
             close: (math_delimiter)))))))
 
 ==================
@@ -513,9 +513,8 @@ $mat(x: y)$
           arguments: (math_arguments
             (math_named_argument
               name: (identifier)
-              (math_space)
               value: (math_sequence
-                (math_text)))))))))
+                (math_letter)))))))))
 
 ==================
 Math spread argument with embedded code

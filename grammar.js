@@ -366,17 +366,14 @@ function mathClose($) {
 }
 
 function mathCloseGap($) {
-  return mathSpaceRun($, alias($._math_close_space, $.math_space));
+  return mathSpaceRun($, $._math_close_space);
 }
 
 function mathArgumentSeparatorGap($) {
-  return mathSpaceRun(
-    $,
-    alias($._math_argument_separator_space, $.math_space),
-  );
+  return mathSpaceRun($, $._math_argument_separator_space);
 }
 
-function mathSpaceRun($, first = $.math_space) {
+function mathSpaceRun($, first = $._math_space) {
   // Math spaces are branch selectors: the scanner says whether the trivia leads
   // to another expression, an attachment, a fraction, a close delimiter, or an
   // argument separator. Comments may sit inside that trivia, so every branch
@@ -1506,7 +1503,7 @@ export default grammar({
     $._markup_word_gap,
     $._markup_newline,
     $.parbreak,
-    $.math_space,
+    $._math_space,
     $._atomic_field_dot,
     $._code_dot_ahead,
     $._code_else_ahead,
@@ -1615,7 +1612,7 @@ export default grammar({
     _math_space_run_tail: ($) =>
       repeat1(seq(
         choice($.line_comment, $.block_comment),
-        optional($.math_space),
+        optional($._math_space),
       )),
 
     line_comment: (_) =>
@@ -2269,16 +2266,21 @@ export default grammar({
       functionCall($, $._atomic_postfix_expression),
 
     arguments: ($) =>
-      prec.right(seq(
-        $._code_argument_ahead,
-        choice(
-          seq(
-            $._parenthesized_arguments,
-            repeat(alias($._immediate_content_block, $.content_block)),
-          ),
-          repeat1(alias($._immediate_content_block, $.content_block)),
-        ),
+      prec.right(choice(
+        prec.dynamic(1, seq(
+          $._code_argument_ahead,
+          $._parenthesized_arguments,
+          repeat1($._content_argument),
+        )),
+        seq($._code_argument_ahead, $._parenthesized_arguments),
+        repeat1($._content_argument),
       )),
+
+    _content_argument: ($) =>
+      seq(
+        $._code_argument_ahead,
+        alias($._immediate_content_block, $.content_block),
+      ),
 
     _set_arguments: ($) =>
       seq($._code_argument_ahead, $._parenthesized_arguments),
@@ -2630,7 +2632,7 @@ export default grammar({
         repeat(choice(
           $._math_expression,
           seq(
-            mathSpaceRun($, alias($._math_expression_space, $.math_space)),
+            mathSpaceRun($, $._math_expression_space),
             $._math_expression,
           ),
         )),
@@ -2655,7 +2657,7 @@ export default grammar({
           choice(
             seq($._math_fraction_ahead, "/"),
             seq(
-              mathSpaceRun($, alias($._math_fraction_space, $.math_space)),
+              mathSpaceRun($, $._math_fraction_space),
               $._math_fraction_ahead,
               "/",
             ),
@@ -2818,7 +2820,7 @@ export default grammar({
       choice(
         "_",
         seq(
-          mathSpaceRun($, alias($._math_attachment_space, $.math_space)),
+          mathSpaceRun($, $._math_attachment_space),
           "_",
         ),
       ),
@@ -2827,7 +2829,7 @@ export default grammar({
       choice(
         "^",
         seq(
-          mathSpaceRun($, alias($._math_attachment_space, $.math_space)),
+          mathSpaceRun($, $._math_attachment_space),
           "^",
         ),
       ),
@@ -2885,7 +2887,7 @@ export default grammar({
     _math_atom: ($) =>
       choice(
         $.math_identifier,
-        alias($._math_letter, $.math_text),
+        alias($._math_letter, $.math_letter),
         alias($._math_text, $.math_text),
         $.math_number,
         $.math_text,
@@ -3084,7 +3086,7 @@ export default grammar({
             field(
               "function",
               choice(
-                alias($._math_letter, $.math_text),
+                alias($._math_letter, $.math_letter),
                 $.math_primes,
                 $.string,
                 $.escape,

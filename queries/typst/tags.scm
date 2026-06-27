@@ -34,6 +34,12 @@
 (set_rule
   target: (field_access field: (identifier) @name)) @reference.call
 
+(show_rule
+  selector: (identifier) @name) @reference.call
+
+(show_rule
+  selector: (field_access field: (identifier) @name)) @reference.call
+
 (module_import
   source: (string) @name) @reference.import
 
@@ -51,3 +57,18 @@
 
 (function_call
   function: (field_access field: (identifier) @name)) @reference.call
+
+(math_call
+  function: (math_identifier) @name) @reference.call
+
+(math_call
+  function: (math_field_access field: (math_identifier) @name)) @reference.call
+
+(math_application
+  function: (math_letter) @name) @reference.call
+
+(math_application
+  function: (math_identifier) @name) @reference.call
+
+(math_application
+  function: (math_field_access field: (math_identifier) @name)) @reference.call

@@ -1032,20 +1032,15 @@ Nested: $ f(#(x + 1)) $
     (text)
     (equation
       body: (math
-        (math_space)
+        (math_letter)
         (math_text)
-        (math_space)
-        (math_text)
-        (math_space)
-        (math_text))
-      (math_space))
+        (math_letter)))
     (text)
     (text)
     (equation
       body: (math
-        (math_space)
         (math_application
-          function: (math_text)
+          function: (math_letter)
           argument: (math_delimited
             open: (math_delimiter)
             body: (math
@@ -1054,8 +1049,7 @@ Nested: $ f(#(x + 1)) $
                   expression: (binary_expression
                     left: (identifier)
                     right: (integer)))))
-            close: (math_delimiter))))
-      (math_space))))
+            close: (math_delimiter)))))))
 
 ==================
 Math fraction slash adjacency
@@ -1071,15 +1065,13 @@ $x / y$
     (equation
       body: (math
         (math_fraction
-          numerator: (math_text)
-          denominator: (math_text))))
+          numerator: (math_letter)
+          denominator: (math_letter))))
     (equation
       body: (math
         (math_fraction
-          numerator: (math_text)
-          (math_space)
-          (math_space)
-          denominator: (math_text))))))
+          numerator: (math_letter)
+          denominator: (math_letter))))))
 
 ==================
 Math delimited close preserves preceding comment
@@ -1093,17 +1085,12 @@ $ [| x /* comment */ |] $
   (content
     (equation
       body: (math
-        (math_space)
         (math_delimited
           open: (math_delimiter)
           body: (math
-            (math_space)
-            (math_text))
-          (math_space)
+            (math_letter))
           (block_comment)
-          (math_space)
-          close: (math_delimiter)))
-      (math_space))))
+          close: (math_delimiter))))))
 
 ==================
 Math comments are trivia in spaced gaps
@@ -1123,35 +1110,26 @@ $[a /* comment */ ]$
   (content
     (equation
       body: (math
-        (math_text)
-        (math_space)
+        (math_letter)
         (block_comment)
-        (math_space)
-        (math_text)))
+        (math_letter)))
     (equation
       body: (math
         (math_attachment
-          base: (math_text)
-          (math_space)
+          base: (math_letter)
           (block_comment)
-          (math_space)
-          subscript: (math_text))))
+          subscript: (math_letter))))
     (equation
       body: (math
         (math_fraction
-          numerator: (math_text)
-          (math_space)
+          numerator: (math_letter)
           (block_comment)
-          (math_space)
-          (math_space)
-          denominator: (math_text))))
+          denominator: (math_letter))))
     (equation
       body: (math
         (math_root
-          (math_space)
           (block_comment)
-          (math_space)
-          radicand: (math_text))))
+          radicand: (math_letter))))
     (equation
       body: (math
         (math_call
@@ -1159,30 +1137,24 @@ $[a /* comment */ ]$
           arguments: (math_arguments
             (math_named_argument
               name: (identifier)
-              (math_space)
               (block_comment)
-              (math_space)
               value: (math_sequence
-                (math_text)))))))
+                (math_letter)))))))
     (equation
       body: (math
         (math_delimited
           open: (math_delimiter)
           body: (math
-            (math_text))
-          (math_space)
+            (math_letter))
           (block_comment)
-          (math_space)
           close: (math_delimiter))))
     (equation
       body: (math
         (math_delimited
           open: (math_delimiter)
           body: (math
-            (math_text))
-          (math_space)
+            (math_letter))
           (block_comment)
-          (math_space)
           close: (math_delimiter))))))
 
 ==================
@@ -1209,87 +1181,71 @@ $[| x | y |]$
   (content
     (equation
       body: (math
-        (math_text)
+        (math_letter)
         (math_text)))
     (equation
       body: (math
-        (math_text)
-        (math_space)
+        (math_letter)
         (math_text)))
     (equation
       body: (math
+        (math_letter)
         (math_text)
-        (math_text)
-        (math_text)))
+        (math_letter)))
     (equation
       body: (math
+        (math_letter)
         (math_text)
-        (math_space)
-        (math_text)
-        (math_space)
-        (math_text)))
+        (math_letter)))
     (equation
       body: (math
-        (math_text)
+        (math_letter)
         (math_shorthand)
-        (math_text)))
+        (math_letter)))
     (equation
       body: (math
-        (math_text)
-        (math_space)
+        (math_letter)
         (math_shorthand)
-        (math_space)
+        (math_letter)))
+    (equation
+      body: (math
+        (math_letter)
         (math_text)))
     (equation
       body: (math
-        (math_text)
-        (math_space)
-        (math_text)))
-    (equation
-      body: (math
-        (math_text)
-        (math_space)
+        (math_letter)
         (math_attachment
           base: (math_text)
-          subscript: (math_text))))
+          subscript: (math_letter))))
     (equation
       body: (math
-        (math_text)
-        (math_space)
+        (math_letter)
         (math_fraction
           numerator: (math_text)
-          denominator: (math_text))))
+          denominator: (math_letter))))
     (equation
       body: (math
-        (math_text)
-        (math_space)
+        (math_letter)
         (math_text)))
     (equation
       body: (math
-        (math_text)
-        (math_space)
+        (math_letter)
         (math_text)))
     (equation
       body: (math
         (math_delimited
           open: (math_delimiter)
           body: (math
-            (math_space)
-            (math_text))
-          (math_space)
+            (math_letter))
           close: (math_delimiter))))
     (equation
       body: (math
         (math_delimited
           open: (math_delimiter)
           body: (math
-            (math_space)
+            (math_letter)
             (math_text)
-            (math_space)
-            (math_text)
-            (math_space)
-            (math_text))
-          (math_space)
+            (math_letter))
           close: (math_delimiter))))))
 
 ==================
@@ -1315,14 +1271,12 @@ $score_(#metric.bucket) / (a+b)$
                     object: (identifier)
                     field: (identifier))))
               close: (math_delimiter)))
-          (math_space)
-          (math_space)
           denominator: (math_group
             open: (math_delimiter)
             body: (math
+              (math_letter)
               (math_text)
-              (math_text)
-              (math_text))
+              (math_letter))
             close: (math_delimiter)))))))
 
 ==================
@@ -1337,13 +1291,11 @@ $ foo.bar_baz $
   (content
     (equation
       body: (math
-        (math_space)
         (math_attachment
           base: (math_field_access
             object: (math_identifier)
             field: (math_identifier))
-          subscript: (math_identifier)))
-      (math_space))))
+          subscript: (math_identifier))))))
 
 ==================
 Math text attachment base uses codepoint recovery
@@ -1357,13 +1309,11 @@ $ 👩‍🔬_x $
   (content
     (equation
       body: (math
-        (math_space)
         (math_text)
         (math_text)
         (math_attachment
           base: (math_text)
-          subscript: (math_text)))
-      (math_space))))
+          subscript: (math_letter))))))
 
 ==================
 Math spaced attachment operators
@@ -1380,25 +1330,19 @@ $x' _ y$
     (equation
       body: (math
         (math_attachment
-          base: (math_text)
-          (math_space)
-          (math_space)
-          subscript: (math_text))))
+          base: (math_letter)
+          subscript: (math_letter))))
     (equation
       body: (math
         (math_attachment
-          base: (math_text)
-          (math_space)
-          (math_space)
-          superscript: (math_text))))
+          base: (math_letter)
+          superscript: (math_letter))))
     (equation
       body: (math
         (math_attachment
-          base: (math_text)
+          base: (math_letter)
           primes: (math_primes)
-          (math_space)
-          (math_space)
-          subscript: (math_text))))))
+          subscript: (math_letter))))))
 
 ==================
 Math attachment stop sets
@@ -1418,67 +1362,53 @@ $ a'! $
   (content
     (equation
       body: (math
-        (math_space)
         (math_attachment
-          base: (math_text)
-          subscript: (math_text)
-          superscript: (math_text)))
-      (math_space))
+          base: (math_letter)
+          subscript: (math_letter)
+          superscript: (math_letter))))
     (equation
       body: (math
-        (math_space)
         (math_attachment
-          base: (math_text)
-          superscript: (math_text)
-          subscript: (math_text)))
-      (math_space))
+          base: (math_letter)
+          superscript: (math_letter)
+          subscript: (math_letter))))
     (equation
       body: (math
-        (math_space)
         (math_attachment
-          base: (math_text)
+          base: (math_letter)
           subscript: (math_attachment
-            base: (math_text)
-            subscript: (math_text))))
-      (math_space))
+            base: (math_letter)
+            subscript: (math_letter)))))
     (equation
       body: (math
-        (math_space)
         (math_attachment
-          base: (math_text)
+          base: (math_letter)
           superscript: (math_attachment
-            base: (math_text)
-            superscript: (math_text))))
-      (math_space))
+            base: (math_letter)
+            superscript: (math_letter)))))
     (equation
       body: (math
-        (math_space)
         (math_attachment
           base: (math_attachment
-            base: (math_text)
+            base: (math_letter)
             superscript: (math_attachment
-              base: (math_text)
+              base: (math_letter)
               primes: (math_primes))
-            subscript: (math_text))
-          superscript: (math_text)))
-      (math_space))
+            subscript: (math_letter))
+          superscript: (math_letter))))
     (equation
       body: (math
-        (math_space)
         (math_attachment
-          base: (math_text)
+          base: (math_letter)
           primes: (math_primes)
-          subscript: (math_text)
-          superscript: (math_text)))
-      (math_space))
+          subscript: (math_letter)
+          superscript: (math_letter))))
     (equation
       body: (math
-        (math_space)
         (math_factorial
           operand: (math_attachment
-            base: (math_text)
-            primes: (math_primes))))
-      (math_space))))
+            base: (math_letter)
+            primes: (math_primes)))))))
 
 ==================
 Math trailing space is not attachment
@@ -1492,8 +1422,7 @@ $x $
   (content
     (equation
       body: (math
-        (math_text))
-      (math_space))))
+        (math_letter)))))
 
 ==================
 Heading and list comment boundaries
@@ -1583,7 +1512,6 @@ $ vec(#(x + 1)) $
   (content
     (equation
       body: (math
-        (math_space)
         (math_call
           function: (math_identifier)
           arguments: (math_arguments
@@ -1592,8 +1520,7 @@ $ vec(#(x + 1)) $
                 body: (parenthesized_expression
                   expression: (binary_expression
                     left: (identifier)
-                    right: (integer))))))))
-      (math_space))))
+                    right: (integer)))))))))))
 
 ==================
 Spaced content block after control-flow header is body
@@ -1650,16 +1577,12 @@ Parenthesized call accepts multiple content blocks
   (content
     (embedded_code
       body: (function_call
-        function: (function_call
-          function: (function_call
-            function: (identifier)
-            arguments: (arguments
-              (identifier)))
-          arguments: (arguments
-            (content_block
-              body: (content
-                (text)))))
+        function: (identifier)
         arguments: (arguments
+          (identifier)
+          (content_block
+            body: (content
+              (text)))
           (content_block
             body: (content
               (text))))))))
@@ -1767,13 +1690,11 @@ Immediate if content block remains call argument
   (content)
   (ERROR
     (function_call
-      function: (function_call
-        function: (identifier)
-        arguments: (arguments
-          (content_block
-            body: (content
-              (text)))))
+      function: (identifier)
       arguments: (arguments
+        (content_block
+          body: (content
+            (text)))
         (content_block
           body: (content
             (text)))))
@@ -1791,11 +1712,9 @@ Immediate while content block remains call argument
   (content)
   (ERROR
     (function_call
-      function: (function_call
-        function: (identifier)
-        arguments: (arguments
-          (identifier)))
+      function: (identifier)
       arguments: (arguments
+        (identifier)
         (content_block
           body: (content
             (text)))))
@@ -1880,7 +1799,7 @@ Set rule does not accept trailing content arguments
             value: (numeric
               value: (integer)
               unit: (unit)))))
-        body: (MISSING ";"))
+      body: (MISSING ";"))
     (bracketed_text
       (text))))
 
@@ -2301,24 +2220,20 @@ Real-world boundary regression cases
     (line_comment)
     (embedded_code
       body: (function_call
-        function: (function_call
-          function: (identifier)
-          arguments: (arguments
-            (string
-              (string_content))))
+        function: (identifier)
         arguments: (arguments
+          (string
+            (string_content))
           (content_block
             body: (content
               (text))))))
     (text)
     (embedded_code
       body: (function_call
-        function: (function_call
-          function: (identifier)
-          arguments: (arguments
-            (string
-              (string_content))))
+        function: (identifier)
         arguments: (arguments
+          (string
+            (string_content))
           (content_block
             body: (content
               (text))))))
@@ -2597,11 +2512,9 @@ Immediate for content block remains call argument
   (ERROR
     (identifier)
     (function_call
-      function: (function_call
-        function: (identifier)
-        arguments: (arguments
-          (identifier)))
+      function: (identifier)
       arguments: (arguments
+        (identifier)
         (content_block
           body: (content
             (text)))))
@@ -2932,32 +2845,27 @@ $a |]$
   (content
     (equation
       body: (math
-        (math_text)
-        (math_space)
+        (math_letter)
         (math_text)))
     (equation
       body: (math
-        (math_text)
-        (math_space)
+        (math_letter)
         (math_shorthand)))
     (equation
       body: (math
-        (math_text)
-        (math_space)
+        (math_letter)
         (math_attachment
           base: (math_text)
-          subscript: (math_text))))
+          subscript: (math_letter))))
     (equation
       body: (math
-        (math_text)
-        (math_space)
+        (math_letter)
         (math_fraction
           numerator: (math_text)
-          denominator: (math_text))))
+          denominator: (math_letter))))
     (equation
       body: (math
-        (math_text)
-        (math_space)
+        (math_letter)
         (math_shorthand)))))
 
 ==================
@@ -2976,50 +2884,44 @@ $f(a ,)$
     (equation
       body: (math
         (math_application
-          function: (math_text)
+          function: (math_letter)
           argument: (math_delimited
             open: (math_delimiter)
             body: (math
+              (math_letter)
               (math_text)
-              (math_text)
-              (math_space)
-              (math_text))
+              (math_letter))
             close: (math_delimiter)))))
     (equation
       body: (math
         (math_application
-          function: (math_text)
+          function: (math_letter)
           argument: (math_delimited
             open: (math_delimiter)
             body: (math
+              (math_letter)
               (math_text)
-              (math_space)
-              (math_text)
-              (math_space)
-              (math_text))
+              (math_letter))
             close: (math_delimiter)))))
     (equation
       body: (math
         (math_application
-          function: (math_text)
+          function: (math_letter)
           argument: (math_delimited
             open: (math_delimiter)
             body: (math
+              (math_letter)
               (math_text)
-              (math_space)
-              (math_text)
-              (math_space)
-              (math_text))
+              (math_letter))
             close: (math_delimiter)))))
     (equation
       body: (math
         (math_application
-          function: (math_text)
+          function: (math_letter)
           argument: (math_delimited
             open: (math_delimiter)
             body: (math
-              (math_text)
-              (math_space)
+              (math_letter)
               (math_text))
             close: (math_delimiter)))))))
 
@@ -3042,40 +2944,34 @@ $mat(a ,)$
           function: (math_identifier)
           arguments: (math_arguments
             (math_sequence
-              (math_text))
-            (math_space)
+              (math_letter))
             (math_sequence
-              (math_text))))))
+              (math_letter))))))
     (equation
       body: (math
         (math_call
           function: (math_identifier)
           arguments: (math_arguments
             (math_sequence
-              (math_text))
-            (math_space)
-            (math_space)
+              (math_letter))
             (math_sequence
-              (math_text))))))
+              (math_letter))))))
     (equation
       body: (math
         (math_call
           function: (math_identifier)
           arguments: (math_arguments
             (math_sequence
-              (math_text))
-            (math_space)
-            (math_space)
+              (math_letter))
             (math_sequence
-              (math_text))))))
+              (math_letter))))))
     (equation
       body: (math
         (math_call
           function: (math_identifier)
           arguments: (math_arguments
             (math_sequence
-              (math_text))
-            (math_space)))))))
+              (math_letter))))))))
 
 ==================
 Review matrix large decimal integer recovery
@@ -3177,49 +3073,37 @@ $(a )$
   (content
     (equation
       body: (math
-        (math_text)
-        (math_space)
+        (math_letter)
         (block_comment)
-        (math_space)
-        (math_text)))
+        (math_letter)))
     (equation
       body: (math
         (math_attachment
-          base: (math_text)
-          (math_space)
+          base: (math_letter)
           (block_comment)
-          (math_space)
-          subscript: (math_text))))
+          subscript: (math_letter))))
     (equation
       body: (math
         (math_fraction
-          numerator: (math_text)
-          (math_space)
+          numerator: (math_letter)
           (block_comment)
-          (math_space)
-          (math_space)
-          denominator: (math_text))))
+          denominator: (math_letter))))
     (equation
       body: (math
         (math_root
-          (math_space)
           (block_comment)
-          (math_space)
-          radicand: (math_text))))
+          radicand: (math_letter))))
     (equation
       body: (math
+        (math_letter)
         (math_text)
-        (math_space)
-        (math_text)
-        (math_space)
-        (math_text)))
+        (math_letter)))
     (equation
       body: (math
         (math_delimited
           open: (math_delimiter)
           body: (math
-            (math_text))
-          (math_space)
+            (math_letter))
           close: (math_delimiter))))))
 
 ==================
@@ -3487,21 +3371,17 @@ Nested metric content block remains uninterrupted
   (content
     (embedded_code
       body: (function_call
-        function: (function_call
-          function: (identifier)
-          arguments: (arguments))
+        function: (identifier)
         arguments: (arguments
           (content_block
             body: (content
               (embedded_code
                 body: (function_call
-                  function: (function_call
-                    function: (identifier)
-                    arguments: (arguments
-                      (named_argument
-                        name: (identifier)
-                        value: (integer))))
+                  function: (identifier)
                   arguments: (arguments
+                    (named_argument
+                      name: (identifier)
+                      value: (integer))
                     (content_block
                       body: (content
                         (text))))))
@@ -3520,13 +3400,9 @@ Nested metric content block remains uninterrupted
                         (text))))))
               (equation
                 body: (math
-                  (math_space)
+                  (math_letter)
                   (math_text)
-                  (math_space)
-                  (math_text)
-                  (math_space)
-                  (math_text))
-                (math_space)))))))))
+                  (math_letter))))))))))
 
 ==================
 Preface followed by sibling sections
@@ -3565,6 +3441,47 @@ Body B.
       body: (heading_body
         (text)))
     body: (content)))
+
+==================
+Emoji text in sibling sections
+==================
+
+= Status 😀
+Ready ✅ and reviewed 🔎.
+
+== Notes 📝
+Emoji stay in text 🎯.
+
+= Done 🚀
+Ship it ✨.
+
+---
+
+(source_file
+  (content)
+  (section
+    heading: (heading
+      marker: (heading_marker)
+      body: (heading_body
+        (text)))
+    body: (content
+      (text)
+      (parbreak)))
+  (section
+    heading: (heading
+      marker: (heading_marker)
+      body: (heading_body
+        (text)))
+    body: (content
+      (text)
+      (parbreak)))
+  (section
+    heading: (heading
+      marker: (heading_marker)
+      body: (heading_body
+        (text)))
+    body: (content
+      (text))))
 
 ==================
 Dynamic dictionary keys

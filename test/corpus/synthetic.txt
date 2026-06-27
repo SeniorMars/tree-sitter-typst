@@ -1,7 +1,6 @@
 ==================
 Complex dashboard fixture
 ==================
-
 // Synthetic parser fixture inspired by real-world package code.
 #import "@preview/cetz:0.5.2": canvas, draw
 #import "helpers.typ": palette as base_palette
@@ -298,8 +297,8 @@ https://typst.app/docs, references like @metrics, and inline code such as
 ---
 
 (source_file
+  (line_comment)
   (content
-    (line_comment)
     (embedded_code
       body: (module_import
         source: (string
@@ -678,40 +677,36 @@ https://typst.app/docs, references like @metrics, and inline code such as
                   name: (identifier)
                   value: (identifier)))))
           body: (function_call
-            function: (function_call
-              function: (identifier)
-              arguments: (arguments
-                (named_argument
-                  name: (identifier)
-                  value: (numeric
-                    value: (integer)
-                    unit: (unit)))
-                (named_argument
-                  name: (identifier)
-                  value: (numeric
-                    value: (integer)
-                    unit: (unit)))
-                (named_argument
-                  name: (identifier)
-                  value: (binary_expression
-                    left: (field_access
-                      object: (identifier)
-                      field: (identifier))
-                    right: (numeric
-                      value: (float)
-                      unit: (unit))))))
+            function: (identifier)
             arguments: (arguments
+              (named_argument
+                name: (identifier)
+                value: (numeric
+                  value: (integer)
+                  unit: (unit)))
+              (named_argument
+                name: (identifier)
+                value: (numeric
+                  value: (integer)
+                  unit: (unit)))
+              (named_argument
+                name: (identifier)
+                value: (binary_expression
+                  left: (field_access
+                    object: (identifier)
+                    field: (identifier))
+                  right: (numeric
+                    value: (float)
+                    unit: (unit))))
               (content_block
                 body: (content
                   (embedded_code
                     body: (function_call
-                      function: (function_call
-                        function: (identifier)
-                        arguments: (arguments
-                          (named_argument
-                            name: (identifier)
-                            value: (integer))))
+                      function: (identifier)
                       arguments: (arguments
+                        (named_argument
+                          name: (identifier)
+                          value: (integer))
                         (content_block
                           body: (content
                             (embedded_code
@@ -783,7 +778,6 @@ https://typst.app/docs, references like @metrics, and inline code such as
                             arguments: (arguments))))))
                   (equation
                     body: (math
-                      (math_space)
                       (math_attachment
                         base: (math_identifier)
                         subscript: (math_delimited
@@ -794,14 +788,11 @@ https://typst.app/docs, references like @metrics, and inline code such as
                                 object: (identifier)
                                 field: (identifier))))
                           close: (math_delimiter)))
-                      (math_space)
                       (math_text)
-                      (math_space)
                       (embedded_code
                         body: (field_access
                           object: (identifier)
-                          field: (identifier))))
-                    (math_space)))))))))
+                          field: (identifier))))))))))))
     (embedded_code
       body: (let_binding
         name: (identifier)
@@ -1213,32 +1204,30 @@ https://typst.app/docs, references like @metrics, and inline code such as
                           (string
                             (string_content))))))))))
           body: (function_call
-            function: (function_call
-              function: (identifier)
-              arguments: (arguments
-                (named_argument
-                  name: (identifier)
-                  value: (identifier))
-                (named_argument
-                  name: (identifier)
-                  value: (binary_expression
-                    left: (numeric
-                      value: (float)
-                      unit: (unit))
-                    right: (field_access
-                      object: (identifier)
-                      field: (identifier))))
-                (named_argument
-                  name: (identifier)
-                  value: (numeric
-                    value: (integer)
-                    unit: (unit)))
-                (named_argument
-                  name: (identifier)
-                  value: (numeric
-                    value: (integer)
-                    unit: (unit)))))
+            function: (identifier)
             arguments: (arguments
+              (named_argument
+                name: (identifier)
+                value: (identifier))
+              (named_argument
+                name: (identifier)
+                value: (binary_expression
+                  left: (numeric
+                    value: (float)
+                    unit: (unit))
+                  right: (field_access
+                    object: (identifier)
+                    field: (identifier))))
+              (named_argument
+                name: (identifier)
+                value: (numeric
+                  value: (integer)
+                  unit: (unit)))
+              (named_argument
+                name: (identifier)
+                value: (numeric
+                  value: (integer)
+                  unit: (unit)))
               (content_block
                 body: (content
                   (embedded_code
@@ -1267,56 +1256,52 @@ https://typst.app/docs, references like @metrics, and inline code such as
             name: (identifier)
             default: (boolean)))
         value: (function_call
-          function: (function_call
-            function: (identifier)
-            arguments: (arguments
-              (named_argument
-                name: (identifier)
-                value: (numeric
-                  value: (integer)
-                  unit: (unit)))
-              (named_argument
-                name: (identifier)
-                value: (dictionary
-                  (dictionary_entry
-                    key: (identifier)
-                    value: (numeric
-                      value: (integer)
-                      unit: (unit)))
-                  (dictionary_entry
-                    key: (identifier)
-                    value: (numeric
-                      value: (integer)
-                      unit: (unit)))))
-              (named_argument
-                name: (identifier)
-                value: (binary_expression
-                  left: (function_call
-                    function: (field_access
-                      object: (identifier)
-                      field: (identifier))
-                    arguments: (arguments
-                      (numeric
-                        value: (integer)
-                        unit: (unit))))
-                  right: (numeric
-                    value: (float)
-                    unit: (unit))))))
+          function: (identifier)
           arguments: (arguments
+            (named_argument
+              name: (identifier)
+              value: (numeric
+                value: (integer)
+                unit: (unit)))
+            (named_argument
+              name: (identifier)
+              value: (dictionary
+                (dictionary_entry
+                  key: (identifier)
+                  value: (numeric
+                    value: (integer)
+                    unit: (unit)))
+                (dictionary_entry
+                  key: (identifier)
+                  value: (numeric
+                    value: (integer)
+                    unit: (unit)))))
+            (named_argument
+              name: (identifier)
+              value: (binary_expression
+                left: (function_call
+                  function: (field_access
+                    object: (identifier)
+                    field: (identifier))
+                  arguments: (arguments
+                    (numeric
+                      value: (integer)
+                      unit: (unit))))
+                right: (numeric
+                  value: (float)
+                  unit: (unit))))
             (content_block
               body: (content
                 (embedded_code
                   body: (function_call
-                    function: (function_call
-                      function: (identifier)
-                      arguments: (arguments
-                        (named_argument
-                          name: (identifier)
-                          value: (identifier))
-                        (named_argument
-                          name: (identifier)
-                          value: (identifier))))
+                    function: (identifier)
                     arguments: (arguments
+                      (named_argument
+                        name: (identifier)
+                        value: (identifier))
+                      (named_argument
+                        name: (identifier)
+                        value: (identifier))
                       (content_block
                         body: (content
                           (embedded_code
@@ -1398,21 +1383,19 @@ https://typst.app/docs, references like @metrics, and inline code such as
                     value: (integer)
                     unit: (unit)))
                 (function_call
-                  function: (function_call
-                    function: (identifier)
-                    arguments: (arguments
-                      (named_argument
-                        name: (identifier)
-                        value: (function_call
-                          function: (identifier)
-                          arguments: (arguments
-                            (integer))))
-                      (named_argument
-                        name: (identifier)
-                        value: (numeric
-                          value: (integer)
-                          unit: (unit)))))
+                  function: (identifier)
                   arguments: (arguments
+                    (named_argument
+                      name: (identifier)
+                      value: (function_call
+                        function: (identifier)
+                        arguments: (arguments
+                          (integer))))
+                    (named_argument
+                      name: (identifier)
+                      value: (numeric
+                        value: (integer)
+                        unit: (unit)))
                     (content_block
                       body: (content
                         (strong
@@ -1425,15 +1408,13 @@ https://typst.app/docs, references like @metrics, and inline code such as
                         (embedded_code
                           body: (identifier))))))
                 (function_call
-                  function: (function_call
-                    function: (identifier)
-                    arguments: (arguments
-                      (named_argument
-                        name: (identifier)
-                        value: (numeric
-                          value: (integer)
-                          unit: (unit)))))
+                  function: (identifier)
                   arguments: (arguments
+                    (named_argument
+                      name: (identifier)
+                      value: (numeric
+                        value: (integer)
+                        unit: (unit)))
                     (content_block
                       body: (content
                         (text)
@@ -1510,24 +1491,22 @@ https://typst.app/docs, references like @metrics, and inline code such as
                           (embedded_code
                             body: (identifier)))))))))
             (function_call
-              function: (function_call
-                function: (identifier)
-                arguments: (arguments
-                  (named_argument
-                    name: (identifier)
-                    value: (numeric
-                      value: (integer)
-                      unit: (unit)))
-                  (named_argument
-                    name: (identifier)
-                    value: (binary_expression
-                      left: (field_access
-                        object: (identifier)
-                        field: (identifier))
-                      right: (numeric
-                        value: (float)
-                        unit: (unit))))))
+              function: (identifier)
               arguments: (arguments
+                (named_argument
+                  name: (identifier)
+                  value: (numeric
+                    value: (integer)
+                    unit: (unit)))
+                (named_argument
+                  name: (identifier)
+                  value: (binary_expression
+                    left: (field_access
+                      object: (identifier)
+                      field: (identifier))
+                    right: (numeric
+                      value: (float)
+                      unit: (unit))))
                 (content_block
                   body: (content
                     (strong
@@ -1620,21 +1599,19 @@ https://typst.app/docs, references like @metrics, and inline code such as
                         body: (content
                           (embedded_code
                             body: (function_call
-                              function: (function_call
-                                function: (identifier)
-                                arguments: (arguments
-                                  (string
-                                    (string_content))
-                                  (named_argument
-                                    name: (identifier)
-                                    value: (content_block
-                                      body: (content
-                                        (text)
-                                        (embedded_code
-                                          body: (field_access
-                                            object: (identifier)
-                                            field: (identifier))))))))
+                              function: (identifier)
                               arguments: (arguments
+                                (string
+                                  (string_content))
+                                (named_argument
+                                  name: (identifier)
+                                  value: (content_block
+                                    body: (content
+                                      (text)
+                                      (embedded_code
+                                        body: (field_access
+                                          object: (identifier)
+                                          field: (identifier))))))
                                 (content_block
                                   body: (content
                                     (text)
@@ -1649,7 +1626,6 @@ https://typst.app/docs, references like @metrics, and inline code such as
                                     (text))))))
                           (equation
                             body: (math
-                              (math_space)
                               (math_attachment
                                 base: (math_identifier)
                                 subscript: (math_delimited
@@ -1660,9 +1636,7 @@ https://typst.app/docs, references like @metrics, and inline code such as
                                         object: (identifier)
                                         field: (identifier))))
                                   close: (math_delimiter)))
-                              (math_space)
                               (math_text)
-                              (math_space)
                               (math_fraction
                                 numerator: (embedded_code
                                   body: (function_call
@@ -1672,15 +1646,12 @@ https://typst.app/docs, references like @metrics, and inline code such as
                                         field: (identifier))
                                       field: (identifier))
                                     arguments: (arguments)))
-                                (math_space)
-                                (math_space)
                                 denominator: (embedded_code
                                   body: (function_call
                                     function: (field_access
                                       object: (identifier)
                                       field: (identifier))
-                                    arguments: (arguments)))))
-                            (math_space))))
+                                    arguments: (arguments))))))))
                       (spread_argument
                         value: (identifier))))))))
           body: (function_call
@@ -1756,17 +1727,15 @@ https://typst.app/docs, references like @metrics, and inline code such as
       (parbreak)
       (embedded_code
         body: (function_call
-          function: (function_call
-            function: (identifier)
-            arguments: (arguments
-              (string
-                (string_content))
-              (named_argument
-                name: (identifier)
-                value: (content_block
-                  body: (content
-                    (text))))))
+          function: (identifier)
           arguments: (arguments
+            (string
+              (string_content))
+            (named_argument
+              name: (identifier)
+              value: (content_block
+                body: (content
+                  (text))))
             (content_block
               body: (content
                 (text)
@@ -1786,28 +1755,22 @@ https://typst.app/docs, references like @metrics, and inline code such as
                     (text)
                     (equation
                       body: (math
-                        (math_space)
                         (math_fraction
                           numerator: (math_attachment
                             base: (math_identifier)
-                            subscript: (math_text)
+                            subscript: (math_letter)
                             superscript: (math_number))
-                          (math_space)
-                          (math_space)
                           denominator: (math_group
                             open: (math_delimiter)
                             body: (math
                               (math_number)
-                              (math_space)
                               (math_text)
-                              (math_space)
                               (math_attachment
                                 base: (math_identifier)
                                 subscript: (math_attachment
-                                  base: (math_text)
+                                  base: (math_letter)
                                   primes: (math_primes))))
-                            close: (math_delimiter))))
-                      (math_space))
+                            close: (math_delimiter)))))
                     (text)))
                 (parbreak)
                 (term_list_item
@@ -1893,36 +1856,28 @@ https://typst.app/docs, references like @metrics, and inline code such as
       (parbreak)
       (embedded_code
         body: (function_call
-          function: (function_call
-            function: (identifier)
-            arguments: (arguments
-              (string
-                (string_content))))
+          function: (identifier)
           arguments: (arguments
+            (string
+              (string_content))
             (content_block
               body: (content
                 (text)
                 (equation
                   body: (math
-                    (math_space)
                     (math_attachment
-                      base: (math_text)
-                      subscript: (math_text)
-                      superscript: (math_text))
-                    (math_space)
+                      base: (math_letter)
+                      subscript: (math_letter)
+                      superscript: (math_letter))
                     (math_text)
-                    (math_space)
                     (math_fraction
                       numerator: (math_attachment
-                        base: (math_text)
+                        base: (math_letter)
                         primes: (math_primes)
-                        subscript: (math_text))
-                      (math_space)
-                      (math_space)
+                        subscript: (math_letter))
                       denominator: (math_attachment
-                        base: (math_text)
-                        superscript: (math_text))))
-                  (math_space))
+                        base: (math_letter)
+                        superscript: (math_letter)))))
                 (text)
                 (text))))))
       (parbreak)
@@ -1948,13 +1903,11 @@ https://typst.app/docs, references like @metrics, and inline code such as
             body: (content
               (embedded_code
                 body: (function_call
-                  function: (function_call
-                    function: (identifier)
-                    arguments: (arguments
-                      (named_argument
-                        name: (identifier)
-                        value: (integer))))
+                  function: (identifier)
                   arguments: (arguments
+                    (named_argument
+                      name: (identifier)
+                      value: (integer))
                     (content_block
                       body: (content
                         (embedded_code

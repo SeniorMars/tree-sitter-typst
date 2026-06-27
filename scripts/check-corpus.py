@@ -19,6 +19,11 @@ for path in sorted((root / 'test/corpus').glob('*.txt')):
             continue
         if in_expected:
             structural = quoted.sub('""', line)
+            if depth != 0 and '(source_file' in structural:
+                raise SystemExit(
+                    f'{path}:{lineno}: nested source_file in expected tree; '
+                    'injected trees do not belong in parser corpus fixtures'
+                )
             depth += structural.count('(') - structural.count(')')
             if depth < 0:
                 raise SystemExit(f'{path}:{lineno}: unexpected closing parenthesis')
