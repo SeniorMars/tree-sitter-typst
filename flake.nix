@@ -1,31 +1,58 @@
- {
+{
+  description = "Tree-sitter grammar for Typst";
+
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    flake-utils.url = "github:numtide/flake-utils";
-    flake-compat = {
-      url = "github:edolstra/flake-compat";
-      flake = false;
-    };
   };
-  outputs = { self, nixpkgs, flake-utils, ... }@inputs:
+
+  outputs =
+    { self, nixpkgs }:
     let
-      defaultPackage = pkgs: pkgs.callPackage (nixpkgs + "/pkgs/development/tools/parsing/tree-sitter/grammar.nix") { } {
-        language = "typst";
-        src = ./.;
-        inherit (pkgs.tree-sitter) version;
-      };
+      systems = [
+        "x86_64-linux"
+        "aarch64-linux"
+        "x86_64-darwin"
+        "aarch64-darwin"
+      ];
+
+      forAllSystems = nixpkgs.lib.genAttrs systems;
     in
-    (let pkgs = import nixpkgs { }; in { defaultPackage = defaultPackage pkgs; }) // (flake-utils.lib.eachDefaultSystem
-      (system:
-        let pkgs = import nixpkgs { inherit system; }; in
+    {
+      packages = forAllSystems (
+        system:
+        let
+          pkgs = import nixpkgs { inherit system; };
+        in
+        rec {
+          tree-sitter-typst = pkgs.callPackage ./nix/package.nix { };
+          default = tree-sitter-typst;
+        }
+      );
+
+      defaultPackage = forAllSystems (system: self.packages.${system}.default);
+
+      devShells = forAllSystems (
+        system:
+        let
+          pkgs = import nixpkgs { inherit system; };
+          python = pkgs.python3.withPackages (ps: [ ps.regex ]);
+        in
         {
-          defaultPackage = defaultPackage pkgs;
-          devShell = pkgs.mkShell {
-            nativeBuildInputs = with pkgs; [
+          default = pkgs.mkShell {
+            packages = with pkgs; [
+              cargo
+              cmake
+              gnumake
               nodejs
-              nodePackages.node-gyp
+              pkg-config
+              python
+              rustc
               tree-sitter
             ];
           };
-        }));
+        }
+      );
+
+      devShell = forAllSystems (system: self.devShells.${system}.default);
+    };
 }

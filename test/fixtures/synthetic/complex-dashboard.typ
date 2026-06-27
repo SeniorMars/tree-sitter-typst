@@ -1,0 +1,292 @@
+// Synthetic parser fixture inspired by real-world package code.
+#import "@preview/cetz:0.5.2": canvas, draw
+#import "helpers.typ": palette as base_palette
+#set page(paper: "us-letter", margin: (x: 42pt, y: 48pt))
+#set text(font: "Libertinus Serif", size: 10pt)
+#show heading.where(level: 1): set text(size: 16pt, weight: "bold")
+#show raw: set text(font: "DejaVu Sans Mono", size: 8pt)
+#let palette = (
+  high: rgb("2f6f9f"),
+  medium: rgb("d9862c"),
+  low: gray.darken(25%),
+  accent: base_palette.at("accent", default: blue),
+)
+#let samples = (
+  (name: "alpha", weight: 0.72, points: ((0, 1), (2, 3), (5, 8))),
+  (name: "beta", weight: 0.41, points: ((1, 1), (3, 5), (8, 13))),
+  (name: "gamma", weight: 0.18, points: ((2, 1), (4, 4), (9, 6))),
+)
+#let classify(weight) = {
+  if weight > 0.66 {
+    return "high"
+  } else if weight > 0.30 {
+    return "medium"
+  }
+  return "low"
+}
+#let normalize(item, scale: 1pt, debug: false) = {
+  let total = 0pt
+  let rows = ()
+  for (i, point) in item.points {
+    let (x, y) = point
+    let value = (x + y) * scale
+    total += value
+    rows.push((index: i, pos: point, value: value))
+  }
+  let bucket = classify(item.weight)
+  if debug and total > 20pt {
+    rows.push((index: rows.len(), pos: (0, 0), value: total / 2))
+  }
+  return (
+    name: item.name,
+    bucket: bucket,
+    total: total,
+    rows: rows,
+    color: palette.at(bucket, default: palette.low),
+  )
+}
+#let metric-card(item, scale: 1pt, debug: false) = {
+  let metric = normalize(item, scale: scale, debug: debug)
+  block(width: 100%, inset: 8pt, stroke: metric.color + .6pt)[
+    #heading(level: 3)[#upper(metric.name)]
+    #table(
+      columns: (auto, 1fr, auto),
+      [Index], [Point], [Value],
+      ..metric.rows.map(row => (
+        [#row.index],
+        [#raw(repr(row.pos))],
+        [#row.value],
+      )).flatten(),
+    )
+    $ score_(#metric.bucket) = #metric.total $
+  ]
+}
+#let dashboard(items, scale: 1pt, debug: false) = {
+  let rendered = ()
+  for item in items {
+    rendered.push(metric-card(item, scale: scale, debug: debug))
+  }
+  return stack(dir: ttb, spacing: 8pt, ..rendered)
+}
+
+#import "components.typ": (
+  docs-figure,
+  docs-table as accessible-table,
+  warning-box,
+)
+
+#let default-profile = (
+  title: [Quarterly Access Report],
+  authors: ("Ari", "Bo", "Chen"),
+  outline: include "OUTLINE.typ",
+  metadata: (: ..palette, mode: "synthetic", revision: 7),
+)
+
+#let status-icon(done, blocked: false) = {
+  if blocked {
+    return [blocked]
+  } else if done {
+    return [done]
+  }
+  return [open]
+}
+
+#let audit-events = (
+  (
+    phase: "intake",
+    owner: "Ari",
+    done: true,
+    tasks: ("source map", "heading outline", "alt text"),
+    checks: (syntax: true, semantics: true, exports: false),
+  ),
+  (
+    phase: "review",
+    owner: "Bo",
+    done: false,
+    tasks: ("tables", "figures", "math notes"),
+    checks: (syntax: true, semantics: false, exports: false),
+  ),
+  (
+    phase: "publish",
+    owner: "Chen",
+    done: false,
+    tasks: ("metadata", "links", "attachments"),
+    checks: (syntax: false, semantics: false, exports: false),
+  ),
+)
+
+#let render-schedule(items, caption: none) = {
+  let rows = ()
+  for (index, item) in items {
+    let finished = item.checks.syntax and item.checks.semantics
+    rows.push((
+      [#index],
+      [#item.phase],
+      [#item.owner],
+      [#status-icon(item.done, blocked: not finished)],
+      [#item.tasks.join(", ")],
+    ))
+  }
+
+  figure(
+    table(
+      columns: (auto, auto, auto, auto, 1fr),
+      inset: 4pt,
+      align: (right, left, left, center, left),
+      [Index], [Phase], [Owner], [State], [Checks],
+      ..rows.flatten(),
+    ),
+    caption: caption,
+  )
+}
+
+#let make-callout(kind, title: none, body) = {
+  let fill = if kind == "warning" {
+    rgb("#fff7d6")
+  } else if kind == "success" {
+    rgb("#e8f7ed")
+  } else {
+    rgb("#edf2ff")
+  }
+
+  block(fill: fill, stroke: 0.6pt + palette.medium, inset: 8pt, radius: 2pt)[
+    #if title != none [
+      *#title*
+    ]
+    #body
+  ]
+}
+
+#let section-card(title, body, level: 3, numbering: true) = block(
+  width: 100%,
+  inset: (x: 8pt, y: 6pt),
+  stroke: gray.lighten(65%) + .5pt,
+)[
+  #heading(level: level, numbering: numbering)[#title]
+  #body
+]
+
+#let accessibility-panel(profile) = context {
+  let page-no = counter(page).get().first()
+  let prior-headings = query(selector(heading).before(here()))
+  let last-heading = if prior-headings.len() == 0 {
+    none
+  } else {
+    prior-headings.last()
+  }
+
+  grid(
+    columns: (1fr, 2fr),
+    gutter: 8pt,
+    block(fill: luma(245), inset: 6pt)[
+      *Document*
+      #profile.title
+      Page #page-no
+    ],
+    block(inset: 6pt)[
+      Last heading:
+      #if last-heading == none [none] else [#last-heading.body]
+
+      Authors:
+      #profile.authors.join(", ")
+    ],
+  )
+}
+
+#let theoremish(name, numbered: true, body) = figure(
+  kind: "theorem",
+  supplement: [Theorem],
+  numbering: if numbered { n => counter(heading).display() + [.#n] },
+  block(inset: 6pt, stroke: palette.accent + .5pt)[
+    *#name.*
+    #body
+  ],
+)
+
+#let render-matrix(data, caption: [Transition matrix]) = docs-figure(
+  caption: caption,
+  table(
+    columns: (auto, auto, auto),
+    align: center,
+    ..data.map(row => row.map(cell => [#cell])).flatten(),
+  ),
+)
+
+#let nested-report(profile, items, ..args) = {
+  let cards = items.map(item => section-card(
+    upper(item.phase),
+    [
+      #make-callout("info", title: [Owner #item.owner])[
+        The active checklist contains #item.tasks.len() tasks.
+      ]
+      $ progress_(#item.phase) = #item.tasks.len() / #items.len() $
+    ],
+    ..args,
+  ))
+
+  stack(dir: ttb, spacing: 8pt,
+    accessibility-panel(profile),
+    render-schedule(items, caption: [Audit schedule]),
+    ..cards,
+  )
+}
+
+= Instrumented Metrics <metrics>
+
+The report combines markup, code, math, and nested content arguments.
+#dashboard(samples, scale: 2pt, debug: true)
+
+== Accessibility Notes <accessibility>
+
+These paragraphs mirror the documentation-style fixtures: links like
+https://typst.app/docs, references like @metrics, and inline code such as
+`#set text(lang: "en")` should remain normal markup.
+
+#make-callout("warning", title: [Semantic checklist])[
+  Use headings for document structure, labels for stable links, and figure
+  captions for anything readers need to revisit.
+
+  - The parser should keep list bodies and paragraph breaks visible.
+  - Nested content blocks should still expose embedded code.
+  - Math such as $ alpha_i^2 / (1 + beta_i') $ should retain attachments.
+
+  / Screen reader: Keep headings sequential.
+  / Export: Check PDF tags and alternate text.
+]
+
+#render-schedule(audit-events, caption: [Accessibility review schedule])
+
+=== Contextual header
+
+#accessibility-panel(default-profile)
+
+== Computed Layout <layout>
+
+#nested-report(default-profile, audit-events, level: 4)
+
+#render-matrix((
+  (1, 0, 0),
+  (0, 1, 0),
+  (samples.len(), audit-events.len(), palette.metadata),
+))
+
+#theoremish("Attachment stability")[
+  If $ a_b^c + d'_e / f^g $ is edited inside a content block, the surrounding
+  section and function-call CST should remain stable.
+]
+
+```typ
+#let local = if true {
+  [yes]
+} else {
+  [no]
+}
+#show heading: set text(weight: "bold")
+```
+
+== Appendix <appendix>
+
+#for event in audit-events [
+  #heading(level: 3)[#event.phase]
+  #event.owner owns #event.tasks.len() checks.
+]

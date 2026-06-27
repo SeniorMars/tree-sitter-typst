@@ -1,19 +1,38 @@
-try {
-  module.exports = require("../../build/Release/tree_sitter_typst_binding");
-} catch (error1) {
-  if (error1.code !== 'MODULE_NOT_FOUND') {
-    throw error1;
-  }
-  try {
-    module.exports = require("../../build/Debug/tree_sitter_typst_binding");
-  } catch (error2) {
-    if (error2.code !== 'MODULE_NOT_FOUND') {
-      throw error2;
-    }
-    throw error1
-  }
-}
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+
+const root = fileURLToPath(new URL("../..", import.meta.url));
+
+const binding = typeof process.versions.bun === "string"
+  // Support `bun build --compile` by being statically analyzable enough to find the .node file at build-time
+  ? await import(`${root}/prebuilds/${process.platform}-${process.arch}/tree-sitter-typst.node`)
+  : (await import("node-gyp-build")).default(root);
 
 try {
-  module.exports.nodeTypeInfo = require("../../src/node-types.json");
-} catch (_) {}
+  const nodeTypes = await import(`${root}/src/node-types.json`, { with: { type: "json" } });
+  binding.nodeTypeInfo = nodeTypes.default;
+} catch { }
+
+const queries = [
+  ["HIGHLIGHTS_QUERY", `${root}/queries/typst/highlights.scm`],
+  ["INJECTIONS_QUERY", `${root}/queries/typst/injections.scm`],
+  ["LOCALS_QUERY", `${root}/queries/typst/locals.scm`],
+  ["FOLDS_QUERY", `${root}/queries/typst/folds.scm`],
+  ["TAGS_QUERY", `${root}/queries/typst/tags.scm`],
+];
+
+for (const [prop, path] of queries) {
+  Object.defineProperty(binding, prop, {
+    configurable: true,
+    enumerable: true,
+    get() {
+      delete binding[prop];
+      try {
+        binding[prop] = readFileSync(path, "utf8");
+      } catch { }
+      return binding[prop];
+    }
+  });
+}
+
+export default binding;

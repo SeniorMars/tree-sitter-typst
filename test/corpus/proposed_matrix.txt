@@ -1,0 +1,1184 @@
+==================
+top_level_unmatched_right_bracket
+==================
+
+before ] after
+
+---
+
+(source_file
+  (content
+    (text))
+  (ERROR
+    (string_content)))
+
+==================
+balanced_markup_brackets
+==================
+
+[a [b] c]
+
+---
+
+(source_file
+  (content
+    (bracketed_text
+      (text)
+      (bracketed_text
+        (text))
+      (text))))
+
+==================
+heading_with_less_than_text
+==================
+
+= x < y
+
+---
+
+(source_file
+  (content)
+  (section
+    heading: (heading
+      marker: (heading_marker)
+      body: (heading_body
+        (text)
+        (text)))
+    body: (content)))
+
+==================
+heading_with_label
+==================
+
+= Title <sec>
+
+---
+
+(source_file
+  (content)
+  (section
+    heading: (heading
+      marker: (heading_marker)
+      body: (heading_body
+        (text)))
+    label: (label)
+    body: (content)))
+
+==================
+heading_marker_followed_by_comment
+==================
+
+=/*c*/ Heading
+
+---
+
+(source_file
+  (content)
+  (section
+    heading: (heading
+      marker: (heading_marker)
+      (block_comment)
+      body: (heading_body
+        (text)))
+    body: (content)))
+
+==================
+list_starts_with_heading
+==================
+
+- = Nested heading
+
+---
+
+(source_file
+  (content
+    (bullet_list_item
+      marker: (bullet_list_marker)
+      body: (list_body
+        heading: (heading
+          marker: (heading_marker)
+          body: (heading_body
+            (text)))))))
+
+==================
+list_starts_with_nested_list
+==================
+
+- - Child
+
+---
+
+(source_file
+  (content
+    (bullet_list_item
+      marker: (bullet_list_marker)
+      body: (list_body
+        (bullet_list_item
+          marker: (bullet_list_marker)
+          body: (list_body
+            (text)))))))
+
+==================
+term_description_starts_list
+==================
+
+/ Term: - Child
+
+---
+
+(source_file
+  (content
+    (term_list_item
+      marker: (term_list_marker)
+      term: (text)
+      description: (list_body
+        (bullet_list_item
+          marker: (bullet_list_marker)
+          body: (list_body
+            (text)))))))
+
+==================
+list_multiline_item
+==================
+
+- first
+  second
+
+---
+
+(source_file
+  (content
+    (bullet_list_item
+      marker: (bullet_list_marker)
+      body: (list_body
+        (text)
+        (text)))))
+
+==================
+list_multiple_paragraphs
+==================
+
+- first
+
+  second
+
+---
+
+(source_file
+  (content
+    (bullet_list_item
+      marker: (bullet_list_marker)
+      body: (list_body
+        (text)
+        (parbreak)
+        (text)))))
+
+==================
+list_blank_line_between_items
+==================
+
+- one
+
+- two
+
+---
+
+(source_file
+  (content
+    (bullet_list_item
+      marker: (bullet_list_marker)
+      body: (list_body
+        (text)))
+    (parbreak)
+    (bullet_list_item
+      marker: (bullet_list_marker)
+      body: (list_body
+        (text)))))
+
+==================
+nested_list_dedent
+==================
+
+- one
+  - child
+- two
+
+---
+
+(source_file
+  (content
+    (bullet_list_item
+      marker: (bullet_list_marker)
+      body: (list_body
+        (text)
+        (bullet_list_item
+          marker: (bullet_list_marker)
+          body: (list_body
+            (text)))))
+    (bullet_list_item
+      marker: (bullet_list_marker)
+      body: (list_body
+        (text)))))
+
+==================
+latin_in_word_markers
+==================
+
+snake_case and a*b
+café_noir
+α_β
+привет_мир
+
+---
+
+(source_file
+  (content
+    (text)
+    (text)
+    (text)
+    (text)))
+
+==================
+korean_emphasis_without_spaces
+==================
+
+한_강조_글
+
+---
+
+(source_file
+  (content
+    (text)
+    (emphasis
+      body: (text))
+    (text)))
+
+==================
+balanced_automatic_link
+==================
+
+https://host/a_(b)[c]
+
+---
+
+(source_file
+  (content
+    (automatic_link)))
+
+==================
+automatic_link_trailing_punctuation
+==================
+
+See https://typst.app/.
+
+---
+
+(source_file
+  (content
+    (text)
+    (automatic_link)
+    (text)))
+
+==================
+automatic_link_protocol_apostrophe_ascii
+==================
+
+http://
+https://
+http://typst.app/it'reads
+http://typst.app/docs'
+https://éxample.test
+
+---
+
+(source_file
+  (content
+    (automatic_link)
+    (automatic_link)
+    (automatic_link)
+    (automatic_link)
+    (smart_quote)
+    (automatic_link)
+    (text)))
+
+==================
+automatic_link_unbalanced_recovery
+==================
+
+https://host/a_(b
+
+---
+
+(source_file
+  (content
+    (automatic_link)))
+
+==================
+automatic_link_crossed_bracket_recovery
+==================
+
+https://host/a_[(])
+
+---
+
+(source_file
+  (content
+    (automatic_link)))
+
+==================
+reference_trailing_punctuation
+==================
+
+@foo.bar.
+
+---
+
+(source_file
+  (content
+    (reference
+      target: (identifier))
+    (text)))
+
+==================
+raw_empty_language_tag
+==================
+
+`typ`
+
+---
+
+(source_file
+  (content
+    (raw
+      (raw_delimiter)
+      content: (raw_content)
+      (raw_delimiter))))
+
+==================
+raw_block_dedent
+==================
+
+```typ
+  body
+```
+
+---
+
+(source_file
+  (content
+    (raw
+      (raw_delimiter)
+      language: (raw_language)
+      content: (raw_content)
+      (raw_delimiter))))
+
+==================
+unclosed_raw
+==================
+
+`abc
+
+---
+
+(source_file
+  (content
+    (raw
+      (raw_delimiter)
+      content: (raw_content)
+      (MISSING raw_delimiter))))
+
+==================
+mode_roundtrip
+==================
+
+Text #let x = [*hi*]; #x and $f(#x)$
+
+---
+
+(source_file
+  (content
+    (text)
+    (embedded_code
+      body: (let_binding
+        name: (identifier)
+        value: (content_block
+          body: (content
+            (strong
+              body: (text))))))
+    (embedded_code
+      body: (identifier))
+    (text)
+    (equation
+      body: (math
+        (math_application
+          function: (math_text)
+          argument: (math_delimited
+            open: (math_delimiter)
+            body: (math
+              (embedded_code
+                body: (identifier)))
+            close: (math_delimiter)))))))
+
+==================
+hash_direct_unary
+==================
+
+#-30deg and #(-30deg)
+
+---
+
+(source_file
+  (content)
+  (ERROR
+    (string_content)))
+
+==================
+immediate_function_call
+==================
+
+#f(1) and #f (1)
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (function_call
+        function: (identifier)
+        arguments: (arguments
+          (integer))))
+    (text)
+    (embedded_code
+      body: (identifier))
+    (text)))
+
+==================
+set_immediate_arguments
+==================
+
+#set text(size: 10pt)
+#set text (size: 10pt)
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (set_rule
+        target: (identifier)
+        arguments: (arguments
+          (named_argument
+            name: (identifier)
+            value: (numeric
+              value: (integer)
+              unit: (unit)))))))
+  (ERROR
+    (identifier)
+    (math_delimiter)
+    (string_content)))
+
+==================
+contextual_newline_dot
+==================
+
+#object
+  .field
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (identifier))
+    (text)))
+
+==================
+contextual_newline_else
+==================
+
+#if true [a]
+else [b]
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (if_expression
+        condition: (boolean)
+        consequence: (content_block
+          body: (content
+            (text)))))
+    (text)
+    (bracketed_text
+      (text))))
+
+==================
+paren_array_dictionary
+==================
+
+#(x) #(x,) #() #(:) #(: key: 1)
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (parenthesized_expression
+        expression: (identifier)))
+    (embedded_code
+      body: (array
+        (identifier)))
+    (embedded_code
+      body: (array))
+    (embedded_code
+      body: (dictionary))
+    (embedded_code
+      body: (dictionary
+        (dictionary_entry
+          key: (identifier)
+          value: (integer))))))
+
+==================
+spread_led_collection
+==================
+
+#(..xs) #(: ..dict)
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (array
+        (spread
+          value: (identifier))))
+    (embedded_code
+      body: (dictionary
+        (spread
+          value: (identifier))))))
+
+==================
+spread_led_dictionary
+==================
+
+#(..ctx, name: value) #(..first, key: value, ..second) #(..a, ..b, key: value)
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (dictionary
+        (spread
+          value: (identifier))
+        (dictionary_entry
+          key: (identifier)
+          value: (identifier))))
+    (embedded_code
+      body: (dictionary
+        (spread
+          value: (identifier))
+        (dictionary_entry
+          key: (identifier)
+          value: (identifier))
+        (spread
+          value: (identifier))))
+    (embedded_code
+      body: (dictionary
+        (spread
+          value: (identifier))
+        (spread
+          value: (identifier))
+        (dictionary_entry
+          key: (identifier)
+          value: (identifier))))))
+
+==================
+multiline_arguments_without_trailing_comma
+==================
+
+#f(
+  x
+)
+#f(
+  a: x
+)
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (function_call
+        function: (identifier)
+        arguments: (arguments
+          (identifier))))
+    (embedded_code
+      body: (function_call
+        function: (identifier)
+        arguments: (arguments
+          (named_argument
+            name: (identifier)
+            value: (identifier)))))))
+
+==================
+multiline_dictionary_without_trailing_comma
+==================
+
+#{
+  return (
+    a: a
+  )
+}
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (code_block
+        body: (return_expression
+          value: (dictionary
+            (dictionary_entry
+              key: (identifier)
+              value: (identifier))))))))
+
+==================
+multiline_parenthesized_expression_without_trailing_comma
+==================
+
+#{
+  let x = (
+    a - b - c
+  )
+  if (
+    x > 0 and not done
+  ) [ok]
+}
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (code_block
+        body: (let_binding
+          name: (identifier)
+          value: (parenthesized_expression
+            expression: (binary_expression
+              left: (binary_expression
+                left: (identifier)
+                right: (identifier))
+              right: (identifier))))
+        body: (if_expression
+          condition: (parenthesized_expression
+            expression: (binary_expression
+              left: (binary_expression
+                left: (identifier)
+                right: (integer))
+              right: (logical_not_expression
+                operand: (identifier))))
+          consequence: (content_block
+            body: (content
+              (text))))))))
+
+==================
+multiline_parameters_without_trailing_comma
+==================
+
+#let inlinechord(
+  text,
+  styling: strong
+) = "[[" + styling[#text<chord>] + "]]"
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (let_binding
+        name: (identifier)
+        parameters: (parameters
+          (identifier)
+          (named_parameter
+            name: (identifier)
+            default: (identifier)))
+        value: (binary_expression
+          left: (binary_expression
+            left: (string
+              (string_content))
+            right: (function_call
+              function: (identifier)
+              arguments: (arguments
+                (content_block
+                  body: (content
+                    (embedded_code
+                      body: (identifier))
+                    (label))))))
+          right: (string
+            (string_content)))))))
+
+==================
+multiline_arguments_with_newline_before_comma
+==================
+
+#let f(..args) = none
+#f(
+  1
+  , 2
+)
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (let_binding
+        name: (identifier)
+        parameters: (parameters
+          (sink_parameter
+            name: (identifier)))
+        value: (none)))
+    (embedded_code
+      body: (function_call
+        function: (identifier)
+        arguments: (arguments
+          (integer)
+          (integer))))))
+
+==================
+multiline_dictionary_with_newline_before_comma
+==================
+
+#let x = (
+  a: 1
+  , b: 2
+)
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (let_binding
+        name: (identifier)
+        value: (dictionary
+          (dictionary_entry
+            key: (identifier)
+            value: (integer))
+          (dictionary_entry
+            key: (identifier)
+            value: (integer)))))))
+
+==================
+embedded_array_with_newline_before_close
+==================
+
+#(
+  1,
+  2
+)
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (array
+        (integer)
+        (integer)))))
+
+==================
+closure_paren_ambiguity
+==================
+
+#((x: 1) => x)
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (parenthesized_expression
+        expression: (closure
+          parameters: (parameters
+            (named_parameter
+              name: (identifier)
+              default: (integer)))
+          body: (identifier))))))
+
+==================
+nested_destructuring
+==================
+
+#let (a, b: (c, ..rest)) = value
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (let_binding
+        pattern: (destructuring_pattern
+          (identifier)
+          (named_destructuring_item
+            key: (identifier)
+            pattern: (destructuring_pattern
+              (identifier)
+              (destructuring_sink
+                pattern: (identifier)))))
+        value: (identifier)))))
+
+==================
+reassignment_fields
+==================
+
+#(object.x, y) = pair
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (array
+        (field_access
+          object: (identifier)
+          field: (identifier))
+        (identifier))))
+  (section
+    heading: (heading
+      marker: (heading_marker)
+      body: (heading_body
+        (text)))
+    body: (content)))
+
+==================
+parenthesized_import_list
+==================
+
+#import "m.typ": (a, sub.item as x,)
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (module_import
+        source: (string
+          (string_content))
+        imports: (parenthesized_import_list
+          (import_item
+            path: (import_path
+              head: (identifier)))
+          (import_item
+            path: (import_path
+              head: (identifier)
+              tail: (identifier))
+            alias: (identifier)))))))
+
+==================
+spaced_import_colon_wildcard
+==================
+
+#import "../../lib.typ" : *
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (module_import
+        source: (string
+          (string_content))
+        imports: (wildcard_import)))))
+
+==================
+dynamic_import_alias
+==================
+
+#{
+  import mod_name as mod
+}
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (code_block
+        body: (module_import
+          source: (identifier)
+          alias: (identifier))))))
+
+==================
+base_number_prefix_recovery
+==================
+
+#0b102
+#0xGG
+#0x10pt
+#0xffffffffffffffff
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      (integer))
+    (text)
+    (embedded_code
+      (integer))
+    (text)
+    (embedded_code
+      (integer))
+    (text)
+    (embedded_code
+      (integer))))
+
+==================
+exponent_prefix_recovery
+==================
+
+#1e
+#1E
+#1e+
+#1E-
+#1ex
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      (integer))
+    (text)
+    (embedded_code
+      (integer))
+    (text)
+    (embedded_code
+      (integer))
+    (text)
+    (embedded_code
+      (integer))
+    (text)
+    (embedded_code
+      (integer))
+    (text)))
+
+==================
+math_fraction_014_precedence
+==================
+
+$x>=(y)/z$
+
+---
+
+(source_file
+  (content
+    (equation
+      body: (math
+        (math_text)
+        (math_shorthand)
+        (math_fraction
+          numerator: (math_delimited
+            open: (math_delimiter)
+            body: (math
+              (math_text))
+            close: (math_delimiter))
+          denominator: (math_text))))))
+
+==================
+math_group_vs_display
+==================
+
+$a/(b+c)$
+$(a+b)$
+
+---
+
+(source_file
+  (content
+    (equation
+      body: (math
+        (math_fraction
+          numerator: (math_text)
+          denominator: (math_group
+            open: (math_delimiter)
+            body: (math
+              (math_text)
+              (math_text)
+              (math_text))
+            close: (math_delimiter)))))
+    (equation
+      body: (math
+        (math_delimited
+          open: (math_delimiter)
+          body: (math
+            (math_text)
+            (math_text)
+            (math_text))
+          close: (math_delimiter))))))
+
+==================
+math_call_and_application
+==================
+
+$floor(x) x(y) f[a]$
+
+---
+
+(source_file
+  (content
+    (equation
+      body: (math
+        (math_call
+          function: (math_identifier)
+          arguments: (math_arguments
+            (math_sequence
+              (math_text))))
+        (math_space)
+        (math_application
+          function: (math_text)
+          argument: (math_delimited
+            open: (math_delimiter)
+            body: (math
+              (math_text))
+            close: (math_delimiter)))
+        (math_space)
+        (math_application
+          function: (math_text)
+          argument: (math_delimited
+            open: (math_delimiter)
+            body: (math
+              (math_text))
+            close: (math_delimiter)))))))
+
+==================
+math_empty_cells
+==================
+
+$mat(, a; b,)$
+
+---
+
+(source_file
+  (content
+    (equation
+      body: (math
+        (math_call
+          function: (math_identifier)
+          arguments: (math_arguments
+            (math_space)
+            (math_sequence
+              (math_text))
+            (math_space)
+            (math_sequence
+              (math_text))))))))
+
+==================
+math_spaced_argument_separator
+==================
+
+$mat(a , b)$
+
+---
+
+(source_file
+  (content
+    (equation
+      body: (math
+        (math_call
+          function: (math_identifier)
+          arguments: (math_arguments
+            (math_sequence
+              (math_text))
+            (math_space)
+            (math_space)
+            (math_sequence
+              (math_text))))))))
+
+==================
+math_named_and_spread_args
+==================
+
+$f(size: #12pt, ..#args)$
+
+---
+
+(source_file
+  (content
+    (equation
+      body: (math
+        (math_application
+          function: (math_text)
+          argument: (math_delimited
+            open: (math_delimiter)
+            body: (math
+              (math_identifier)
+              (math_text)
+              (math_space)
+              (embedded_code
+                body: (numeric
+                  value: (integer)
+                  unit: (unit)))
+              (math_text)
+              (math_space)
+              (math_text)
+              (math_text)
+              (embedded_code
+                body: (identifier)))
+            close: (math_delimiter)))))))
+
+==================
+math_attachment_order
+==================
+
+$a_1^2' a'^2_1$
+
+---
+
+(source_file
+  (content
+    (equation
+      body: (math
+        (math_attachment
+          base: (math_text)
+          subscript: (math_number)
+          superscript: (math_number)
+          primes: (math_primes))
+        (math_space)
+        (math_attachment
+          base: (math_text)
+          primes: (math_primes)
+          superscript: (math_number)
+          subscript: (math_number))))))
+
+==================
+math_incomplete_attachment
+==================
+
+$x^$
+
+---
+
+(source_file
+  (content
+    (equation
+      body: (math
+        (math_text))
+      (ERROR))))
+
+==================
+math_incomplete_call
+==================
+
+$mat(,$
+
+---
+
+(source_file
+  (content)
+  (ERROR
+    (math_identifier)
+    (string_content)))

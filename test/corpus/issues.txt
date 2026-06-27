@@ -1,0 +1,44 @@
+==================
+Both equation delimiters
+==================
+
+$a$
+
+---
+
+(source_file
+  (content
+    (equation
+      body: (math
+        (math_text)))))
+
+==================
+Hidden hash marker
+==================
+
+#foo
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (identifier))))
+
+==================
+Raw scanner and language
+==================
+
+```typc
+let x = 1
+```
+
+---
+
+(source_file
+  (content
+    (raw
+      (raw_delimiter)
+      language: (raw_language)
+      content: (raw_content)
+      (raw_delimiter))))

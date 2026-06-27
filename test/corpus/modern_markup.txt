@@ -1,0 +1,223 @@
+==================
+Unmatched right bracket is an error
+==================
+
+before ] after
+
+---
+
+(source_file
+  (content
+    (text))
+  (ERROR
+    (string_content)))
+
+==================
+Balanced markup brackets
+==================
+
+[a [b] c]
+
+---
+
+(source_file
+  (content
+    (bracketed_text
+      (text)
+      (bracketed_text
+        (text))
+      (text))))
+
+==================
+Heading less-than text
+==================
+
+= x < y
+
+---
+
+(source_file
+  (content)
+  (section
+    heading: (heading
+      marker: (heading_marker)
+      body: (heading_body
+        (text)
+        (text)))
+    body: (content)))
+
+==================
+Automatic links trim punctuation without delimiter validation
+==================
+
+https://host/a_(b)[c].
+See https://typst.app/.
+https://host/a_(b tail
+
+---
+
+(source_file
+  (content
+    (automatic_link)
+    (text)
+    (text)
+    (automatic_link)
+    (text)
+    (automatic_link)
+    (text)))
+
+==================
+Malformed code numbers tokenize recoverable prefixes
+==================
+
+#0b102
+#0xGG
+#0x10pt
+#1e
+#1e+
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      (integer))
+    (text)
+    (embedded_code
+      (integer))
+    (text)
+    (embedded_code
+      (integer))
+    (text)
+    (embedded_code
+      (integer))
+    (text)
+    (embedded_code
+      (integer))
+    (text)))
+
+==================
+List bodies accept line-start markup
+==================
+
+- = Nested heading
+- - Child
+/ Term: - Child
+
+---
+
+(source_file
+  (content
+    (bullet_list_item
+      marker: (bullet_list_marker)
+      body: (list_body
+        heading: (heading
+          marker: (heading_marker)
+          body: (heading_body
+            (text)))))
+    (bullet_list_item
+      marker: (bullet_list_marker)
+      body: (list_body
+        (bullet_list_item
+          marker: (bullet_list_marker)
+          body: (list_body
+            (text)))))
+    (term_list_item
+      marker: (term_list_marker)
+      term: (text)
+      description: (list_body
+        (bullet_list_item
+          marker: (bullet_list_marker)
+          body: (list_body
+            (text)))))))
+
+==================
+List item multiple paragraphs
+==================
+
+- first
+
+  second
+- one
+
+- two
+
+---
+
+(source_file
+  (content
+    (bullet_list_item
+      marker: (bullet_list_marker)
+      body: (list_body
+        (text)
+        (parbreak)
+        (text)))
+    (bullet_list_item
+      marker: (bullet_list_marker)
+      body: (list_body
+        (text)))
+    (parbreak)
+    (bullet_list_item
+      marker: (bullet_list_marker)
+      body: (list_body
+        (text)))))
+
+==================
+CJK and Korean emphasis boundaries
+==================
+
+snake_case and a*b
+café_noir
+α_β
+привет_мир
+한_강조_글
+漢_強調_字
+
+---
+
+(source_file
+  (content
+    (text)
+    (text)
+    (text)
+    (text)
+    (text)
+    (emphasis
+      body: (text))
+    (text)
+    (text)
+    (emphasis
+      body: (text))
+    (text)))
+
+==================
+Math grouping characterization
+==================
+
+$a/(b+c)$
+$(a+b)$
+
+---
+
+(source_file
+  (content
+    (equation
+      body: (math
+        (math_fraction
+          numerator: (math_text)
+          denominator: (math_group
+            open: (math_delimiter)
+            body: (math
+              (math_text)
+              (math_text)
+              (math_text))
+            close: (math_delimiter)))))
+    (equation
+      body: (math
+        (math_delimited
+          open: (math_delimiter)
+          body: (math
+            (math_text)
+            (math_text)
+            (math_text))
+          close: (math_delimiter))))))

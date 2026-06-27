@@ -1,49 +1,33 @@
 {
-    "name": "tree-sitter-typst",
-    "version": "1.0.0",
-    "description": "A TreeSitter parser for the typst file format",
-    "main": "bindings/node",
-    "scripts": {
-        "gen": "tree-sitter generate",
-        "test": "tree-sitter test",
-        "parse": "tree-sitter parse",
-        "debug": "tree-sitter parse --debug-build",
-        "build": "tree-sitter generate && node-gyp build"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/SeniorMars/tree-sitter-typst.git"
-    },
-    "keywords": [
-        "typst",
-        "markup",
-        "treesitter",
-        "tree-sitter"
-    ],
-    "author": "SeniorMars",
-    "license": "MIT",
-    "bugs": {
-        "url": "https://github.com/SeniorMars/tree-sitter-typst/issues"
-    },
-    "homepage": "https://github.com/SeniorMars/tree-sitter-typst#readme",
-    "dependencies": {
-        "nan": "^2.17.0"
-    },
-    "devDependencies": {
-        "eslint": "^8.36.0",
-        "eslint-config-standard": "^17.0.0",
-        "eslint-plugin-import": "^2.27.5",
-        "eslint-plugin-n": "^15.6.1",
-        "eslint-plugin-promise": "^6.1.1",
-        "tree-sitter-cli": "^0.20.7"
-    },
-    "tree-sitter": [
-        {
-            "scope": "source.typst",
-            "injection-regex": "typst",
-            "file-types": [
-                "typ"
-            ]
-        }
-    ]
+  "name": "tree-sitter-typst",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Tree-sitter grammar for Typst",
+  "scripts": {
+    "install": "node-gyp-build",
+    "generate": "tree-sitter generate",
+    "generate:variants": "scripts/generate-variants.sh",
+    "test": "tree-sitter test && npm run test:incremental && npm run test:fuzz",
+    "test:corpus": "tree-sitter test",
+    "test:incremental": "node test/incremental/delimiters.js && node test/incremental/strings.js && node test/incremental/edits.js && node test/incremental/stress.js",
+    "test:fuzz": "node scripts/fuzz-parser.js --iterations 1000",
+    "test:fuzz:full": "node scripts/fuzz-parser.js --iterations 50000 --max-length 4096",
+    "test:fuzz:incremental": "node scripts/fuzz-parser.js --iterations 1000 --check-incremental",
+    "test:queries": "node scripts/audit-queries.js",
+    "test:unicode": "python3 scripts/check-unicode-mathclass.py",
+    "fetch:real-world": "node scripts/fetch-real-world-fixtures.js",
+    "test:real-world": "npm run fetch:real-world && node scripts/validate-real-world-fixtures.js test/fixtures/real_world",
+    "test:real-world:strict": "npm run fetch:real-world && node scripts/validate-real-world-fixtures.js --fail-on-error test/fixtures/real_world",
+    "check": "scripts/test-static.sh",
+    "generate:unicode": "python3 scripts/generate-unicode-tables.py"
+  },
+  "devDependencies": {
+    "tree-sitter": "^0.25.0",
+    "tree-sitter-cli": "0.26.9"
+  },
+  "dependencies": {
+    "node-addon-api": "^8.8.0",
+    "node-gyp-build": "^4.8.4"
+  }
 }

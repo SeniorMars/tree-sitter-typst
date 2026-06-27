@@ -1,0 +1,52 @@
+{
+  "$schema": "https://tree-sitter.github.io/tree-sitter/assets/schemas/config.schema.json",
+  "grammars": [
+    {
+      "name": "typst",
+      "camelcase": "Typst",
+      "title": "Typst",
+      "scope": "source.typst",
+      "path": ".",
+      "external-files": [
+        "src/scanner.c",
+        "src/unicode_tables.h"
+      ],
+      "file-types": [
+        "typ",
+        "typst"
+      ],
+      "highlights": [
+        "queries/typst/highlights.scm"
+      ],
+      "injections": [
+        "queries/typst/injections.scm"
+      ],
+      "locals": [
+        "queries/typst/locals.scm"
+      ],
+      "tags": [
+        "queries/typst/tags.scm"
+      ],
+      "injection-regex": "^typ(st)?$"
+    }
+  ],
+  "metadata": {
+    "version": "0.1.0",
+    "license": "MIT",
+    "description": "Typst Tree-sitter grammar",
+    "authors": [
+      {
+        "name": "tree-sitter-typst contributors"
+      }
+    ],
+    "links": {
+      "repository": "https://github.com/SeniorMars/tree-sitter-typst"
+    }
+  },
+  "bindings": {
+    "c": true,
+    "node": true,
+    "python": true,
+    "rust": true
+  }
+}

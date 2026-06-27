@@ -1,0 +1,141 @@
+==================
+Scanner edge bare underscore is not field continuation
+==================
+
+#foo
+._
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (identifier))
+    (text)
+    (emphasis
+      (MISSING "_"))))
+
+==================
+Scanner edge underscore-start field continuation
+==================
+
+#{
+  foo
+  ._bar
+}
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (code_block
+        body: (field_access
+          object: (identifier)
+          field: (identifier))))))
+
+==================
+Scanner edge set rule rejects trailing content block
+==================
+
+#set text(size: 10pt)[oops]
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (set_rule
+        target: (identifier)
+        arguments: (arguments
+          (named_argument
+            name: (identifier)
+            value: (numeric
+              value: (integer)
+              unit: (unit)))))
+      body: (MISSING ";"))
+    (bracketed_text
+      (text))))
+
+==================
+Scanner edge huge numbered list marker
+==================
+
+999999999999999999999999999999999999999. item
+
+---
+
+(source_file
+  (content
+    (numbered_list_item
+      marker: (numbered_list_marker)
+      body: (list_body
+        (text)))))
+
+==================
+Scanner edge failed else-space probe falls back
+==================
+
+#if true [ok] elsewhere
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (if_expression
+        condition: (boolean)
+        consequence: (content_block
+          body: (content
+            (text)))))
+    (text)))
+
+==================
+Scanner edge numeric unit adjacency
+==================
+
+#let a = 12pt
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (let_binding
+        name: (identifier)
+        value: (numeric
+          value: (integer)
+          unit: (unit))))))
+
+==================
+Scanner edge spaced numeric unit is not adjacent
+==================
+
+#let b = 12 pt
+
+---
+
+(source_file
+  (content)
+  (ERROR
+    (let_binding
+      name: (identifier)
+      value: (integer))
+    (string_content)))
+
+==================
+Scanner edge commented numeric unit is not adjacent
+==================
+
+#let c = 12/* comment */pt
+
+---
+
+(source_file
+  (content)
+  (ERROR
+    (let_binding
+      name: (identifier)
+      value: (integer))
+    (block_comment)
+    (string_content)))

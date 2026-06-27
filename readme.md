@@ -1,125 +1,222 @@
-# A tree-sitter parser for the typst file format
+# tree-sitter-typst
 
-This language is soooo hard to parse… whitespace, parenthesizes for everything, and Unicode :(
+`tree-sitter-typst` is a correct Tree-sitter parser for Typst. It parses
+Typst's markup, code, and math syntax, including embedded code, content blocks,
+equations, imports, set/show rules, closures, arrays, dictionaries, lists,
+sections, labels, raw blocks, and math attachments.
 
+Compared with earlier Typst grammars such as
+[`uben0/tree-sitter-typst`](https://github.com/uben0/tree-sitter-typst), this
+project is intended to be a more complete parser that works for real Typst
+documents, editor queries, injections, incremental parsing, and real-world
+fixture validation.
 
-DONE:
+The grammar is intentionally written as one self-contained `grammar.js` plus an
+external scanner for the lexical decisions that Tree-sitter cannot express
+well in pure LR grammar rules.
 
-- [O] Code mode: `#` to enter code mode
+## Generate And Test
 
-    - [x] any literal: `1`, `"hi"`, `true`, `false`, `none`, `auto`
-    - [ ] raw and labels are literals
-    - [x] code block: `{ x = 1 }`
-    - [x] content block: `[ hello ]`
-    - [x] parenthesized expression: `(1 + 2)`
-    - [x] array: `(1, 2, 3)`
-    - [x] dictionary: `(a: "hi", b: 2)`
-    - [x] unary operator: `-x`
-    - [x] binary operator: `x + y`
-    - [x] assignment: `x = 1`
-    - [x] variable access: `x`
-    - [x] field access: `x.y`
-    - [x] method call: `x.flatten()`
-    - [x] named function: `let f(x) = 2 * x`
-    - [x] unnamed function: `(x, y) => x + y`
-    - [x] function call: `min(x, y)`
-    - [x] let binding: `let x = 1`
-    - [x] set rule: `set text(14pt)`
-    - [x] set-if rule: `set text(..) if ..`
-    - [x] show-set rule: `show par: set block(..)`
-    - [x] show rule with function: `show par: set block(..)`
-    - [x] show-everything rule: `show: set block(..)`
-    - [x] conditional: `if x < 0 {0} else {x}`
-    - [x] for loop: `for x in [1, 2, 3]`
-    - [x] while loop: `while x < 10 {}`
-    - [x] loop control flow: `break`, `continue`
-    - [x] return from function: `return x`
-    - [x] include module: `include "bar.typ"`
-    - [x] import module: `import "bar.typ"`
-    - [x] import items from module: `import "bar.typ": a, b, c`
-    - [x] comment: `// hi` or `/* hi */`.
+Use Tree-sitter CLI 0.26.9 or newer:
 
-- [ ] Math mode
-
-    - [ ] Everything :)
-
-- [ ] Markup mode
-
-    - [x] Whitespace (Unicode)
-    - [x] paragraph break
-    - [x] text (Unicode)
-    - [x] emphasis
-        - [x] strong
-        - [x] italic
-    - [x] label
-    - [x] reference
-    - [ ] raw text
-        - [ ] inline
-        - [ ] block
-    - [ ] link
-    - [ ] heading
-    - [ ] bullet list
-    - [ ] numbered list
-    - [ ] term list
-    - [ ] math
-    - [x] line break
-    - [ ] smart quote
-        - [ ] single quote
-        - [x] double quote
-    - [ ] symbol shorthand
-    - [x] code expression
-    - [x] character escape
-    - [x] comment.
-
----
-
-Outdated specification comes from: https://www.user.tu-berlin.de/laurmaedje/programmable-markup-language-for-typesetting.pdf
-
-I'll be using the textmate grammar as inspiration: https://github.com/typst/typst/blob/main/tools/support/typst.tmLanguage.json
-
-For myself, I'll paste it here:
-
----
-
-## Typst Grammar
-
-Below is an approximate EBNF grammar for the Typst language that is based on our
-handwritten recursive descent parser. We follow these conventions:
-
-    – Production names are all lowercase.
-    – Text enclosed in single (') or double quotes (") defines a terminal.
-    – * for an arbitrary number of repetitions.
-    – + for at least one repetition.
-    – ? for zero or one repetitions.
-    – ! to negate a simple (character-class-like) production.
-    – . to match an arbitrary character.
-    – a - b to match anything that matches a but not b.
-    – unicode(Property) to match any character that has the given unicode property.
-
-Note that comments and spaces are allowed almost everywhere within code constructs.
-For readability, this is omitted in the grammar. Moreover, the grammar omits the
-indentation rules for lists, as EBNF cannot handle context-sensitive constructs.
-
+```sh
+npm install
+npm run generate
+npm test
+npm run check
 ```
-// Markup.
-markup ::= markup-node*
-markup-node ::=
-space | nbsp | shy | endash | emdash | ellipsis | quote | 
-strong | emph | raw | link | math | heading | list | enum | desc
 
-// Markup nodes.
-nbsp ::= '~'
-shy ::= '-?'
-endash ::= '--'
-emdash = '---'
-ellipsis ::= '...'
-quote ::= "'" | '"'
-strong ::= '*' markup '*'
-raw ::= '`' (raw | .*) '`'
-link ::= 'http' 's'? '://' (!space)*
-math ::= ('$' .* '$') | ('$[' .* ']$')
-heading ::= '='+ space markup
-list ::= '-' space markup
-enum ::= digit* '.' space markup
-desc ::= '/' space markup ':' space markup
+Useful focused checks:
+
+```sh
+npm run test:corpus
+npm run test:queries
+npm run test:incremental
+npm run test:real-world
 ```
+
+`src/parser.c`, `src/grammar.json`, and `src/node-types.json` are generated.
+Do not hand-edit them.
+
+The committed `src/unicode_tables.h` is generated scanner support data. Regenerate
+it only when updating Unicode data:
+
+```sh
+npm run generate:unicode
+```
+
+The Unicode generator requires Python's `regex` module plus Unicode XID/number
+data and UTR #25 MathClass data files. It searches `vendor/unicode`,
+`src/vendor/unicode`, `third_party/unicode`, `unicode`, and `data`; set
+`TREE_SITTER_TYPST_UNICODE_DIR` or `TREE_SITTER_TYPST_MATH_CLASS` for other
+locations.
+
+## Root Modes
+
+The default parser is named `typst`. It starts in markup mode and still parses
+all three Typst modes in one grammar: markup, embedded code, and math.
+
+The same grammar can also generate direct code and direct math root parsers for
+editor integrations that need those modes as injection targets:
+
+```sh
+npm run generate:variants
+```
+
+This writes variant grammars under:
+
+```text
+build/typst
+build/typc
+build/typm
+```
+
+The `typc` and `typm` builds are companion root modes, not replacements for the
+default parser. Raw language injections tagged `typc` or `typm` can use them
+when an editor registers those parser names.
+
+## Queries
+
+Editor queries live under `queries/typst/`:
+
+- `highlights.scm`: markup, code, math, calls, definitions, literals, operators
+- `injections.scm`: raw-language injections
+- `locals.scm`: definitions, parameters, imports, and references
+- `tags.scm`: headings, labels, functions, variables, imports, and calls
+- `folds.scm`: foldable blocks and sections
+- `indents.scm`: Neovim indentation captures
+
+`npm run test:queries` compiles every query and verifies that every declared
+capture is exercised by the audit fixture.
+
+## Scanner Design
+
+The external scanner owns boundary-sensitive tokens that must coordinate with
+the LR parser:
+
+- raw delimiter width and raw language/content/close scanning
+- nested comments
+- heading, bullet, numbered, and term markers
+- list continuation and serialized list-marker indentation
+- code newlines, continuation lookahead, immediate calls, and field access
+- numeric tokens and unit adjacency
+- markup word gaps and automatic links
+- math words, text, spacing, fractions, arguments, and delimiters
+
+Scanner state is intentionally small and serialized for incremental parsing.
+Broad recovery states opt out through `_error_sentinel` so speculative recovery
+does not mutate scanner state.
+
+Scanner probes follow this convention: helpers that advance before deciding
+must either be returned immediately by `scanner_scan` or handle all
+same-position fallbacks internally. This avoids failed lookahead probes blocking
+ordinary whitespace, newline, or recovery tokens.
+
+Focused scanner coverage lives in:
+
+```text
+test/scanner/scanner_test.c
+test/corpus/scanner_edges.txt
+```
+
+## Corpus And Real-World Fixtures
+
+The corpus covers small syntax contracts, scanner edge cases, regressions, and a
+large synthetic Typst document:
+
+```text
+test/corpus/
+test/incremental/
+test/fixtures/synthetic/
+test/fixtures/real_world/
+```
+
+The real-world validator reports expected parser errors separately from
+unexpected ones:
+
+```sh
+npm run test:real-world
+```
+
+## Benchmarks
+
+Criterion benchmarks cover full parsing, incremental edits, and query execution
+over synthetic and real-world fixtures:
+
+```sh
+cargo bench
+```
+
+The benchmark entry point is `benches/bench_main.rs`.
+
+## Nix
+
+With Nix, enter the development shell or build the C grammar package:
+
+```sh
+nix develop
+nix build
+```
+
+Legacy commands are also supported:
+
+```sh
+nix-shell
+nix-build
+```
+
+## Neovim
+
+Neovim support is planned through
+[`SeniorMars/typst.nvim`](https://github.com/SeniorMars/typst.nvim), a
+work-in-progress plugin for using this parser and its editor queries from
+Neovim.
+
+Until that plugin is ready, the maintained queries in `queries/typst/` can be
+used as the source for a manual Tree-sitter setup. Tree-sitter provides syntax
+parsing; Tinymist provides language-server features.
+
+## Emacs
+
+Use Emacs 29 or newer and register the grammar with built-in `treesit`:
+
+```elisp
+(add-to-list
+ 'treesit-language-source-alist
+ '(typst "https://github.com/SeniorMars/tree-sitter-typst" "main"))
+```
+
+Then run `M-x treesit-install-language-grammar RET typst RET`. Configure
+`typst-ts-mode` according to that package's current documentation.
+
+## Helix
+
+A ready-to-copy Helix integration lives under:
+
+```text
+editors/helix/
+```
+
+It includes:
+
+- `languages.toml`: parser registration, file types, auto-pairs, indentation,
+  and Tinymist language-server configuration
+- `queries/`: Helix query files for highlights, injections, indentation, and
+  folds
+
+Copy or merge the integration into your Helix config:
+
+```sh
+mkdir -p ~/.config/helix/runtime/queries/typst
+cp editors/helix/languages.toml ~/.config/helix/languages.toml
+cp editors/helix/queries/*.scm ~/.config/helix/runtime/queries/typst/
+```
+
+Then build the grammar:
+
+```sh
+hx --grammar fetch
+hx --grammar build
+```
+
+Tree-sitter provides syntax parsing; Tinymist provides language-server features.

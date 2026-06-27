@@ -1,0 +1,636 @@
+==================
+Empty source
+==================
+
+
+---
+
+(source_file
+  (content))
+
+==================
+Empty content block
+==================
+
+#[]
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (content_block))))
+
+==================
+Empty code block
+==================
+
+#{}
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (code_block))))
+
+==================
+Empty inline equation
+==================
+
+$$
+
+---
+
+(source_file
+  (content
+    (equation)))
+
+==================
+Empty math delimiter
+==================
+
+$()$
+
+---
+
+(source_file
+  (content
+    (equation
+      body: (math
+        (math_delimited
+          open: (math_delimiter)
+          close: (math_delimiter))))))
+
+==================
+Non-markers remain text
+==================
+
+=foo
+-foo
+/foo
+1.foo
+
+---
+
+(source_file
+  (content
+    (text)
+    (text)
+    (text)
+    (text)))
+
+==================
+Heading label is outside heading body
+==================
+
+= Heading <heading-label>
+
+---
+
+(source_file
+  (content)
+  (section
+    heading: (heading
+      marker: (heading_marker)
+      body: (heading_body
+        (text)))
+    label: (label)
+    body: (content)))
+
+==================
+Indented list continuation and nested item
+==================
+
+- first line
+  continuation
+  - nested item
+
+---
+
+(source_file
+  (content
+    (bullet_list_item
+      marker: (bullet_list_marker)
+      body: (list_body
+        (text)
+        (text)
+        (bullet_list_item
+          marker: (bullet_list_marker)
+          body: (list_body
+            (text)))))))
+
+==================
+Code continuation after assignment and binary operator
+==================
+
+#let x =
+  1 +
+  2
+
+---
+
+(source_file
+  (content)
+  (ERROR
+    (identifier)
+    (string_content)))
+
+==================
+Code continuation before conditional block
+==================
+
+#if condition
+  { result }
+
+---
+
+(source_file
+  (content)
+  (ERROR
+    (identifier)
+    (string_content)))
+
+==================
+Number followed by field access and call
+==================
+
+#1.abs()
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (function_call
+        function: (field_access
+          object: (integer)
+          field: (identifier))
+        arguments: (arguments)))))
+
+==================
+Logical and chain
+==================
+
+#if a and b and c [ok]
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (if_expression
+        condition: (binary_expression
+          left: (binary_expression
+            left: (identifier)
+            right: (identifier))
+          right: (identifier))
+        consequence: (content_block
+          body: (content
+            (text)))))))
+
+==================
+Logical and before or
+==================
+
+#if a and b or c [ok]
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (if_expression
+        condition: (binary_expression
+          left: (binary_expression
+            left: (identifier)
+            right: (identifier))
+          right: (identifier))
+        consequence: (content_block
+          body: (content
+            (text)))))))
+
+==================
+Logical and after or
+==================
+
+#if a or b and c [ok]
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (if_expression
+        condition: (binary_expression
+          left: (identifier)
+          right: (binary_expression
+            left: (identifier)
+            right: (identifier)))
+        consequence: (content_block
+          body: (content
+            (text)))))))
+
+==================
+Logical not condition versus comparison
+==================
+
+#if not a == b [ok]
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (if_expression
+        condition: (logical_not_expression
+          operand: (binary_expression
+            left: (identifier)
+            right: (identifier)))
+        consequence: (content_block
+          body: (content
+            (text)))))))
+
+==================
+Logical not versus and
+==================
+
+#(not a and b)
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (parenthesized_expression
+        expression: (binary_expression
+          left: (logical_not_expression
+            operand: (identifier))
+          right: (identifier))))))
+
+==================
+Logical not versus comparison
+==================
+
+#(not a == b)
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (parenthesized_expression
+        expression: (logical_not_expression
+          operand: (binary_expression
+            left: (identifier)
+            right: (identifier)))))))
+
+==================
+Logical not versus membership
+==================
+
+#(not a in b)
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (parenthesized_expression
+        expression: (logical_not_expression
+          operand: (binary_expression
+            left: (identifier)
+            right: (identifier)))))))
+
+==================
+Logical not versus addition
+==================
+
+#(not a + b)
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (parenthesized_expression
+        expression: (logical_not_expression
+          operand: (binary_expression
+            left: (identifier)
+            right: (identifier)))))))
+
+==================
+Logical not as right operand of and
+==================
+
+#(a and not b)
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (parenthesized_expression
+        expression: (binary_expression
+          left: (identifier)
+          right: (logical_not_expression
+            operand: (identifier)))))))
+
+==================
+Nested logical not
+==================
+
+#(not not a)
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (parenthesized_expression
+        expression: (logical_not_expression
+          operand: (logical_not_expression
+            operand: (identifier)))))))
+
+==================
+Logical not versus not-in
+==================
+
+#(not a not in b)
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (parenthesized_expression
+        expression: (logical_not_expression
+          operand: (binary_expression
+            left: (identifier)
+            operator: (not_in_operator)
+            right: (identifier)))))))
+
+==================
+Immediate expression semicolon
+==================
+
+#x;
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (identifier))))
+
+==================
+Single math XID codepoint is text
+==================
+
+$x$
+
+---
+
+(source_file
+  (content
+    (equation
+      body: (math
+        (math_text)))))
+
+==================
+Generic math text run is split
+==================
+
+$≈≈$
+
+---
+
+(source_file
+  (content
+    (equation
+      body: (math
+        (math_text)
+        (math_text)))))
+
+==================
+Multi-codepoint math XID run is identifier
+==================
+
+$pi$
+
+---
+
+(source_file
+  (content
+    (equation
+      body: (math
+        (math_identifier)))))
+
+==================
+Immediate single-letter math application
+==================
+
+$f(x)$
+
+---
+
+(source_file
+  (content
+    (equation
+      body: (math
+        (math_application
+          function: (math_text)
+          argument: (math_delimited
+            open: (math_delimiter)
+            body: (math
+              (math_text))
+            close: (math_delimiter)))))))
+
+==================
+Math field requires an immediate right identifier
+==================
+
+$arrow. r$
+
+---
+
+(source_file
+  (content
+    (equation
+      body: (math
+        (math_field_access
+          object: (math_identifier)
+          field: (math_identifier))))))
+
+==================
+Unicode raw language tag
+==================
+
+```λ-tag
+body
+```
+
+---
+
+(source_file
+  (content
+    (raw
+      (raw_delimiter)
+      language: (raw_language)
+      content: (raw_content)
+      (raw_delimiter))))
+
+==================
+Immediate math field with single-letter field
+==================
+
+$arrow.r$
+
+---
+
+(source_file
+  (content
+    (equation
+      body: (math
+        (math_field_access
+          object: (math_identifier)
+          field: (math_identifier))))))
+
+==================
+Math named argument uses a code identifier
+==================
+
+$mat(x: y)$
+
+---
+
+(source_file
+  (content
+    (equation
+      body: (math
+        (math_call
+          function: (math_identifier)
+          arguments: (math_arguments
+            (math_named_argument
+              name: (identifier)
+              (math_space)
+              value: (math_sequence
+                (math_text)))))))))
+
+==================
+Math spread argument with embedded code
+==================
+
+$mat(..#args)$
+
+---
+
+(source_file
+  (content
+    (equation
+      body: (math
+        (math_call
+          function: (math_identifier)
+          arguments: (math_arguments
+            (math_spread_argument
+              (math_spread_operator)
+              value: (math_sequence
+                (embedded_code
+                  body: (identifier))))))))))
+
+==================
+Comment is a valid heading boundary
+==================
+
+=/*comment*/Heading
+
+---
+
+(source_file
+  (content)
+  (section
+    heading: (heading
+      marker: (heading_marker)
+      (block_comment)
+      body: (heading_body
+        (text)))
+    body: (content)))
+
+==================
+Comment is a valid list-marker boundary
+==================
+
+-/*comment*/item
+
+---
+
+(source_file
+  (content
+    (bullet_list_item
+      marker: (bullet_list_marker)
+      (block_comment)
+      body: (list_body
+        (text)))))
+
+==================
+Indented term-list continuation
+==================
+
+/ Term: first line
+  continued description
+
+---
+
+(source_file
+  (content
+    (term_list_item
+      marker: (term_list_marker)
+      term: (text)
+      description: (list_body
+        (text)
+        (text)))))
+
+==================
+Comment-only list continuation
+==================
+
+- first
+  // c
+  continuation
+next
+
+- one
+  /* c */
+  two
+after
+
+- tail
+  // final
+after tail
+
+---
+
+(source_file
+  (content
+    (bullet_list_item
+      marker: (bullet_list_marker)
+      body: (list_body
+        (text)
+        (line_comment)
+        (text)))
+    (text)
+    (parbreak)
+    (bullet_list_item
+      marker: (bullet_list_marker)
+      body: (list_body
+        (text)
+        (block_comment)
+        (text)))
+    (text)
+    (parbreak)
+    (bullet_list_item
+      marker: (bullet_list_marker)
+      body: (list_body
+        (text)
+        (line_comment)))
+    (text)))

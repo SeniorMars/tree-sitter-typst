@@ -1,0 +1,3606 @@
+==================
+Code block accepts trailing newline before close
+==================
+
+#{
+  let n = 0
+}
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (code_block
+        body: (let_binding
+          name: (identifier)
+          value: (integer))))))
+
+==================
+Code block accepts blank lines before close
+==================
+
+#{
+  if number-to-left {
+    x
+
+  }
+  else { y }
+}
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (code_block
+        body: (if_expression
+          condition: (identifier)
+          consequence: (code_block
+            body: (identifier))
+          alternative: (else_clause
+            body: (code_block
+              body: (identifier))))))))
+
+==================
+Code block separates newline statements
+==================
+
+#{
+  let a = 1
+  let b = a + 2
+  b
+}
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (code_block
+        body: (let_binding
+          name: (identifier)
+          value: (integer))
+        body: (let_binding
+          name: (identifier)
+          value: (binary_expression
+            left: (identifier)
+            right: (integer)))
+        body: (identifier)))))
+
+==================
+Editor contract top newline before operator is a statement boundary
+==================
+
+#{
+  let a = 1
+  + 2
+}
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (code_block
+        body: (let_binding
+          name: (identifier)
+          value: (integer))
+        body: (unary_expression
+          operand: (integer))))))
+
+==================
+Editor contract parenthesized newline before operator continues expression
+==================
+
+#let a = (
+  1
+  + 2
+)
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (let_binding
+        name: (identifier)
+        value: (parenthesized_expression
+          expression: (binary_expression
+            left: (integer)
+            right: (integer)))))))
+
+==================
+Editor contract top newline-dot field access remains contextual
+==================
+
+#{
+  let a = foo
+    .bar()
+}
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (code_block
+        body: (let_binding
+          name: (identifier)
+          value: (function_call
+            function: (field_access
+              object: (identifier)
+              field: (identifier))
+            arguments: (arguments)))))))
+
+==================
+Editor contract parenthesized newline-dot field access continues
+==================
+
+#let a = (
+  foo
+  .bar()
+)
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (let_binding
+        name: (identifier)
+        value: (parenthesized_expression
+          expression: (function_call
+            function: (field_access
+              object: (identifier)
+              field: (identifier))
+            arguments: (arguments)))))))
+
+==================
+Editor contract embedded root stops before newline-dot
+==================
+
+#foo
+.bar
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (identifier))
+    (text)))
+
+==================
+Editor contract stopped binary expressions do not absorb newline-dot
+==================
+
+#show: a + b
+.c
+#return a + b
+.c
+#let x = a + b
+.c
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (show_rule
+        transformation: (binary_expression
+          left: (identifier)
+          right: (identifier))))
+    (text)
+    (embedded_code
+      body: (return_expression
+        value: (binary_expression
+          left: (identifier)
+          right: (identifier))))
+    (text)
+    (embedded_code
+      body: (let_binding
+        name: (identifier)
+        value: (binary_expression
+          left: (identifier)
+          right: (identifier))))
+    (text)))
+
+==================
+Editor contract contextual else across newline
+==================
+
+#{
+  if cond [
+    yes
+  ]
+  else [
+    no
+  ]
+}
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (code_block
+        body: (if_expression
+          condition: (identifier)
+          consequence: (content_block
+            body: (content
+              (text)))
+          alternative: (else_clause
+            body: (content_block
+              body: (content
+                (text)))))))))
+
+==================
+Editor contract parenthesized public node names remain stable
+==================
+
+#let f(a, b: 1, ..rest) = none
+#let (x, y: z, ..rest) = value
+#(one, two)
+#(key: value)
+#{
+  (x, y) = point
+}
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (let_binding
+        name: (identifier)
+        parameters: (parameters
+          (identifier)
+          (named_parameter
+            name: (identifier)
+            default: (integer))
+          (sink_parameter
+            name: (identifier)))
+        value: (none)))
+    (embedded_code
+      body: (let_binding
+        pattern: (destructuring_pattern
+          (identifier)
+          (named_destructuring_item
+            key: (identifier)
+            pattern: (identifier))
+          (destructuring_sink
+            pattern: (identifier)))
+        value: (identifier)))
+    (embedded_code
+      body: (array
+        (identifier)
+        (identifier)))
+    (embedded_code
+      body: (dictionary
+        (dictionary_entry
+          key: (identifier)
+          value: (identifier))))
+    (embedded_code
+      body: (code_block
+        body: (destructuring_assignment
+          pattern: (reassignment_pattern
+            (identifier)
+            (identifier))
+          value: (identifier))))))
+
+==================
+Code block expression continues before field access
+==================
+
+#{
+  foo
+    .bar
+}
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (code_block
+        body: (field_access
+          object: (identifier)
+          field: (identifier))))))
+
+==================
+Code continuation before field access through comment
+==================
+
+#{
+  foo
+  /* comment */
+  .bar
+}
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (code_block
+        body: (field_access
+          object: (identifier)
+          (block_comment)
+          field: (identifier))))))
+
+==================
+Code continuation before field access through blank lines
+==================
+
+#{
+  let foo = (bar: [ok])
+  foo
+
+
+  .bar
+}
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (code_block
+        body: (let_binding
+          name: (identifier)
+          value: (dictionary
+            (dictionary_entry
+              key: (identifier)
+              value: (content_block
+                body: (content
+                  (text))))))
+        body: (field_access
+          object: (identifier)
+          field: (identifier))))))
+
+==================
+Newline before leading-dot float is not field access
+==================
+
+#{
+  x
+  .5
+}
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (code_block
+        body: (identifier)
+        body: (float)))))
+
+==================
+Field access permits trivia around ordinary dot
+==================
+
+#{
+  foo. bar
+  foo./* c */bar
+}
+#(
+  foo.
+  bar
+)
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (code_block
+        body: (field_access
+          object: (identifier)
+          field: (identifier))
+        body: (field_access
+          object: (identifier)
+          (block_comment)
+          field: (identifier))))
+    (embedded_code
+      body: (parenthesized_expression
+        expression: (field_access
+          object: (identifier)
+          field: (identifier))))))
+
+==================
+Contextual field continuation rejects newline after dot
+==================
+
+#{
+  value
+  ./* comment */field
+}
+#{
+  value
+  .
+  field
+}
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (code_block
+        body: (field_access
+          object: (identifier)
+          (block_comment)
+          field: (identifier)))))
+  (ERROR
+    body: (identifier)
+    (string_content)))
+
+==================
+Code continuation before else through comment
+==================
+
+#{
+  if condition { yes }
+  // comment
+  else { no }
+}
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (code_block
+        body: (if_expression
+          condition: (identifier)
+          consequence: (code_block
+            body: (identifier))
+          alternative: (else_clause
+            (line_comment)
+            body: (code_block
+              body: (identifier))))))))
+
+==================
+Code continuation before else through blank lines
+==================
+
+#{
+  if true { [yes] }
+
+
+  else { [no] }
+}
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (code_block
+        body: (if_expression
+          condition: (boolean)
+          consequence: (code_block
+            body: (content_block
+              body: (content
+                (text))))
+          alternative: (else_clause
+            body: (code_block
+              body: (content_block
+                body: (content
+                  (text))))))))))
+
+==================
+Code continuation before operator through comment
+==================
+
+#(
+  1
+  /* comment */
+  + 2
+)
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (parenthesized_expression
+        expression: (binary_expression
+          left: (integer)
+          (block_comment)
+          right: (integer))))))
+
+==================
+Code continuation before operator through blank and comment lines
+==================
+
+#{
+  let blank = (
+    1
+
+    + 2
+  )
+  let comments = (
+    1
+    // c1
+    // c2
+    + 2
+  )
+}
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (code_block
+        body: (let_binding
+          name: (identifier)
+          value: (parenthesized_expression
+            expression: (binary_expression
+              left: (integer)
+              right: (integer))))
+        body: (let_binding
+          name: (identifier)
+          value: (parenthesized_expression
+            expression: (binary_expression
+              left: (integer)
+              (line_comment)
+              (line_comment)
+              right: (integer))))))))
+
+==================
+Code continuation operator wins before comma-list newline
+==================
+
+#let values = (
+  1
+  + 2,
+)
+
+#f(
+  1
+  + 2,
+)
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (let_binding
+        name: (identifier)
+        value: (array
+          (binary_expression
+            left: (integer)
+            right: (integer)))))
+    (parbreak)
+    (embedded_code
+      body: (function_call
+        function: (identifier)
+        arguments: (arguments
+          (binary_expression
+            left: (integer)
+            right: (integer)))))))
+
+==================
+Code continuation before division operator
+==================
+
+#(
+  a
+  / b
+)
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (parenthesized_expression
+        expression: (binary_expression
+          left: (identifier)
+          right: (identifier))))))
+
+==================
+Not-in continuation rejects bare slash trivia stop
+==================
+
+#{
+  value
+  not /in
+}
+
+---
+
+(source_file
+  (content)
+  (ERROR
+    (identifier)
+    (string_content)))
+
+==================
+Let binding parenthesized division
+==================
+
+#let value = (
+  numerator
+  / denominator
+)
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (let_binding
+        name: (identifier)
+        value: (parenthesized_expression
+          expression: (binary_expression
+            left: (identifier)
+            right: (identifier)))))))
+
+==================
+Failed code keyword lookahead falls back to newline
+==================
+
+#{
+  a
+  example
+  alpha
+  input
+  other
+  name
+}
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (code_block
+        body: (identifier)
+        body: (identifier)
+        body: (identifier)
+        body: (identifier)
+        body: (identifier)
+        body: (identifier)))))
+
+==================
+Failed else probe keeps next code item
+==================
+
+#{
+  if true {}
+  example
+}
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (code_block
+        body: (if_expression
+          condition: (boolean)
+          consequence: (code_block))
+        body: (identifier)))))
+
+==================
+Code close delimiter accepts preceding comment
+==================
+
+#(
+  value
+  /* comment */
+)
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (parenthesized_expression
+        expression: (identifier)
+        (block_comment)))))
+
+==================
+Call close delimiter preserves preceding line comment
+==================
+
+#f(
+  value,
+  // important comment
+)
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (function_call
+        function: (identifier)
+        arguments: (arguments
+          (identifier)
+          (line_comment))))))
+
+==================
+Code block close delimiter preserves preceding block comment
+==================
+
+#{
+  value
+  /* trailing explanation */
+}
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (code_block
+        body: (identifier)
+        (block_comment)))))
+
+==================
+Embedded call continues across argument lines
+==================
+
+#calc(
+  1,
+  2,
+)
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (function_call
+        function: (identifier)
+        arguments: (arguments
+          (integer)
+          (integer))))))
+
+==================
+Embedded hash requires immediate code
+==================
+
+#foo
+# foo
+#/* comment */foo
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (identifier)))
+  (ERROR
+    (string_content)))
+
+==================
+Embedded hash statement stops at newline
+==================
+
+#let
+x = 1
+
+---
+
+(source_file
+  (content)
+  (ERROR
+    (string_content)))
+
+==================
+Embedded return is a statement
+==================
+
+#return;
+#return 1;
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (return_expression))
+    (embedded_code
+      body: (return_expression
+        value: (integer)))))
+
+==================
+Atomic context permits spaced statement bodies
+==================
+
+#context if true [yes]
+#context let x = 1
+#context return 1
+#context break
+#context foo
+#context +foo
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (contextual_expression
+        body: (if_expression
+          condition: (boolean)
+          consequence: (content_block
+            body: (content
+              (text))))))
+    (embedded_code
+      body: (contextual_expression
+        body: (identifier)))
+    (text)
+    (embedded_code
+      body: (contextual_expression
+        body: (identifier)))
+    (text)
+    (embedded_code
+      body: (contextual_expression
+        body: (break_expression)))
+    (embedded_code
+      body: (contextual_expression
+        body: (identifier)))
+    (embedded_code
+      body: (contextual_expression
+        body: (unary_expression
+          operand: (identifier))))))
+
+==================
+Statement-like expressions participate in precedence
+==================
+
+#let result = (
+  1 + let temporary = 2
+)
+
+#{
+  1 + let temporary = 2
+}
+
+[#context let temporary = 2]
+
+---
+
+(source_file
+  (content)
+  (ERROR
+    (identifier)
+    (binary_expression
+      left: (integer)
+      right: (identifier))
+    (string_content)))
+
+==================
+Assignment is an assignment expression
+==================
+
+#f(x: y = z)
+#{ a = b = c }
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (function_call
+        function: (identifier)
+        arguments: (arguments
+          (named_argument
+            name: (identifier)
+            value: (assignment_expression
+              left: (identifier)
+              right: (identifier))))))
+    (embedded_code
+      body: (code_block
+        body: (assignment_expression
+          left: (identifier)
+          right: (assignment_expression
+            left: (identifier)
+            right: (identifier)))))))
+
+==================
+Immediate parenthesized call
+==================
+
+#{ f(x) }
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (code_block
+        body: (function_call
+          function: (identifier)
+          arguments: (arguments
+            (identifier)))))))
+
+==================
+Spaced parenthesized call is invalid
+==================
+
+#{ f (x) }
+
+---
+
+(source_file
+  (content)
+  (ERROR
+    (identifier)
+    (string_content)))
+
+==================
+Newline separates parenthesized expression from identifier
+==================
+
+#{
+  f
+  (x)
+}
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (code_block
+        body: (identifier)
+        body: (parenthesized_expression
+          expression: (identifier))))))
+
+==================
+String escape may contain newline
+==================
+
+#"a\
+b"
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (string
+        (string_content)
+        (string_escape)
+        (string_content)))))
+
+==================
+Closure call argument
+==================
+
+#metric.rows.map(row => row.index)
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (function_call
+        function: (field_access
+          object: (field_access
+            object: (identifier)
+            field: (identifier))
+          field: (identifier))
+        arguments: (arguments
+          (closure
+            parameters: (identifier)
+            body: (field_access
+              object: (identifier)
+              field: (identifier))))))))
+
+==================
+Closure tuple parameters
+==================
+
+#((x, y) => x + y)
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (parenthesized_expression
+        expression: (closure
+          parameters: (parameters
+            (identifier)
+            (identifier))
+          body: (binary_expression
+            left: (identifier)
+            right: (identifier)))))))
+
+==================
+Math trailing spaces before inline close
+==================
+
+Trailing: $ a + b $
+Nested: $ f(#(x + 1)) $
+
+---
+
+(source_file
+  (content
+    (text)
+    (text)
+    (equation
+      body: (math
+        (math_space)
+        (math_text)
+        (math_space)
+        (math_text)
+        (math_space)
+        (math_text))
+      (math_space))
+    (text)
+    (text)
+    (equation
+      body: (math
+        (math_space)
+        (math_application
+          function: (math_text)
+          argument: (math_delimited
+            open: (math_delimiter)
+            body: (math
+              (embedded_code
+                body: (parenthesized_expression
+                  expression: (binary_expression
+                    left: (identifier)
+                    right: (integer)))))
+            close: (math_delimiter))))
+      (math_space))))
+
+==================
+Math fraction slash adjacency
+==================
+
+$x/y$
+$x / y$
+
+---
+
+(source_file
+  (content
+    (equation
+      body: (math
+        (math_fraction
+          numerator: (math_text)
+          denominator: (math_text))))
+    (equation
+      body: (math
+        (math_fraction
+          numerator: (math_text)
+          (math_space)
+          (math_space)
+          denominator: (math_text))))))
+
+==================
+Math delimited close preserves preceding comment
+==================
+
+$ [| x /* comment */ |] $
+
+---
+
+(source_file
+  (content
+    (equation
+      body: (math
+        (math_space)
+        (math_delimited
+          open: (math_delimiter)
+          body: (math
+            (math_space)
+            (math_text))
+          (math_space)
+          (block_comment)
+          (math_space)
+          close: (math_delimiter)))
+      (math_space))))
+
+==================
+Math comments are trivia in spaced gaps
+==================
+
+$a /* comment */ b$
+$a /* comment */ _b$
+$a /* comment */ / b$
+$√ /* comment */ x$
+$foo(x: /* comment */ y)$
+$(a /* comment */ )$
+$[a /* comment */ ]$
+
+---
+
+(source_file
+  (content
+    (equation
+      body: (math
+        (math_text)
+        (math_space)
+        (block_comment)
+        (math_space)
+        (math_text)))
+    (equation
+      body: (math
+        (math_attachment
+          base: (math_text)
+          (math_space)
+          (block_comment)
+          (math_space)
+          subscript: (math_text))))
+    (equation
+      body: (math
+        (math_fraction
+          numerator: (math_text)
+          (math_space)
+          (block_comment)
+          (math_space)
+          (math_space)
+          denominator: (math_text))))
+    (equation
+      body: (math
+        (math_root
+          (math_space)
+          (block_comment)
+          (math_space)
+          radicand: (math_text))))
+    (equation
+      body: (math
+        (math_call
+          function: (math_identifier)
+          arguments: (math_arguments
+            (math_named_argument
+              name: (identifier)
+              (math_space)
+              (block_comment)
+              (math_space)
+              value: (math_sequence
+                (math_text)))))))
+    (equation
+      body: (math
+        (math_delimited
+          open: (math_delimiter)
+          body: (math
+            (math_text))
+          (math_space)
+          (block_comment)
+          (math_space)
+          close: (math_delimiter))))
+    (equation
+      body: (math
+        (math_delimited
+          open: (math_delimiter)
+          body: (math
+            (math_text))
+          (math_space)
+          (block_comment)
+          (math_space)
+          close: (math_delimiter))))))
+
+==================
+Spaced math closers and pipes remain text outside close context
+==================
+
+$a)$
+$a )$
+$a|b$
+$a | b$
+$a||b$
+$a || b$
+$a |$
+$a |_b$
+$a |/b$
+$a ]$
+$a }$
+$[| x |]$
+$[| x | y |]$
+
+---
+
+(source_file
+  (content
+    (equation
+      body: (math
+        (math_text)
+        (math_text)))
+    (equation
+      body: (math
+        (math_text)
+        (math_space)
+        (math_text)))
+    (equation
+      body: (math
+        (math_text)
+        (math_text)
+        (math_text)))
+    (equation
+      body: (math
+        (math_text)
+        (math_space)
+        (math_text)
+        (math_space)
+        (math_text)))
+    (equation
+      body: (math
+        (math_text)
+        (math_shorthand)
+        (math_text)))
+    (equation
+      body: (math
+        (math_text)
+        (math_space)
+        (math_shorthand)
+        (math_space)
+        (math_text)))
+    (equation
+      body: (math
+        (math_text)
+        (math_space)
+        (math_text)))
+    (equation
+      body: (math
+        (math_text)
+        (math_space)
+        (math_attachment
+          base: (math_text)
+          subscript: (math_text))))
+    (equation
+      body: (math
+        (math_text)
+        (math_space)
+        (math_fraction
+          numerator: (math_text)
+          denominator: (math_text))))
+    (equation
+      body: (math
+        (math_text)
+        (math_space)
+        (math_text)))
+    (equation
+      body: (math
+        (math_text)
+        (math_space)
+        (math_text)))
+    (equation
+      body: (math
+        (math_delimited
+          open: (math_delimiter)
+          body: (math
+            (math_space)
+            (math_text))
+          (math_space)
+          close: (math_delimiter))))
+    (equation
+      body: (math
+        (math_delimited
+          open: (math_delimiter)
+          body: (math
+            (math_space)
+            (math_text)
+            (math_space)
+            (math_text)
+            (math_space)
+            (math_text))
+          (math_space)
+          close: (math_delimiter))))))
+
+==================
+Math grouping versus display parentheses
+==================
+
+$score_(#metric.bucket) / (a+b)$
+
+---
+
+(source_file
+  (content
+    (equation
+      body: (math
+        (math_fraction
+          numerator: (math_attachment
+            base: (math_identifier)
+            subscript: (math_delimited
+              open: (math_delimiter)
+              body: (math
+                (embedded_code
+                  body: (field_access
+                    object: (identifier)
+                    field: (identifier))))
+              close: (math_delimiter)))
+          (math_space)
+          (math_space)
+          denominator: (math_group
+            open: (math_delimiter)
+            body: (math
+              (math_text)
+              (math_text)
+              (math_text))
+            close: (math_delimiter)))))))
+
+==================
+Math field identifiers exclude underscore
+==================
+
+$ foo.bar_baz $
+
+---
+
+(source_file
+  (content
+    (equation
+      body: (math
+        (math_space)
+        (math_attachment
+          base: (math_field_access
+            object: (math_identifier)
+            field: (math_identifier))
+          subscript: (math_identifier)))
+      (math_space))))
+
+==================
+Math text attachment base uses codepoint recovery
+==================
+
+$ 👩‍🔬_x $
+
+---
+
+(source_file
+  (content
+    (equation
+      body: (math
+        (math_space)
+        (math_text)
+        (math_text)
+        (math_attachment
+          base: (math_text)
+          subscript: (math_text)))
+      (math_space))))
+
+==================
+Math spaced attachment operators
+==================
+
+$x _ y$
+$x ^ y$
+$x' _ y$
+
+---
+
+(source_file
+  (content
+    (equation
+      body: (math
+        (math_attachment
+          base: (math_text)
+          (math_space)
+          (math_space)
+          subscript: (math_text))))
+    (equation
+      body: (math
+        (math_attachment
+          base: (math_text)
+          (math_space)
+          (math_space)
+          superscript: (math_text))))
+    (equation
+      body: (math
+        (math_attachment
+          base: (math_text)
+          primes: (math_primes)
+          (math_space)
+          (math_space)
+          subscript: (math_text))))))
+
+==================
+Math attachment stop sets
+==================
+
+$ a_b^c $
+$ a^b_c $
+$ a_b_c $
+$ a^b^c $
+$ a^b'_c^d $
+$ a'_b^c $
+$ a'! $
+
+---
+
+(source_file
+  (content
+    (equation
+      body: (math
+        (math_space)
+        (math_attachment
+          base: (math_text)
+          subscript: (math_text)
+          superscript: (math_text)))
+      (math_space))
+    (equation
+      body: (math
+        (math_space)
+        (math_attachment
+          base: (math_text)
+          superscript: (math_text)
+          subscript: (math_text)))
+      (math_space))
+    (equation
+      body: (math
+        (math_space)
+        (math_attachment
+          base: (math_text)
+          subscript: (math_attachment
+            base: (math_text)
+            subscript: (math_text))))
+      (math_space))
+    (equation
+      body: (math
+        (math_space)
+        (math_attachment
+          base: (math_text)
+          superscript: (math_attachment
+            base: (math_text)
+            superscript: (math_text))))
+      (math_space))
+    (equation
+      body: (math
+        (math_space)
+        (math_attachment
+          base: (math_attachment
+            base: (math_text)
+            superscript: (math_attachment
+              base: (math_text)
+              primes: (math_primes))
+            subscript: (math_text))
+          superscript: (math_text)))
+      (math_space))
+    (equation
+      body: (math
+        (math_space)
+        (math_attachment
+          base: (math_text)
+          primes: (math_primes)
+          subscript: (math_text)
+          superscript: (math_text)))
+      (math_space))
+    (equation
+      body: (math
+        (math_space)
+        (math_factorial
+          operand: (math_attachment
+            base: (math_text)
+            primes: (math_primes))))
+      (math_space))))
+
+==================
+Math trailing space is not attachment
+==================
+
+$x $
+
+---
+
+(source_file
+  (content
+    (equation
+      body: (math
+        (math_text))
+      (math_space))))
+
+==================
+Heading and list comment boundaries
+==================
+
+=/*comment*/Heading
+-/*comment*/item
++/*comment*/item
+1./*comment*/item
+999999999999999999999999999999999999999. item
+
+---
+
+(source_file
+  (content)
+  (section
+    heading: (heading
+      marker: (heading_marker)
+      (block_comment)
+      body: (heading_body
+        (text)))
+    body: (content
+      (bullet_list_item
+        marker: (bullet_list_marker)
+        (block_comment)
+        body: (list_body
+          (text)))
+      (numbered_list_item
+        marker: (numbered_list_marker)
+        (block_comment)
+        body: (list_body
+          (text)))
+      (numbered_list_item
+        marker: (numbered_list_marker)
+        (block_comment)
+        body: (list_body
+          (text)))
+      (numbered_list_item
+        marker: (numbered_list_marker)
+        body: (list_body
+          (text))))))
+
+==================
+Heading trailing comments
+==================
+
+= Heading // comment
+= Heading /* c */
+= Heading /* c */ more
+
+---
+
+(source_file
+  (content)
+  (section
+    heading: (heading
+      marker: (heading_marker)
+      body: (heading_body
+        (text)))
+    comment: (line_comment)
+    body: (content))
+  (section
+    heading: (heading
+      marker: (heading_marker)
+      body: (heading_body
+        (text)))
+    comment: (block_comment)
+    body: (content))
+  (section
+    heading: (heading
+      marker: (heading_marker)
+      body: (heading_body
+        (text)
+        (block_comment)
+        (text)))
+    body: (content)))
+
+==================
+Nested code in math call with trailing equation space
+==================
+
+$ vec(#(x + 1)) $
+
+---
+
+(source_file
+  (content
+    (equation
+      body: (math
+        (math_space)
+        (math_call
+          function: (math_identifier)
+          arguments: (math_arguments
+            (math_sequence
+              (embedded_code
+                body: (parenthesized_expression
+                  expression: (binary_expression
+                    left: (identifier)
+                    right: (integer))))))))
+      (math_space))))
+
+==================
+Spaced content block after control-flow header is body
+==================
+
+#if f[x] [body]
+#while f(x) [body]
+#for x in f(y) [body]
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (if_expression
+        condition: (function_call
+          function: (identifier)
+          arguments: (arguments
+            (content_block
+              body: (content
+                (text)))))
+        consequence: (content_block
+          body: (content
+            (text)))))
+    (embedded_code
+      body: (while_loop
+        condition: (function_call
+          function: (identifier)
+          arguments: (arguments
+            (identifier)))
+        body: (content_block
+          body: (content
+            (text)))))
+    (embedded_code
+      body: (for_loop
+        pattern: (identifier)
+        iterable: (function_call
+          function: (identifier)
+          arguments: (arguments
+            (identifier)))
+        body: (content_block
+          body: (content
+            (text)))))))
+
+==================
+Parenthesized call accepts multiple content blocks
+==================
+
+#f(x)[a][b]
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (function_call
+        function: (function_call
+          function: (function_call
+            function: (identifier)
+            arguments: (arguments
+              (identifier)))
+          arguments: (arguments
+            (content_block
+              body: (content
+                (text)))))
+        arguments: (arguments
+          (content_block
+            body: (content
+              (text))))))))
+
+==================
+Immediate postfix does not cross block comments
+==================
+
+#f/* comment */(x)
+#f/* comment */[content]
+#value/* comment */.field
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (identifier))
+    (block_comment)
+    (text)
+    (embedded_code
+      body: (identifier))
+    (block_comment)
+    (bracketed_text
+      (text))
+    (embedded_code
+      body: (identifier))
+    (block_comment)
+    (text)))
+
+==================
+Atomic field requires direct adjacency
+==================
+
+#value .field
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (identifier))
+    (text)))
+
+==================
+Bare underscore is not an atomic field identifier
+==================
+
+#value._
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (identifier))
+    (text)
+    (emphasis
+      (MISSING "_"))))
+
+==================
+Comment-blocked content block is a control body
+==================
+
+#if condition/* c */[body]
+#while condition/* c */[body]
+#for item in items/* c */[body]
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (if_expression
+        condition: (identifier)
+        (block_comment)
+        consequence: (content_block
+          body: (content
+            (text)))))
+    (embedded_code
+      body: (while_loop
+        condition: (identifier)
+        (block_comment)
+        body: (content_block
+          body: (content
+            (text)))))
+    (embedded_code
+      body: (for_loop
+        pattern: (identifier)
+        iterable: (identifier)
+        (block_comment)
+        body: (content_block
+          body: (content
+            (text)))))))
+
+==================
+Immediate if content block remains call argument
+==================
+
+#if f[x][body]
+
+---
+
+(source_file
+  (content)
+  (ERROR
+    (function_call
+      function: (function_call
+        function: (identifier)
+        arguments: (arguments
+          (content_block
+            body: (content
+              (text)))))
+      arguments: (arguments
+        (content_block
+          body: (content
+            (text)))))
+    (string_content)))
+
+==================
+Immediate while content block remains call argument
+==================
+
+#while f(x)[body]
+
+---
+
+(source_file
+  (content)
+  (ERROR
+    (function_call
+      function: (function_call
+        function: (identifier)
+        arguments: (arguments
+          (identifier)))
+      arguments: (arguments
+        (content_block
+          body: (content
+            (text)))))
+    (string_content)))
+
+==================
+Inline import accepts space before code close
+==================
+
+#{ import "x.typ" }
+#{ import mod_name as mod }
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (code_block
+        body: (module_import
+          source: (string
+            (string_content)))))
+    (embedded_code
+      body: (code_block
+        body: (module_import
+          source: (identifier)
+          alias: (identifier))))))
+
+==================
+Stopped statement continuations accept comment trivia
+==================
+
+#import "x"/* comment */as alias;
+#set text()/* comment */if condition;
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (module_import
+        source: (string
+          (string_content))
+        (block_comment)
+        alias: (identifier)))
+    (embedded_code
+      body: (set_rule
+        target: (identifier)
+        arguments: (arguments)
+        (block_comment)
+        condition: (identifier)))))
+
+==================
+Set rule requires parenthesized arguments
+==================
+
+#set text[hello]
+
+---
+
+(source_file
+  (content)
+  (ERROR
+    (identifier)
+    (string_content)))
+
+==================
+Set rule does not accept trailing content arguments
+==================
+
+#set text(size: 10pt)[hello]
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (set_rule
+        target: (identifier)
+        arguments: (arguments
+          (named_argument
+            name: (identifier)
+            value: (numeric
+              value: (integer)
+              unit: (unit)))))
+        body: (MISSING ";"))
+    (bracketed_text
+      (text))))
+
+==================
+Non-parenthesized import items allow trailing comma
+==================
+
+#import "module.typ": one, two,
+#{ import "module.typ": one, two, }
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (module_import
+        source: (string
+          (string_content))
+        imports: (import_list
+          (import_item
+            path: (import_path
+              head: (identifier)))
+          (import_item
+            path: (import_path
+              head: (identifier))))))
+    (embedded_code
+      body: (code_block
+        body: (module_import
+          source: (string
+            (string_content))
+          imports: (import_list
+            (import_item
+              path: (import_path
+                head: (identifier)))
+            (import_item
+              path: (import_path
+                head: (identifier)))))))))
+
+==================
+Numeric unit adjacency does not cross multiline block comment
+==================
+
+#{ let x = 12/*
+*/pt }
+
+---
+
+(source_file
+  (content)
+  (ERROR
+    (let_binding
+      name: (identifier)
+      value: (integer))
+    (block_comment)
+    (string_content)))
+
+==================
+Destructuring reassignment
+==================
+
+#{ (x, y) = pair }
+#{ _ = value }
+#{ (object.x, y) = pair }
+#{ (outer, (inner, target.field)) = value }
+#{ (key: object.field, other: value) = source }
+#{ (..rest, last) = source }
+#{ () = source }
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (code_block
+        body: (destructuring_assignment
+          pattern: (reassignment_pattern
+            (identifier)
+            (identifier))
+          value: (identifier))))
+    (embedded_code
+      body: (code_block
+        body: (destructuring_assignment
+          pattern: (discard_pattern)
+          value: (identifier))))
+    (embedded_code
+      body: (code_block
+        body: (destructuring_assignment
+          pattern: (reassignment_pattern
+            (field_access
+              object: (identifier)
+              field: (identifier))
+            (identifier))
+          value: (identifier))))
+    (embedded_code
+      body: (code_block
+        body: (destructuring_assignment
+          pattern: (reassignment_pattern
+            (identifier)
+            (reassignment_pattern
+              (identifier)
+              (field_access
+                object: (identifier)
+                field: (identifier))))
+          value: (identifier))))
+    (embedded_code
+      body: (code_block
+        body: (destructuring_assignment
+          pattern: (reassignment_pattern
+            (named_destructuring_item
+              key: (identifier)
+              pattern: (field_access
+                object: (identifier)
+                field: (identifier)))
+            (named_destructuring_item
+              key: (identifier)
+              pattern: (identifier)))
+          value: (identifier))))
+    (embedded_code
+      body: (code_block
+        body: (destructuring_assignment
+          pattern: (reassignment_pattern
+            (destructuring_sink
+              pattern: (identifier))
+            (identifier))
+          value: (identifier))))
+    (embedded_code
+      body: (code_block
+        body: (destructuring_assignment
+          pattern: (reassignment_pattern)
+          value: (identifier))))))
+
+==================
+Parenthesized single assignment target is not destructuring
+==================
+
+#{ (x) = value }
+#{ () = value }
+#{ (x,) = value }
+#{ (x, y) = value }
+#{ (key: x) = value }
+#{ (..rest) = value }
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (code_block
+        body: (assignment_expression
+          left: (parenthesized_expression
+            expression: (identifier))
+          right: (identifier))))
+    (embedded_code
+      body: (code_block
+        body: (destructuring_assignment
+          pattern: (reassignment_pattern)
+          value: (identifier))))
+    (embedded_code
+      body: (code_block
+        body: (destructuring_assignment
+          pattern: (reassignment_pattern
+            (identifier))
+          value: (identifier))))
+    (embedded_code
+      body: (code_block
+        body: (destructuring_assignment
+          pattern: (reassignment_pattern
+            (identifier)
+            (identifier))
+          value: (identifier))))
+    (embedded_code
+      body: (code_block
+        body: (destructuring_assignment
+          pattern: (reassignment_pattern
+            (named_destructuring_item
+              key: (identifier)
+              pattern: (identifier)))
+          value: (identifier))))
+    (embedded_code
+      body: (code_block
+        body: (destructuring_assignment
+          pattern: (reassignment_pattern
+            (destructuring_sink
+              pattern: (identifier)))
+          value: (identifier))))))
+
+==================
+List parbreak continuation remains visible
+==================
+
+- first
+  second
+
+- first
+
+  second
+
+---
+
+(source_file
+  (content
+    (bullet_list_item
+      marker: (bullet_list_marker)
+      body: (list_body
+        (text)
+        (text)))
+    (parbreak)
+    (bullet_list_item
+      marker: (bullet_list_marker)
+      body: (list_body
+        (text)
+        (parbreak)
+        (text)))))
+
+==================
+Direct postfix after control expressions
+==================
+
+#if true { 1 } else { 2 }.foo
+#while true { break }.foo
+#for x in xs { x }.foo
+#if true { f }(x)
+#if true { f }[body]
+#break.foo
+#continue.foo
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (field_access
+        object: (if_expression
+          condition: (boolean)
+          consequence: (code_block
+            body: (integer))
+          alternative: (else_clause
+            body: (code_block
+              body: (integer))))
+        field: (identifier)))
+    (embedded_code
+      body: (field_access
+        object: (while_loop
+          condition: (boolean)
+          body: (code_block
+            body: (break_expression)))
+        field: (identifier)))
+    (embedded_code
+      body: (field_access
+        object: (for_loop
+          pattern: (identifier)
+          iterable: (identifier)
+          body: (code_block
+            body: (identifier)))
+        field: (identifier)))
+    (embedded_code
+      body: (function_call
+        function: (if_expression
+          condition: (boolean)
+          consequence: (code_block
+            body: (identifier)))
+        arguments: (arguments
+          (identifier))))
+    (embedded_code
+      body: (function_call
+        function: (if_expression
+          condition: (boolean)
+          consequence: (code_block
+            body: (identifier)))
+        arguments: (arguments
+          (content_block
+            body: (content
+              (text))))))
+    (embedded_code
+      body: (field_access
+        object: (break_expression)
+        field: (identifier)))
+    (embedded_code
+      body: (field_access
+        object: (continue_expression)
+        field: (identifier)))))
+
+==================
+Real-world boundary regression cases
+==================
+
+// Control-condition/body boundary.
+#{ if type(a) != float and type(a) != int { panic() } }
+#{ if coeff < 0 or coeff > 1 { panic() } }
+#{ while p.x >= 0 and p.y >= 0 { break } }
+#{ for x in items.filter(it => it.enabled and it.value > 0) { x } }
+
+// A direct `{` is a control body; a direct `[` remains a call argument.
+#if true{ok}
+#if predicate[arg] [ok]
+#if predicate [ok]
+
+// Atomic field lookahead and handoff back to markup.
+#link("https://typst.app/")[Typst].
+#link("https://typst.app/docs/reference/visualize/stroke/")[Typst stroke].
+#foo.bar.
+#foo. bar
+
+// One generic newline operator guard.
+#(
+  a
+  /* comment */
+  and b
+  or c
+)
+#(
+  value
+  / divisor
+)
+
+---
+
+(source_file
+  (content
+    (line_comment)
+    (embedded_code
+      body: (code_block
+        body: (if_expression
+          condition: (binary_expression
+            left: (binary_expression
+              left: (function_call
+                function: (identifier)
+                arguments: (arguments
+                  (identifier)))
+              right: (identifier))
+            right: (binary_expression
+              left: (function_call
+                function: (identifier)
+                arguments: (arguments
+                  (identifier)))
+              right: (identifier)))
+          consequence: (code_block
+            body: (function_call
+              function: (identifier)
+              arguments: (arguments))))))
+    (embedded_code
+      body: (code_block
+        body: (if_expression
+          condition: (binary_expression
+            left: (binary_expression
+              left: (identifier)
+              right: (integer))
+            right: (binary_expression
+              left: (identifier)
+              right: (integer)))
+          consequence: (code_block
+            body: (function_call
+              function: (identifier)
+              arguments: (arguments))))))
+    (embedded_code
+      body: (code_block
+        body: (while_loop
+          condition: (binary_expression
+            left: (binary_expression
+              left: (field_access
+                object: (identifier)
+                field: (identifier))
+              right: (integer))
+            right: (binary_expression
+              left: (field_access
+                object: (identifier)
+                field: (identifier))
+              right: (integer)))
+          body: (code_block
+            body: (break_expression)))))
+    (embedded_code
+      body: (code_block
+        body: (for_loop
+          pattern: (identifier)
+          iterable: (function_call
+            function: (field_access
+              object: (identifier)
+              field: (identifier))
+            arguments: (arguments
+              (closure
+                parameters: (identifier)
+                body: (binary_expression
+                  left: (field_access
+                    object: (identifier)
+                    field: (identifier))
+                  right: (binary_expression
+                    left: (field_access
+                      object: (identifier)
+                      field: (identifier))
+                    right: (integer))))))
+          body: (code_block
+            body: (identifier)))))
+    (parbreak)
+    (line_comment)
+    (embedded_code
+      body: (if_expression
+        condition: (boolean)
+        consequence: (code_block
+          body: (identifier))))
+    (embedded_code
+      body: (if_expression
+        condition: (function_call
+          function: (identifier)
+          arguments: (arguments
+            (content_block
+              body: (content
+                (text)))))
+        consequence: (content_block
+          body: (content
+            (text)))))
+    (embedded_code
+      body: (if_expression
+        condition: (identifier)
+        consequence: (content_block
+          body: (content
+            (text)))))
+    (parbreak)
+    (line_comment)
+    (embedded_code
+      body: (function_call
+        function: (function_call
+          function: (identifier)
+          arguments: (arguments
+            (string
+              (string_content))))
+        arguments: (arguments
+          (content_block
+            body: (content
+              (text))))))
+    (text)
+    (embedded_code
+      body: (function_call
+        function: (function_call
+          function: (identifier)
+          arguments: (arguments
+            (string
+              (string_content))))
+        arguments: (arguments
+          (content_block
+            body: (content
+              (text))))))
+    (text)
+    (embedded_code
+      body: (field_access
+        object: (identifier)
+        field: (identifier)))
+    (text)
+    (embedded_code
+      body: (identifier))
+    (text)
+    (parbreak)
+    (line_comment)
+    (embedded_code
+      body: (parenthesized_expression
+        expression: (binary_expression
+          left: (binary_expression
+            left: (identifier)
+            (block_comment)
+            right: (identifier))
+          right: (identifier))))
+    (embedded_code
+      body: (parenthesized_expression
+        expression: (binary_expression
+          left: (identifier)
+          right: (identifier))))))
+
+==================
+Leading-dot floats are accepted
+==================
+
+#(.5)
+$#(.5)$
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (parenthesized_expression
+        expression: (float)))
+    (equation
+      body: (math
+        (embedded_code
+          body: (parenthesized_expression
+            expression: (float)))))))
+
+==================
+Numeric units are visible
+==================
+
+#(10pt, .5em, 20%, 1e2pt)
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (array
+        (numeric
+          value: (integer)
+          unit: (unit))
+        (numeric
+          value: (float)
+          unit: (unit))
+        (numeric
+          value: (integer)
+          unit: (unit))
+        (numeric
+          value: (float)
+          unit: (unit))))))
+
+==================
+Large decimal integers remain integer tokens
+==================
+
+#(9223372036854775807, 9223372036854775808)
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (array
+        (integer)
+        (integer)))))
+
+==================
+Large base-prefixed integers remain integer tokens
+==================
+
+#0xffffffffffffffff
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      (integer))))
+
+==================
+Explicit markup linebreak remains visible
+==================
+
+First \
+Second
+
+---
+
+(source_file
+  (content
+    (text)
+    (linebreak)
+    (text)))
+
+==================
+Markup word gap stops before shorthand and links
+==================
+
+text -- text
+text --- text
+text -? text
+text -1 text
+text ... text
+text - text
+text .. text
+text . text
+See https://typst.app text
+
+---
+
+(source_file
+  (content
+    (text)
+    (shorthand)
+    (text)
+    (text)
+    (shorthand)
+    (text)
+    (text)
+    (shorthand)
+    (text)
+    (text)
+    (shorthand)
+    (text)
+    (text)
+    (shorthand)
+    (text)
+    (text)
+    (text)
+    (text)
+    (text)
+    (automatic_link)
+    (text)))
+
+==================
+Control condition keeps comparison tighter than and
+==================
+
+#if debug and total > 20pt { rows.push(total) }
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (if_expression
+        condition: (binary_expression
+          left: (identifier)
+          right: (binary_expression
+            left: (identifier)
+            right: (numeric
+              value: (integer)
+              unit: (unit))))
+        consequence: (code_block
+          body: (function_call
+            function: (field_access
+              object: (identifier)
+              field: (identifier))
+            arguments: (arguments
+              (identifier))))))))
+
+==================
+Continued logical not keeps full precedence ladder
+==================
+
+#let value = (
+  not a + b * c
+)
+#let value = (
+  not a < b + c
+)
+#let value = (
+  not a + b + c
+)
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (let_binding
+        name: (identifier)
+        value: (parenthesized_expression
+          expression: (logical_not_expression
+            operand: (binary_expression
+              left: (identifier)
+              right: (binary_expression
+                left: (identifier)
+                right: (identifier)))))))
+    (embedded_code
+      body: (let_binding
+        name: (identifier)
+        value: (parenthesized_expression
+          expression: (logical_not_expression
+            operand: (binary_expression
+              left: (identifier)
+              right: (binary_expression
+                left: (identifier)
+                right: (identifier)))))))
+    (embedded_code
+      body: (let_binding
+        name: (identifier)
+        value: (parenthesized_expression
+          expression: (logical_not_expression
+            operand: (binary_expression
+              left: (binary_expression
+                left: (identifier)
+                right: (identifier))
+              right: (identifier))))))))
+
+==================
+Embedded statement stops before next-line content
+==================
+
+#let x = 1
+[body]
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (let_binding
+        name: (identifier)
+        value: (integer)))
+    (bracketed_text
+      (text))))
+
+==================
+Stopped conditional rejects next-line content body
+==================
+
+#if true
+[body]
+
+---
+
+(source_file
+  (content)
+  (ERROR
+    (boolean)
+    (string_content)))
+
+==================
+Immediate for content block remains call argument
+==================
+
+#for x in f(y)[body]
+
+---
+
+(source_file
+  (content)
+  (ERROR
+    (identifier)
+    (function_call
+      function: (function_call
+        function: (identifier)
+        arguments: (arguments
+          (identifier)))
+      arguments: (arguments
+        (content_block
+          body: (content
+            (text)))))
+    (string_content)))
+
+==================
+Flat sections are siblings
+==================
+
+Before.
+
+= A <a>
+
+Body A.
+
+== B
+
+Body B.
+
+= C
+
+---
+
+(source_file
+  (content
+    (text)
+    (parbreak))
+  (section
+    heading: (heading
+      marker: (heading_marker)
+      body: (heading_body
+        (text)))
+    label: (label)
+    body: (content
+      (parbreak)
+      (text)
+      (parbreak)))
+  (section
+    heading: (heading
+      marker: (heading_marker)
+      body: (heading_body
+        (text)))
+    body: (content
+      (parbreak)
+      (text)
+      (parbreak)))
+  (section
+    heading: (heading
+      marker: (heading_marker)
+      body: (heading_body
+        (text)))
+    body: (content)))
+
+==================
+Review matrix raw delimiter adjacency
+==================
+
+`abc
+```abc
+
+---
+
+(source_file
+  (content
+    (raw
+      (raw_delimiter)
+      content: (raw_content)
+      (raw_delimiter))
+    (raw
+      (raw_delimiter)
+      (raw_delimiter))
+    (text)))
+
+==================
+Raw language target follows Typst 0.15 identifier-like syntax
+==================
+
+```_
+body
+```
+```_x
+body
+```
+```c++
+body
+```
+```++c
+body
+```
+
+---
+
+(source_file
+  (content
+    (raw
+      (raw_delimiter)
+      language: (raw_language)
+      content: (raw_content)
+      (raw_delimiter))
+    (raw
+      (raw_delimiter)
+      language: (raw_language)
+      content: (raw_content)
+      (raw_delimiter))
+    (raw
+      (raw_delimiter)
+      language: (raw_language)
+      content: (raw_content)
+      (raw_delimiter))
+    (raw
+      (raw_delimiter)
+      content: (raw_content)
+      (raw_delimiter))))
+
+==================
+Review matrix continued operators
+==================
+
+#let a = (
+  1
+  + 2,
+)
+#f(
+  1
+  * 2,
+)
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (let_binding
+        name: (identifier)
+        value: (array
+          (binary_expression
+            left: (integer)
+            right: (integer)))))
+    (embedded_code
+      body: (function_call
+        function: (identifier)
+        arguments: (arguments
+          (binary_expression
+            left: (integer)
+            right: (integer)))))))
+
+==================
+Review matrix atomic adjacency
+==================
+
+#value .field
+#value/* c */.field
+#if condition/* c */[body]
+#value._
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (identifier))
+    (text)
+    (embedded_code
+      body: (identifier))
+    (block_comment)
+    (text)
+    (embedded_code
+      body: (if_expression
+        condition: (identifier)
+        (block_comment)
+        consequence: (content_block
+          body: (content
+            (text)))))
+    (embedded_code
+      body: (identifier))
+    (text)
+    (emphasis
+      (MISSING "_"))))
+
+==================
+Review matrix contextual dot valid
+==================
+
+#{
+  value
+  .field
+}
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (code_block
+        body: (field_access
+          object: (identifier)
+          field: (identifier))))))
+
+==================
+Review matrix contextual dot invalid
+==================
+
+#{
+  value
+  .
+  field
+}
+
+---
+
+(source_file
+  (content)
+  (ERROR
+    (identifier)
+    (string_content)))
+
+==================
+Review matrix atomic context propagation
+==================
+
+#context let temporary = 1
+#context set text(size: 10pt)
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (contextual_expression
+        body: (identifier)))
+    (text)
+    (embedded_code
+      body: (contextual_expression
+        body: (identifier)))
+    (text)
+    (text)))
+
+==================
+Review matrix continued not precedence
+==================
+
+#let x = (
+  not a + b * c
+)
+#let y = (
+  not a < b + c
+)
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (let_binding
+        name: (identifier)
+        value: (parenthesized_expression
+          expression: (logical_not_expression
+            operand: (binary_expression
+              left: (identifier)
+              right: (binary_expression
+                left: (identifier)
+                right: (identifier)))))))
+    (embedded_code
+      body: (let_binding
+        name: (identifier)
+        value: (parenthesized_expression
+          expression: (logical_not_expression
+            operand: (binary_expression
+              left: (identifier)
+              right: (binary_expression
+                left: (identifier)
+                right: (identifier)))))))))
+
+==================
+Review matrix reassignment classification
+==================
+
+#{
+  (x) = value
+  (x,) = value
+  (x, y) = value
+  (key: object.field, ..rest) = value
+}
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (code_block
+        body: (assignment_expression
+          left: (parenthesized_expression
+            expression: (identifier))
+          right: (identifier))
+        body: (destructuring_assignment
+          pattern: (reassignment_pattern
+            (identifier))
+          value: (identifier))
+        body: (destructuring_assignment
+          pattern: (reassignment_pattern
+            (identifier)
+            (identifier))
+          value: (identifier))
+        body: (destructuring_assignment
+          pattern: (reassignment_pattern
+            (named_destructuring_item
+              key: (identifier)
+              pattern: (field_access
+                object: (identifier)
+                field: (identifier)))
+            (destructuring_sink
+              pattern: (identifier)))
+          value: (identifier))))))
+
+==================
+Review matrix math bar classification
+==================
+
+$a |$
+$a ||$
+$a |_b$
+$a |/b$
+$a |]$
+
+---
+
+(source_file
+  (content
+    (equation
+      body: (math
+        (math_text)
+        (math_space)
+        (math_text)))
+    (equation
+      body: (math
+        (math_text)
+        (math_space)
+        (math_shorthand)))
+    (equation
+      body: (math
+        (math_text)
+        (math_space)
+        (math_attachment
+          base: (math_text)
+          subscript: (math_text))))
+    (equation
+      body: (math
+        (math_text)
+        (math_space)
+        (math_fraction
+          numerator: (math_text)
+          denominator: (math_text))))
+    (equation
+      body: (math
+        (math_text)
+        (math_space)
+        (math_shorthand)))))
+
+==================
+Review matrix single-letter math application separators
+==================
+
+$f(a, b)$
+$f(a , b)$
+$f(a ; b)$
+$f(a ,)$
+
+---
+
+(source_file
+  (content
+    (equation
+      body: (math
+        (math_application
+          function: (math_text)
+          argument: (math_delimited
+            open: (math_delimiter)
+            body: (math
+              (math_text)
+              (math_text)
+              (math_space)
+              (math_text))
+            close: (math_delimiter)))))
+    (equation
+      body: (math
+        (math_application
+          function: (math_text)
+          argument: (math_delimited
+            open: (math_delimiter)
+            body: (math
+              (math_text)
+              (math_space)
+              (math_text)
+              (math_space)
+              (math_text))
+            close: (math_delimiter)))))
+    (equation
+      body: (math
+        (math_application
+          function: (math_text)
+          argument: (math_delimited
+            open: (math_delimiter)
+            body: (math
+              (math_text)
+              (math_space)
+              (math_text)
+              (math_space)
+              (math_text))
+            close: (math_delimiter)))))
+    (equation
+      body: (math
+        (math_application
+          function: (math_text)
+          argument: (math_delimited
+            open: (math_delimiter)
+            body: (math
+              (math_text)
+              (math_space)
+              (math_text))
+            close: (math_delimiter)))))))
+
+==================
+Review matrix math argument separators
+==================
+
+$mat(a, b)$
+$mat(a , b)$
+$mat(a ; b)$
+$mat(a ,)$
+
+---
+
+(source_file
+  (content
+    (equation
+      body: (math
+        (math_call
+          function: (math_identifier)
+          arguments: (math_arguments
+            (math_sequence
+              (math_text))
+            (math_space)
+            (math_sequence
+              (math_text))))))
+    (equation
+      body: (math
+        (math_call
+          function: (math_identifier)
+          arguments: (math_arguments
+            (math_sequence
+              (math_text))
+            (math_space)
+            (math_space)
+            (math_sequence
+              (math_text))))))
+    (equation
+      body: (math
+        (math_call
+          function: (math_identifier)
+          arguments: (math_arguments
+            (math_sequence
+              (math_text))
+            (math_space)
+            (math_space)
+            (math_sequence
+              (math_text))))))
+    (equation
+      body: (math
+        (math_call
+          function: (math_identifier)
+          arguments: (math_arguments
+            (math_sequence
+              (math_text))
+            (math_space)))))))
+
+==================
+Review matrix large decimal integer recovery
+==================
+
+#9223372036854775808
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (integer))))
+
+==================
+Review matrix large base integer recovery
+==================
+
+#0xffffffffffffffff
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      (integer))))
+
+==================
+Review matrix exponent prefix recovery
+==================
+
+#1e
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      (integer))
+    (text)))
+
+==================
+Review matrix signed exponent prefix recovery
+==================
+
+#1e+
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      (integer))
+    (text)))
+
+==================
+Review matrix import trivia and trailing comma
+==================
+
+#import "module.typ"/* c */as module;
+#import "module.typ": one, two,
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (module_import
+        source: (string
+          (string_content))
+        (block_comment)
+        alias: (identifier)))
+    (embedded_code
+      body: (module_import
+        source: (string
+          (string_content))
+        imports: (import_list
+          (import_item
+            path: (import_path
+              head: (identifier)))
+          (import_item
+            path: (import_path
+              head: (identifier))))))))
+
+==================
+Review checklist math trivia and closers
+==================
+
+$a /* c */ b$
+$a /* c */ _b$
+$a /* c */ / b$
+$√ /* c */ x$
+$a ) b$
+$(a )$
+
+---
+
+(source_file
+  (content
+    (equation
+      body: (math
+        (math_text)
+        (math_space)
+        (block_comment)
+        (math_space)
+        (math_text)))
+    (equation
+      body: (math
+        (math_attachment
+          base: (math_text)
+          (math_space)
+          (block_comment)
+          (math_space)
+          subscript: (math_text))))
+    (equation
+      body: (math
+        (math_fraction
+          numerator: (math_text)
+          (math_space)
+          (block_comment)
+          (math_space)
+          (math_space)
+          denominator: (math_text))))
+    (equation
+      body: (math
+        (math_root
+          (math_space)
+          (block_comment)
+          (math_space)
+          radicand: (math_text))))
+    (equation
+      body: (math
+        (math_text)
+        (math_space)
+        (math_text)
+        (math_space)
+        (math_text)))
+    (equation
+      body: (math
+        (math_delimited
+          open: (math_delimiter)
+          body: (math
+            (math_text))
+          (math_space)
+          close: (math_delimiter))))))
+
+==================
+Review checklist immediate call comments in code blocks
+==================
+
+#{
+  f/* c */(1)
+}
+
+---
+
+(source_file
+  (content)
+  (ERROR
+    (identifier)
+    (block_comment)
+    (string_content)))
+
+==================
+Review checklist immediate content comments in code blocks
+==================
+
+#{
+  f/* c */[body]
+}
+
+---
+
+(source_file
+  (content)
+  (ERROR
+    (identifier)
+    (block_comment)
+    (string_content)))
+
+==================
+Review checklist atomic field comment adjacency
+==================
+
+#f/* c */.field
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (identifier))
+    (block_comment)
+    (text)))
+
+==================
+Review checklist markup gap classification
+==================
+
+text -- text
+text --- text
+text -? text
+text -1 text
+text ... text
+text 
+
+---
+
+(source_file
+  (content
+    (text)
+    (shorthand)
+    (text)
+    (text)
+    (shorthand)
+    (text)
+    (text)
+    (shorthand)
+    (text)
+    (text)
+    (shorthand)
+    (text)
+    (text)
+    (shorthand)
+    (text)
+    (text)))
+
+==================
+Review checklist invalid embedded code markers
+==================
+
+# text
+#/* c */value
+
+---
+
+(source_file
+  (content)
+  (ERROR
+    (string_content)))
+
+==================
+Review checklist combined reassignment pattern
+==================
+
+#{ (key: object.field, ..rest) = value }
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (code_block
+        body: (destructuring_assignment
+          pattern: (reassignment_pattern
+            (named_destructuring_item
+              key: (identifier)
+              pattern: (field_access
+                object: (identifier)
+                field: (identifier)))
+            (destructuring_sink
+              pattern: (identifier)))
+          value: (identifier))))))
+
+==================
+Review checklist single list paragraph continuation
+==================
+
+- first paragraph
+
+  second paragraph
+
+---
+
+(source_file
+  (content
+    (bullet_list_item
+      marker: (bullet_list_marker)
+      body: (list_body
+        (text)
+        (parbreak)
+        (text)))))
+
+==================
+Review checklist number recovery
+==================
+
+#9223372036854775808
+#1e
+#1e+
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (integer))
+    (embedded_code
+      body: (integer))
+    (text)
+    (embedded_code
+      body: (integer))
+    (text)))
+
+==================
+Adjacent headings are sibling sections
+==================
+
+= A
+= B
+
+---
+
+(source_file
+  (content)
+  (section
+    heading: (heading
+      marker: (heading_marker)
+      body: (heading_body
+        (text)))
+    body: (content))
+  (section
+    heading: (heading
+      marker: (heading_marker)
+      body: (heading_body
+        (text)))
+    body: (content)))
+
+==================
+Section label belongs to section
+==================
+
+= A <label>
+Text
+
+---
+
+(source_file
+  (content)
+  (section
+    heading: (heading
+      marker: (heading_marker)
+      body: (heading_body
+        (text)))
+    label: (label)
+    body: (content
+      (text))))
+
+==================
+Content block keeps markup boundary
+==================
+
+#[
+= Heading
+Body
+]
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (content_block
+        body: (content)
+        body: (section
+          heading: (heading
+            marker: (heading_marker)
+            body: (heading_body
+              (text)))
+          body: (content
+            (text)))))))
+
+==================
+List body heading stays hidden-line helper
+==================
+
+- item
+  = Heading inside item
+
+---
+
+(source_file
+  (content
+    (bullet_list_item
+      marker: (bullet_list_marker)
+      body: (list_body
+        (text)
+        heading: (heading
+          marker: (heading_marker)
+          body: (heading_body
+            (text)))))))
+
+==================
+Nested metric content block remains uninterrupted
+==================
+
+#block()[
+  #heading(level: 3)[Title]
+  #table(
+    columns: 2,
+    [A], [B],
+  )
+  $ x = y $
+]
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (function_call
+        function: (function_call
+          function: (identifier)
+          arguments: (arguments))
+        arguments: (arguments
+          (content_block
+            body: (content
+              (embedded_code
+                body: (function_call
+                  function: (function_call
+                    function: (identifier)
+                    arguments: (arguments
+                      (named_argument
+                        name: (identifier)
+                        value: (integer))))
+                  arguments: (arguments
+                    (content_block
+                      body: (content
+                        (text))))))
+              (embedded_code
+                body: (function_call
+                  function: (identifier)
+                  arguments: (arguments
+                    (named_argument
+                      name: (identifier)
+                      value: (integer))
+                    (content_block
+                      body: (content
+                        (text)))
+                    (content_block
+                      body: (content
+                        (text))))))
+              (equation
+                body: (math
+                  (math_space)
+                  (math_text)
+                  (math_space)
+                  (math_text)
+                  (math_space)
+                  (math_text))
+                (math_space)))))))))
+
+==================
+Preface followed by sibling sections
+==================
+
+Preface.
+= A <a>
+Body A.
+== B
+Body B.
+= C
+
+---
+
+(source_file
+  (content
+    (text))
+  (section
+    heading: (heading
+      marker: (heading_marker)
+      body: (heading_body
+        (text)))
+    label: (label)
+    body: (content
+      (text)))
+  (section
+    heading: (heading
+      marker: (heading_marker)
+      body: (heading_body
+        (text)))
+    body: (content
+      (text)))
+  (section
+    heading: (heading
+      marker: (heading_marker)
+      body: (heading_body
+        (text)))
+    body: (content)))
+
+==================
+Dynamic dictionary keys
+==================
+
+#let d = (
+  "literal": 1,
+  x + y: 2,
+  f(): 3,
+  foo.bar: 4,
+)
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (let_binding
+        name: (identifier)
+        value: (dictionary
+          (dictionary_entry
+            key: (string
+              (string_content))
+            value: (integer))
+          (dictionary_entry
+            key: (binary_expression
+              left: (identifier)
+              right: (identifier))
+            value: (integer))
+          (dictionary_entry
+            key: (function_call
+              function: (identifier)
+              arguments: (arguments))
+            value: (integer))
+          (dictionary_entry
+            key: (field_access
+              object: (identifier)
+              field: (identifier))
+            value: (integer)))))))
