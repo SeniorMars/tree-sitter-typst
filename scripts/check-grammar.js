@@ -46,16 +46,25 @@ for (const [name, callback] of Object.entries(specification.rules)) {
     process.exitCode = 1;
   }
 }
+
+const aliasTargets = new Set();
+function collectAliasTargets(node) {
+  if (node == null || typeof node === 'string' || node instanceof RegExp || node instanceof RustRegex) return;
+  if (node.type === 'alias') {
+    const target = node.children[1];
+    if (target?.type === 'symbol') aliasTargets.add(target.name);
+  }
+  for (const child of node.children || []) collectAliasTargets(child);
+}
+for (const tree of ruleTrees.values()) collectAliasTargets(tree);
+
 for (const reference of references) {
-  if (!defined.has(reference) && !external.has(reference)) {
-    // Alias targets such as `raw_delimiter` do not need a producing rule.
-    if (!['raw_delimiter', 'math_delimiter'].includes(reference)) {
-      console.error(`undefined symbol: ${reference}`);
-      process.exitCode = 1;
-    }
+  if (!defined.has(reference) && !external.has(reference) && !aliasTargets.has(reference)) {
+    console.error(`undefined symbol: ${reference}`);
+    process.exitCode = 1;
   }
 }
-console.log(`grammar=${specification.name} rules=${defined.size} externals=${external.size} references=${references.size}`);
+console.log(`grammar=${specification.name} rules=${defined.size} externals=${external.size} aliases=${aliasTargets.size} references=${references.size}`);
 
 
 function nullable(node, values) {

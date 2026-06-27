@@ -3521,3 +3521,29 @@ Dynamic dictionary keys
               object: (identifier)
               field: (identifier))
             value: (integer)))))))
+
+==================
+Consecutive comments are global named extras
+==================
+
+// Synthetic parser fixture inspired by real-world package code.
+// Synthetic parser fixture inspired by real-world package code.
+#import "@preview/cetz:0.5.2": canvas, draw
+
+---
+
+(source_file
+  (content
+    (line_comment)
+    (line_comment)
+    (embedded_code
+      body: (module_import
+        source: (string
+          (string_content))
+        imports: (import_list
+          (import_item
+            path: (import_path
+              head: (identifier)))
+          (import_item
+            path: (import_path
+              head: (identifier))))))))

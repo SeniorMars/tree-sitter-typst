@@ -1522,6 +1522,10 @@ export default grammar({
   // Code horizontal whitespace is an external extra. The scanner emits it only
   // when visible markup/math whitespace is not valid. Code newlines remain
   // explicit because they terminate statements.
+  //
+  // Comments are global named extras. Their parent node is therefore incidental:
+  // consumers should query `line_comment` and `block_comment` globally instead
+  // of treating parentage as semantic ownership.
   extras: ($) => [
     $._code_space,
     $.line_comment,
