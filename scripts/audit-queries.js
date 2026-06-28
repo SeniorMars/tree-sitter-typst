@@ -9,6 +9,7 @@ const { default: language } = await import("../bindings/node/index.js");
 const root = new URL("..", import.meta.url);
 const queryDir = new URL("../queries/typst/", import.meta.url);
 const helixQueryDir = new URL("../editors/helix/queries/", import.meta.url);
+const emacsFontLockFile = new URL("../editors/emacs/tree-sitter-typst-font-lock.el", import.meta.url);
 
 const auditSource = String.raw`#!/usr/bin/env typst
 // line comment
@@ -153,6 +154,84 @@ function assertCaptureNodeType(captures, name, type) {
   );
 }
 
+function assertEmacsFontLockCompatibility() {
+  const text = readFileSync(emacsFontLockFile, "utf8");
+  for (const obsolete of [
+    "typst-ts-mode-font-lock-settings",
+    "typst-ts-mode-font-lock-feature-list",
+  ]) {
+    assert(
+      !text.includes(obsolete),
+      `${emacsFontLockFile.pathname.replace(root.pathname, "")}: unexpected obsolete variable ${obsolete}`,
+    );
+  }
+  for (const variable of [
+    "typst-ts-font-lock-settings",
+    "typst-ts-font-lock-feature-list",
+  ]) {
+    assert(
+      text.includes(variable),
+      `${emacsFontLockFile.pathname.replace(root.pathname, "")}: missing typst-ts-mode variable ${variable}`,
+    );
+  }
+  assert(
+    text.includes('(else_clause "else" @font-lock-keyword-face)'),
+    `${emacsFontLockFile.pathname.replace(root.pathname, "")}: missing else_clause keyword rule`,
+  );
+  for (const rule of [
+    "(named_destructuring_item pattern: (identifier) @font-lock-variable-name-face)",
+    "(destructuring_sink pattern: (identifier) @font-lock-variable-name-face)",
+  ]) {
+    assert(
+      text.includes(rule),
+      `${emacsFontLockFile.pathname.replace(root.pathname, "")}: missing Emacs font-lock rule ${rule}`,
+    );
+  }
+  const nodeTypes = new Set(
+    JSON.parse(readFileSync(new URL("../src/node-types.json", import.meta.url), "utf8"))
+      .map((entry) => entry.type)
+      .concat("ERROR"),
+  );
+  const lispForms = new Set([
+    "defun",
+    "defvar",
+    "font-lock-flush",
+    "interactive",
+    "provide",
+    "require",
+    "setq",
+    "setq-local",
+    "treesit-font-lock-rules",
+  ]);
+  const fontLockFeatures = new Set([
+    "comment",
+    "definition",
+    "function",
+    "keyword",
+    "literal",
+    "markup",
+    "math",
+    "operator",
+    "punctuation",
+    "variable",
+  ]);
+  const queryFormsOnly = text
+    .replace(/;.*/g, "")
+    .replace(/"(?:\\.|[^"\\])*"/g, "\"\"");
+  const formHeads = [...queryFormsOnly.matchAll(/\(([A-Za-z_][A-Za-z0-9_-]*)\b/g)]
+    .map((match) => match[1]);
+  const invalid = [...new Set(formHeads)]
+    .filter((name) => !lispForms.has(name) && !fontLockFeatures.has(name) && !nodeTypes.has(name))
+    .sort();
+
+  assert.deepEqual(
+    invalid,
+    [],
+    `${emacsFontLockFile.pathname.replace(root.pathname, "")}: invalid node types: ${invalid.join(", ")}`,
+  );
+  console.log(`${emacsFontLockFile.pathname.replace(root.pathname, "")}: font-lock compatibility checked`);
+}
+
 const parser = new Parser();
 parser.setLanguage(language);
 const tree = parseSource(auditSource);
@@ -172,6 +251,8 @@ for (const dir of [queryDir, helixQueryDir]) {
     console.log(`${file.replace(root.pathname, "")}: ${declared.length} captures exercised`);
   }
 }
+
+assertEmacsFontLockCompatibility();
 
 {
   const captures = queryCaptures("indents.scm", "$ mat(\n  a, b\n) $\n");
@@ -259,6 +340,53 @@ for (const [dir, name] of [[queryDir, "indents.scm"], [helixQueryDir, "indents.s
 }
 
 {
+  const captures = queryCapturesFrom(
+    helixQueryDir,
+    "highlights.scm",
+    "= Heading\n#let size = 2pt\n",
+  );
+  assertCaptureText(captures, "markup.heading.marker", "=");
+  assertCaptureText(captures, "type.builtin", "pt");
+}
+
+{
+  const captures = queryCapturesFrom(
+    helixQueryDir,
+    "locals.scm",
+    "#let f(x, y: 1, ..rest) = x + y\n#import \"module.typ\": item\n",
+  );
+  assertCapture(captures, "local.definition.function", "f", 1, 5);
+  assertCapture(captures, "local.definition.variable.parameter", "x", 1, 7);
+  assertCapture(captures, "local.definition.namespace", "item", 2, 22);
+  assertCapture(captures, "local.reference", "x", 1, 26);
+  assertCaptureNodeType(captures, "local.scope", "source_file");
+}
+
+{
+  const captures = queryCapturesFrom(
+    helixQueryDir,
+    "textobjects.scm",
+    "= Heading\nBody\n#let f(x, y) = x + y\n// comment\n#foo(1, named: value)\n#let data = (key: value)\n",
+  );
+  assertCaptureNodeType(captures, "class.around", "section");
+  assertCaptureNodeType(captures, "function.around", "let_binding");
+  assertCaptureText(captures, "parameter.inside", "x");
+  assertCaptureText(captures, "comment.around", "// comment");
+  assertCaptureText(captures, "entry.around", "key: value");
+}
+
+{
+  const captures = queryCapturesFrom(
+    helixQueryDir,
+    "rainbows.scm",
+    "#foo(1)[content]\n$ (a + b) $\n",
+  );
+  assertCaptureNodeType(captures, "rainbow.scope", "arguments");
+  assertCaptureText(captures, "rainbow.bracket", "(");
+  assertCaptureText(captures, "rainbow.bracket", "$");
+}
+
+{
   const captures = queryCaptures(
     "highlights.scm",
     "// TODO item\n/* NOTE item */\n// WARNING item\n/* FIXME item */\n",
@@ -289,6 +417,19 @@ for (const [dir, name] of [[queryDir, "indents.scm"], [helixQueryDir, "indents.s
 }
 
 {
+  const source = "#let (_, tail: renamed, ..others) = pair\n";
+  const captures = queryCaptures("highlights.scm", source);
+  assertCapture(captures, "property", "tail", 1, 9);
+  assertCapture(captures, "variable", "renamed", 1, 15);
+  assertCapture(captures, "variable", "others", 1, 26);
+
+  const helixCaptures = queryCapturesFrom(helixQueryDir, "highlights.scm", source);
+  assertCapture(helixCaptures, "property", "tail", 1, 9);
+  assertCapture(helixCaptures, "variable", "renamed", 1, 15);
+  assertCapture(helixCaptures, "variable", "others", 1, 26);
+}
+
+{
   const captures = queryCaptures(
     "highlights.scm",
     "#value\n#foo(bar: value)\n#set text(size: 10pt)\n",
@@ -301,6 +442,21 @@ for (const [dir, name] of [[queryDir, "indents.scm"], [helixQueryDir, "indents.s
   assertCapture(captures, "punctuation.special", "#", 3, 0);
   assertCapture(captures, "keyword", "set", 3, 1);
   assertCapture(captures, "function.builtin", "text", 3, 5);
+}
+
+{
+  const source = "#if first { none } else if second < 1.0 { return \"mid\" } else { none }\n";
+  const captures = queryCaptures("highlights.scm", source);
+  assertCapture(captures, "keyword.conditional", "if", 1, 1);
+  assertCapture(captures, "keyword.conditional", "else", 1, 19);
+  assertCapture(captures, "keyword.conditional", "if", 1, 24);
+  assertCapture(captures, "keyword.conditional", "else", 1, 57);
+
+  const helixCaptures = queryCapturesFrom(helixQueryDir, "highlights.scm", source);
+  assertCapture(helixCaptures, "keyword.control.conditional", "if", 1, 1);
+  assertCapture(helixCaptures, "keyword.control.conditional", "else", 1, 19);
+  assertCapture(helixCaptures, "keyword.control.conditional", "if", 1, 24);
+  assertCapture(helixCaptures, "keyword.control.conditional", "else", 1, 57);
 }
 
 {

@@ -89,7 +89,8 @@ Editor queries live under `queries/typst/`:
 
 The main highlight query follows Neovim's current tree-sitter capture
 conventions. The Helix integration keeps a separate highlight query adapted to
-Helix theme scopes instead of copying Neovim captures verbatim.
+Helix theme scopes instead of copying Neovim captures verbatim. Emacs likewise
+uses separate `treesit` font-lock rules under `editors/emacs/`.
 
 `npm run test:queries` compiles every query and verifies that every declared
 capture is exercised by the audit fixture.
@@ -194,6 +195,19 @@ Use Emacs 29 or newer and register the grammar with built-in `treesit`:
 Then run `M-x treesit-install-language-grammar RET typst RET`. Configure
 `typst-ts-mode` according to that package's current documentation.
 
+`typst-ts-mode` embeds font-lock queries for another Typst grammar, so using it
+unchanged with this parser can fail with node errors such as `(comment)`.
+Install the compatibility settings from `editors/emacs/` after loading
+`typst-ts-mode`:
+
+```elisp
+(add-to-list 'load-path "/path/to/tree-sitter-typst/editors/emacs")
+
+(with-eval-after-load 'typst-ts-mode
+  (require 'tree-sitter-typst-font-lock)
+  (tree-sitter-typst-font-lock-apply-to-typst-ts-mode))
+```
+
 ## Helix
 
 A ready-to-copy Helix integration lives under:
@@ -206,8 +220,8 @@ It includes:
 
 - `languages.toml`: parser registration, file types, auto-pairs, indentation,
   and Tinymist language-server configuration
-- `queries/`: Helix query files for highlights, injections, indentation, and
-  folds
+- `queries/`: Helix query files for highlights, injections, indentation, folds,
+  locals, tags, textobjects, and rainbow brackets
 
 Helix highlights intentionally use Helix capture conventions and theme scopes,
 while the main `queries/typst/highlights.scm` targets Neovim conventions.

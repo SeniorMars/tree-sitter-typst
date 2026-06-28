@@ -5,6 +5,7 @@
 
 ; Markup
 (heading) @markup.heading
+(heading marker: (heading_marker) @markup.heading.marker)
 ((heading marker: (heading_marker) @_heading_marker) @markup.heading.1
   (#eq? @_heading_marker "="))
 ((heading marker: (heading_marker) @_heading_marker) @markup.heading.2
@@ -61,7 +62,8 @@
 ; Code keywords and builtins
 "let" @keyword.storage.type
 ["set" "show" "context"] @keyword
-(if_expression ["if" "else"] @keyword.control.conditional)
+(if_expression "if" @keyword.control.conditional)
+(else_clause "else" @keyword.control.conditional)
 (for_loop ["for" "in"] @keyword.control.repeat)
 (while_loop "while" @keyword.control.repeat)
 (return_expression "return" @keyword.control.return)
@@ -77,7 +79,7 @@
 (integer) @constant.numeric.integer
 (float) @constant.numeric.float
 (numeric) @constant.numeric
-(unit) @constant.numeric
+(unit) @type.builtin
 (string) @string
 (module_import source: (string) @string.special.path)
 (module_include source: (string) @string.special.path)
@@ -100,6 +102,8 @@
 (sink_parameter name: (identifier) @variable.parameter)
 (sink_parameter name: (discard_pattern) @comment.unused)
 (destructuring_pattern (identifier) @variable)
+(named_destructuring_item pattern: (identifier) @variable)
+(destructuring_sink pattern: (identifier) @variable)
 (for_loop pattern: (identifier) @variable)
 (named_destructuring_item key: (identifier) @property)
 (dictionary_entry key: (identifier) @property)

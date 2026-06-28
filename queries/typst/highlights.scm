@@ -105,7 +105,8 @@
 
 ; Code keywords and builtins
 ["let" "set" "show" "context"] @keyword
-(if_expression ["if" "else"] @keyword.conditional)
+(if_expression "if" @keyword.conditional)
+(else_clause "else" @keyword.conditional)
 (for_loop ["for" "in"] @keyword.repeat)
 (while_loop "while" @keyword.repeat)
 (return_expression "return" @keyword.return)
@@ -144,6 +145,8 @@
 (sink_parameter name: (identifier) @variable.parameter)
 (sink_parameter name: (discard_pattern) @variable.parameter.builtin)
 (destructuring_pattern (identifier) @variable)
+(named_destructuring_item pattern: (identifier) @variable)
+(destructuring_sink pattern: (identifier) @variable)
 (for_loop pattern: (identifier) @variable)
 (named_destructuring_item key: (identifier) @property)
 (dictionary_entry key: (identifier) @property)

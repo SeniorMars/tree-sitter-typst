@@ -32,5 +32,6 @@ hx --grammar build
 
 The default `typst` grammar parses markup, embedded code, and math. The query
 files in this directory are maintained alongside `queries/typst/`, with Helix
-captures adapted to Helix's theme scopes. Helix indentation lives here as
-`editors/helix/queries/indents.scm`, using Helix's expected query filename.
+captures adapted to Helix's theme scopes and runtime query names. The query set
+includes highlights, injections, indentation, folds, locals, tags, textobjects,
+and rainbow brackets.
