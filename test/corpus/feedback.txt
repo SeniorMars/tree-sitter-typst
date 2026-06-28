@@ -131,10 +131,12 @@ Code continuation after assignment and binary operator
 ---
 
 (source_file
-  (content)
-  (ERROR
-    (identifier)
-    (string_content)))
+  (content
+    (embedded_code
+      body: (incomplete_let_binding
+        name: (identifier)))
+    (text)
+    (text)))
 
 ==================
 Code continuation before conditional block
@@ -150,6 +152,730 @@ Code continuation before conditional block
   (ERROR
     (identifier)
     (string_content)))
+
+==================
+Malformed bare hash stops before following embedded statement
+==================
+
+#
+#set document(title: "T")
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (malformed_embedded_code))
+    (embedded_code
+      body: (set_rule
+        target: (identifier)
+        arguments: (arguments
+          (named_argument
+            name: (identifier)
+            value: (string
+              (string_content))))))))
+
+==================
+Malformed hash trivia and semicolon stops before following embedded statement
+==================
+
+# // comment
+#/* comment */
+#;
+#set document(title: "T")
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      (line_comment)
+      body: (malformed_embedded_code))
+    (embedded_code
+      (block_comment)
+      body: (malformed_embedded_code))
+    (embedded_code
+      body: (malformed_embedded_code))
+    (embedded_code
+      body: (set_rule
+        target: (identifier)
+        arguments: (arguments
+          (named_argument
+            name: (identifier)
+            value: (string
+              (string_content))))))))
+
+==================
+Malformed bare let stops before following embedded statement
+==================
+
+#let
+#set document(title: "T")
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (incomplete_let_binding))
+    (embedded_code
+      body: (set_rule
+        target: (identifier)
+        arguments: (arguments
+          (named_argument
+            name: (identifier)
+            value: (string
+              (string_content))))))))
+
+==================
+Incomplete let assignment stops before following embedded statement
+==================
+
+#let x =
+#set document(title: "T")
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (incomplete_let_binding
+        name: (identifier)))
+    (embedded_code
+      body: (set_rule
+        target: (identifier)
+        arguments: (arguments
+          (named_argument
+            name: (identifier)
+            value: (string
+              (string_content))))))))
+
+==================
+Incomplete let function stops before following embedded statement
+==================
+
+#let f(x) =
+#set document(title: "T")
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (incomplete_let_binding
+        name: (identifier)
+        parameters: (parameters
+          (identifier))))
+    (embedded_code
+      body: (set_rule
+        target: (identifier)
+        arguments: (arguments
+          (named_argument
+            name: (identifier)
+            value: (string
+              (string_content))))))))
+
+==================
+Incomplete let destructuring stops before following embedded statement
+==================
+
+#let (x, y) =
+#set document(title: "T")
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (incomplete_let_binding
+        pattern: (destructuring_pattern
+          (identifier)
+          (identifier))))
+    (embedded_code
+      body: (set_rule
+        target: (identifier)
+        arguments: (arguments
+          (named_argument
+            name: (identifier)
+            value: (string
+              (string_content))))))))
+
+==================
+Malformed bare set stops before following embedded statement
+==================
+
+#set
+#set document(title: "T")
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (incomplete_set_rule))
+    (embedded_code
+      body: (set_rule
+        target: (identifier)
+        arguments: (arguments
+          (named_argument
+            name: (identifier)
+            value: (string
+              (string_content))))))))
+
+==================
+Valid multiline set rule is not recovered
+==================
+
+#set document(
+  title: "T",
+  author: "A",
+)
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (set_rule
+        target: (identifier)
+        arguments: (arguments
+          (named_argument
+            name: (identifier)
+            value: (string
+              (string_content)))
+          (named_argument
+            name: (identifier)
+            value: (string
+              (string_content))))))))
+
+==================
+Incomplete set arguments do not eat following show rule
+==================
+
+#set document(
+#show heading.where(level: 1): set text(weight: "bold")
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (incomplete_set_rule
+        target: (identifier)))
+    (embedded_code
+      body: (show_rule
+        selector: (function_call
+          function: (field_access
+            object: (identifier)
+            field: (identifier))
+          arguments: (arguments
+            (named_argument
+              name: (identifier)
+              value: (integer))))
+        transformation: (set_rule
+          target: (identifier)
+          arguments: (arguments
+            (named_argument
+              name: (identifier)
+              value: (string
+                (string_content)))))))))
+
+==================
+Set recovery preserves trailing comment
+==================
+
+#set // bad set
+#set document(title: "T")
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (incomplete_set_rule
+        (line_comment)))
+    (embedded_code
+      body: (set_rule
+        target: (identifier)
+        arguments: (arguments
+          (named_argument
+            name: (identifier)
+            value: (string
+              (string_content))))))))
+
+==================
+Valid set argument content block is not recovered
+==================
+
+#set text(body: [hello])
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (set_rule
+        target: (identifier)
+        arguments: (arguments
+          (named_argument
+            name: (identifier)
+            value: (content_block
+              body: (content
+                (text)))))))))
+
+==================
+Valid multiline set content block with embedded code is not recovered
+==================
+
+#set text(body: [
+#emph[Hello]
+])
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (set_rule
+        target: (identifier)
+        arguments: (arguments
+          (named_argument
+            name: (identifier)
+            value: (content_block
+              body: (content
+                (embedded_code
+                  body: (function_call
+                    function: (identifier)
+                    arguments: (arguments
+                      (content_block
+                        body: (content
+                          (text))))))))))))))
+
+==================
+Unclosed set arguments recover when string contains close paren
+==================
+
+#set document(title: ")"
+#show heading.where(level: 1): set text(weight: "bold")
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (incomplete_set_rule
+        target: (identifier)))
+    (embedded_code
+      body: (show_rule
+        selector: (function_call
+          function: (field_access
+            object: (identifier)
+            field: (identifier))
+          arguments: (arguments
+            (named_argument
+              name: (identifier)
+              value: (integer))))
+        transformation: (set_rule
+          target: (identifier)
+          arguments: (arguments
+            (named_argument
+              name: (identifier)
+              value: (string
+                (string_content)))))))))
+
+==================
+Malformed bare show stops before following embedded statement
+==================
+
+#show heading.where(level: 2)
+#show heading.where(level: 1): set text(size: 16pt, weight: "bold")
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (incomplete_show_rule
+        selector: (function_call
+          function: (field_access
+            object: (identifier)
+            field: (identifier))
+          arguments: (arguments
+            (named_argument
+              name: (identifier)
+              value: (integer))))))
+    (embedded_code
+      body: (show_rule
+        selector: (function_call
+          function: (field_access
+            object: (identifier)
+            field: (identifier))
+          arguments: (arguments
+            (named_argument
+              name: (identifier)
+              value: (integer))))
+        transformation: (set_rule
+          target: (identifier)
+          arguments: (arguments
+            (named_argument
+              name: (identifier)
+              value: (numeric
+                value: (integer)
+                unit: (unit)))
+            (named_argument
+              name: (identifier)
+              value: (string
+                (string_content)))))))))
+
+==================
+Malformed return value stops before following embedded statement
+==================
+
+#return +
+#set document(title: "T")
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (incomplete_return_expression))
+    (embedded_code
+      body: (set_rule
+        target: (identifier)
+        arguments: (arguments
+          (named_argument
+            name: (identifier)
+            value: (string
+              (string_content))))))))
+
+==================
+Malformed return binary operator stops before following embedded statement
+==================
+
+#return foo +
+#set document(title: "T")
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (incomplete_return_expression))
+    (embedded_code
+      body: (set_rule
+        target: (identifier)
+        arguments: (arguments
+          (named_argument
+            name: (identifier)
+            value: (string
+              (string_content))))))))
+
+==================
+Valid return with line comment is not recovered
+==================
+
+#return foo // comment
+#set document(title: "T")
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (return_expression
+        value: (identifier))
+      (line_comment))
+    (embedded_code
+      body: (set_rule
+        target: (identifier)
+        arguments: (arguments
+          (named_argument
+            name: (identifier)
+            value: (string
+              (string_content))))))))
+
+==================
+Malformed return division before comment stops locally
+==================
+
+#return foo / // bad
+#set document(title: "T")
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (incomplete_return_expression
+        (line_comment)))
+    (embedded_code
+      body: (set_rule
+        target: (identifier)
+        arguments: (arguments
+          (named_argument
+            name: (identifier)
+            value: (string
+              (string_content))))))))
+
+==================
+Malformed return after non-identifier value stops locally
+==================
+
+#return 1 +
+#set document(title: "T")
+#return foo.bar +
+#set document(title: "T")
+#return foo() +
+#set document(title: "T")
+#return "x" +
+#set document(title: "T")
+#return (foo) +
+#set document(title: "T")
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (incomplete_return_expression))
+    (embedded_code
+      body: (set_rule
+        target: (identifier)
+        arguments: (arguments
+          (named_argument
+            name: (identifier)
+            value: (string
+              (string_content))))))
+    (embedded_code
+      body: (incomplete_return_expression))
+    (embedded_code
+      body: (set_rule
+        target: (identifier)
+        arguments: (arguments
+          (named_argument
+            name: (identifier)
+            value: (string
+              (string_content))))))
+    (embedded_code
+      body: (incomplete_return_expression))
+    (embedded_code
+      body: (set_rule
+        target: (identifier)
+        arguments: (arguments
+          (named_argument
+            name: (identifier)
+            value: (string
+              (string_content))))))
+    (embedded_code
+      body: (incomplete_return_expression))
+    (embedded_code
+      body: (set_rule
+        target: (identifier)
+        arguments: (arguments
+          (named_argument
+            name: (identifier)
+            value: (string
+              (string_content))))))
+    (embedded_code
+      body: (incomplete_return_expression))
+    (embedded_code
+      body: (set_rule
+        target: (identifier)
+        arguments: (arguments
+          (named_argument
+            name: (identifier)
+            value: (string
+              (string_content))))))))
+
+==================
+Malformed return logical operator stops locally
+==================
+
+#return foo and
+#set document(title: "T")
+#return foo or
+#set document(title: "T")
+#return foo in
+#set document(title: "T")
+#return foo not in
+#set document(title: "T")
+#return not
+#set document(title: "T")
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (incomplete_return_expression))
+    (embedded_code
+      body: (set_rule
+        target: (identifier)
+        arguments: (arguments
+          (named_argument
+            name: (identifier)
+            value: (string
+              (string_content))))))
+    (embedded_code
+      body: (incomplete_return_expression))
+    (embedded_code
+      body: (set_rule
+        target: (identifier)
+        arguments: (arguments
+          (named_argument
+            name: (identifier)
+            value: (string
+              (string_content))))))
+    (embedded_code
+      body: (incomplete_return_expression))
+    (embedded_code
+      body: (set_rule
+        target: (identifier)
+        arguments: (arguments
+          (named_argument
+            name: (identifier)
+            value: (string
+              (string_content))))))
+    (embedded_code
+      body: (incomplete_return_expression))
+    (embedded_code
+      body: (set_rule
+        target: (identifier)
+        arguments: (arguments
+          (named_argument
+            name: (identifier)
+            value: (string
+              (string_content))))))
+    (embedded_code
+      body: (incomplete_return_expression))
+    (embedded_code
+      body: (set_rule
+        target: (identifier)
+        arguments: (arguments
+          (named_argument
+            name: (identifier)
+            value: (string
+              (string_content))))))))
+
+==================
+Valid return values do not use incomplete recovery
+==================
+
+#return 1
+#return +1
+#return foo + 1
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (return_expression
+        value: (integer)))
+    (embedded_code
+      body: (return_expression
+        value: (unary_expression
+          operand: (integer))))
+    (embedded_code
+      body: (return_expression
+        value: (binary_expression
+          left: (identifier)
+          right: (integer))))))
+
+==================
+Malformed return boundaries keep next embedded statement
+==================
+
+#return + // bad return
+#return +;
+#set document(title: "T")
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (incomplete_return_expression
+        (line_comment)))
+    (embedded_code
+      body: (incomplete_return_expression))
+    (embedded_code
+      body: (set_rule
+        target: (identifier)
+        arguments: (arguments
+          (named_argument
+            name: (identifier)
+            value: (string
+              (string_content))))))))
+
+==================
+Malformed bare import stops before following embedded statement
+==================
+
+#import
+#set document(title: "T")
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (incomplete_module_import))
+    (embedded_code
+      body: (set_rule
+        target: (identifier)
+        arguments: (arguments
+          (named_argument
+            name: (identifier)
+            value: (string
+              (string_content))))))))
+
+==================
+Incomplete import tail stops before following embedded statement
+==================
+
+#import "lib.typ":
+#set document(title: "T")
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (incomplete_module_import
+        source: (string
+          (string_content))))
+    (embedded_code
+      body: (set_rule
+        target: (identifier)
+        arguments: (arguments
+          (named_argument
+            name: (identifier)
+            value: (string
+              (string_content))))))))
+
+==================
+Malformed bare include stops before following embedded statement
+==================
+
+#include
+#set document(title: "T")
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (incomplete_module_include))
+    (embedded_code
+      body: (set_rule
+        target: (identifier)
+        arguments: (arguments
+          (named_argument
+            name: (identifier)
+            value: (string
+              (string_content))))))))
 
 ==================
 Number followed by field access and call

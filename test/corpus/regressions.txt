@@ -791,9 +791,10 @@ x = 1
 ---
 
 (source_file
-  (content)
-  (ERROR
-    (string_content)))
+  (content
+    (embedded_code
+      body: (incomplete_let_binding))
+    (text)))
 
 ==================
 Embedded return is a statement

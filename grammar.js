@@ -1464,6 +1464,8 @@ export default grammar({
     $.block_comment,
     $._hash,
     $._embedded_statement_end,
+    $._embedded_unclosed_set_arguments,
+    $._embedded_return_dangling_operator,
     $.math_spread_operator,
     $._math_argument_identifier,
 
@@ -1996,12 +1998,22 @@ export default grammar({
         $.return_expression,
       ),
 
+    _embedded_statement_terminator: ($) =>
+      choice(";", $._embedded_statement_end),
+
     _embedded_body: ($) =>
       choice(
-        seq(
+        prec(1, seq(
           $._embedded_keyword_statement,
-          choice(";", $._embedded_statement_end),
-        ),
+          $._embedded_statement_terminator,
+        )),
+        $.incomplete_let_binding,
+        $.incomplete_set_rule,
+        $.incomplete_show_rule,
+        $.incomplete_module_import,
+        $.incomplete_module_include,
+        $.incomplete_return_expression,
+        $.malformed_embedded_code,
         seq(
           $._atomic_postfix_expression,
           optional(token.immediate(";")),
@@ -2010,13 +2022,118 @@ export default grammar({
 
     _embedded_keyword_statement: ($) =>
       choice(
-        $.let_binding,
-        $.set_rule,
-        $.show_rule,
-        $.module_import,
-        $.module_include,
-        $.return_expression,
+        codeVariant($, CODE_CONTEXT.stopped, "let_binding"),
+        codeVariant($, CODE_CONTEXT.stopped, "set_rule"),
+        codeVariant($, CODE_CONTEXT.stopped, "show_rule"),
+        codeVariant($, CODE_CONTEXT.stopped, "module_import"),
+        codeVariant($, CODE_CONTEXT.stopped, "module_include"),
+        codeVariant($, CODE_CONTEXT.stopped, "return_expression"),
       ),
+
+    malformed_embedded_code: ($) =>
+      prec.dynamic(-20, prec(-1, $._embedded_statement_terminator)),
+
+    incomplete_let_binding: ($) =>
+      prec.dynamic(-10, prec(-1, choice(
+        seq(
+          "let",
+          $._embedded_statement_terminator,
+        ),
+        seq(
+          "let",
+          field("name", $.identifier),
+          optional(field(
+            "parameters",
+            alias($._immediate_parameters, $.parameters),
+          )),
+          "=",
+          $._embedded_statement_terminator,
+        ),
+        seq(
+          "let",
+          field(
+            "pattern",
+            choice(
+              $.discard_pattern,
+              $.destructuring_pattern,
+            ),
+          ),
+          "=",
+          $._embedded_statement_terminator,
+        ),
+      ))),
+
+    incomplete_set_rule: ($) =>
+      prec.dynamic(-10, prec(-1, choice(
+        seq(
+          "set",
+          $._embedded_statement_terminator,
+        ),
+        seq(
+          "set",
+          field(
+            "target",
+            contextRule($, CODE_CONTEXT.stopped, "set_target"),
+          ),
+          $._embedded_statement_terminator,
+        ),
+        seq(
+          "set",
+          field(
+            "target",
+            contextRule($, CODE_CONTEXT.stopped, "set_target"),
+          ),
+          $._code_argument_ahead,
+          $._embedded_unclosed_set_arguments,
+          $._embedded_statement_terminator,
+        ),
+      ))),
+
+    incomplete_show_rule: ($) =>
+      prec.dynamic(-10, prec(-1, choice(
+        seq(
+          "show",
+          $._embedded_statement_terminator,
+        ),
+        seq(
+          "show",
+          field("selector", $._stopped_expression),
+          $._embedded_statement_terminator,
+        ),
+      ))),
+
+    incomplete_module_import: ($) =>
+      prec.dynamic(-10, prec(-1, choice(
+        seq(
+          "import",
+          $._embedded_statement_terminator,
+        ),
+        seq(
+          "import",
+          field("source", $._stopped_expression),
+          ":",
+          $._embedded_statement_terminator,
+        ),
+      ))),
+
+    incomplete_module_include: ($) =>
+      prec.dynamic(-10, prec(-1, seq(
+        "include",
+        $._embedded_statement_terminator,
+      ))),
+
+    incomplete_return_expression: ($) =>
+      prec.dynamic(-10, prec(-1, choice(
+        seq(
+          "return",
+          field("operator", choice("+", "-", "−", "not")),
+          $._embedded_statement_terminator,
+        ),
+        seq(
+          $._embedded_return_dangling_operator,
+          $._embedded_statement_terminator,
+        ),
+      ))),
 
     // Top-level/code-block expressions are newline-strict. The only contextual
     // continuations are a following dot and `else`. Delimited constructs use

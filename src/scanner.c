@@ -18,6 +18,8 @@ enum TokenType {
   BLOCK_COMMENT,
   HASH,
   EMBEDDED_STATEMENT_END,
+  EMBEDDED_UNCLOSED_SET_ARGUMENTS,
+  EMBEDDED_RETURN_DANGLING_OPERATOR,
   MATH_SPREAD_OPERATOR,
   MATH_ARGUMENT_IDENTIFIER,
 
@@ -171,6 +173,7 @@ static uint32_t read_u32(const char *buffer, unsigned offset) {
 static bool scan_code_keyword_ahead(TSLexer *lexer, const char *keyword,
                                     enum TokenType symbol);
 static bool skip_code_all_trivia(TSLexer *lexer, bool *saw_comment);
+static bool consume_nested_block_comment_body_same_line(TSLexer *lexer);
 static bool scan_code_operator_ahead(TSLexer *lexer, bool slash_operator,
                                      uint8_t valid_operator_mask);
 static bool scan_markup_automatic_link_start(TSLexer *lexer);
@@ -565,6 +568,441 @@ static bool scan_list_boundary(Scanner *scanner, TSLexer *lexer,
   return false;
 }
 
+static bool scan_embedded_statement_end(TSLexer *lexer) {
+  // A statement embedded after `#` can end without a semicolon only at the
+  // stopped-code boundary. Horizontal trivia never terminates the statement;
+  // it remains available to ordinary code tokens and extras.
+  if (!lexer->eof(lexer) && !is_newline(lexer->lookahead) &&
+      lexer->lookahead != ']') {
+    return false;
+  }
+
+  lexer->mark_end(lexer);
+  lexer->result_symbol = EMBEDDED_STATEMENT_END;
+  return true;
+}
+
+static void skip_horizontal_space(TSLexer *lexer) {
+  while (is_unicode_space(lexer->lookahead) && !is_newline(lexer->lookahead))
+    advance(lexer);
+}
+
+static bool embedded_boundary_after_newline(TSLexer *lexer) {
+  if (lexer->eof(lexer) || lexer->lookahead == ']' ||
+      lexer->lookahead == ';')
+    return true;
+  if (!is_newline(lexer->lookahead))
+    return false;
+
+  while (true) {
+    if (consume_newline(lexer)) {
+      skip_horizontal_space(lexer);
+      continue;
+    }
+
+    if (lexer->eof(lexer) || lexer->lookahead == ']' ||
+        lexer->lookahead == '#')
+      return true;
+
+    if (lexer->lookahead != '/')
+      return false;
+
+    advance(lexer);
+    if (lexer->lookahead == '/') {
+      while (!lexer->eof(lexer) && !is_newline(lexer->lookahead))
+        advance(lexer);
+      continue;
+    }
+    if (lexer->lookahead == '*') {
+      if (!consume_nested_block_comment_body(lexer))
+        return false;
+      skip_horizontal_space(lexer);
+      continue;
+    }
+    return false;
+  }
+}
+
+static bool consume_string_same_line(TSLexer *lexer) {
+  if (lexer->lookahead != '"')
+    return false;
+
+  advance(lexer);
+  lexer->mark_end(lexer);
+  while (!lexer->eof(lexer) && !is_newline(lexer->lookahead)) {
+    if (lexer->lookahead == '\\') {
+      advance(lexer);
+      lexer->mark_end(lexer);
+      if (!lexer->eof(lexer) && !is_newline(lexer->lookahead)) {
+        advance(lexer);
+        lexer->mark_end(lexer);
+      }
+      continue;
+    }
+    if (lexer->lookahead == '"') {
+      advance(lexer);
+      lexer->mark_end(lexer);
+      return true;
+    }
+    advance(lexer);
+    lexer->mark_end(lexer);
+  }
+
+  return false;
+}
+
+static bool scan_embedded_unclosed_set_arguments(TSLexer *lexer) {
+  if (lexer->lookahead != '(')
+    return false;
+
+  uint32_t parenthesis_depth = 0;
+  uint32_t bracket_depth = 0;
+  while (!lexer->eof(lexer)) {
+    if (lexer->lookahead == '"') {
+      if (!consume_string_same_line(lexer))
+        break;
+      continue;
+    }
+
+    if (lexer->lookahead == '/') {
+      advance(lexer);
+      if (lexer->lookahead == '/') {
+        while (!lexer->eof(lexer) && !is_newline(lexer->lookahead))
+          advance(lexer);
+        break;
+      }
+      if (lexer->lookahead == '*') {
+        if (!consume_nested_block_comment_body_same_line(lexer))
+          return false;
+        continue;
+      }
+      lexer->mark_end(lexer);
+      continue;
+    }
+
+    if (is_newline(lexer->lookahead))
+      break;
+
+    if (lexer->lookahead == '[') {
+      bracket_depth++;
+      advance(lexer);
+      lexer->mark_end(lexer);
+      continue;
+    }
+
+    if (lexer->lookahead == ']') {
+      if (bracket_depth == 0)
+        break;
+      bracket_depth--;
+      advance(lexer);
+      lexer->mark_end(lexer);
+      continue;
+    }
+
+    if (bracket_depth == 0) {
+      if (lexer->lookahead == ';')
+        break;
+      if (lexer->lookahead == '(') {
+        parenthesis_depth++;
+      } else if (lexer->lookahead == ')' && parenthesis_depth > 0) {
+        parenthesis_depth--;
+        if (parenthesis_depth == 0)
+          return false;
+      }
+    }
+
+    advance(lexer);
+    lexer->mark_end(lexer);
+  }
+
+  if (parenthesis_depth == 0 || bracket_depth > 0)
+    return false;
+
+  if (embedded_boundary_after_newline(lexer)) {
+    lexer->result_symbol = EMBEDDED_UNCLOSED_SET_ARGUMENTS;
+    return true;
+  }
+
+  return false;
+}
+
+static bool scan_return_recovery_operator(TSLexer *lexer) {
+  if (lexer->lookahead == 'a') {
+    advance(lexer);
+    if (lexer->lookahead != 'n')
+      return false;
+    advance(lexer);
+    if (lexer->lookahead != 'd')
+      return false;
+    advance(lexer);
+    return !is_id_continue(lexer->lookahead);
+  }
+
+  if (lexer->lookahead == 'o') {
+    advance(lexer);
+    if (lexer->lookahead != 'r')
+      return false;
+    advance(lexer);
+    return !is_id_continue(lexer->lookahead);
+  }
+
+  if (lexer->lookahead == 'i') {
+    advance(lexer);
+    if (lexer->lookahead != 'n')
+      return false;
+    advance(lexer);
+    return !is_id_continue(lexer->lookahead);
+  }
+
+  if (lexer->lookahead == 'n') {
+    advance(lexer);
+    if (lexer->lookahead != 'o')
+      return false;
+    advance(lexer);
+    if (lexer->lookahead != 't')
+      return false;
+    advance(lexer);
+    if (is_id_continue(lexer->lookahead))
+      return false;
+
+    skip_horizontal_space(lexer);
+    if (lexer->lookahead != 'i')
+      return false;
+    advance(lexer);
+    if (lexer->lookahead != 'n')
+      return false;
+    advance(lexer);
+    return !is_id_continue(lexer->lookahead);
+  }
+
+  switch (lexer->lookahead) {
+  case '+':
+  case '*':
+  case '<':
+  case '>': {
+    advance(lexer);
+    if (lexer->lookahead == '=')
+      advance(lexer);
+    return true;
+  }
+  case '/':
+    advance(lexer);
+    if (lexer->lookahead == '/' || lexer->lookahead == '*')
+      return false;
+    if (lexer->lookahead == '=')
+      advance(lexer);
+    return true;
+  case '-':
+  case 0x2212:
+    advance(lexer);
+    if (lexer->lookahead == '=')
+      advance(lexer);
+    return true;
+  case '=':
+  case '!':
+    advance(lexer);
+    if (lexer->lookahead != '=')
+      return false;
+    advance(lexer);
+    return true;
+  default:
+    return false;
+  }
+}
+
+static bool scan_balanced_same_line(TSLexer *lexer, int32_t open,
+                                    int32_t close) {
+  if (lexer->lookahead != open)
+    return false;
+
+  uint32_t depth = 0;
+  do {
+    if (lexer->lookahead == '"') {
+      advance(lexer);
+      while (!lexer->eof(lexer) && !is_newline(lexer->lookahead)) {
+        if (lexer->lookahead == '\\') {
+          advance(lexer);
+          if (!lexer->eof(lexer) && !is_newline(lexer->lookahead))
+            advance(lexer);
+          continue;
+        }
+        if (lexer->lookahead == '"') {
+          advance(lexer);
+          break;
+        }
+        advance(lexer);
+      }
+      continue;
+    }
+
+    if (lexer->lookahead == open) {
+      depth++;
+    } else if (lexer->lookahead == close) {
+      depth--;
+      advance(lexer);
+      return depth == 0;
+    }
+
+    advance(lexer);
+  } while (!lexer->eof(lexer) && !is_newline(lexer->lookahead));
+
+  return false;
+}
+
+static bool scan_simple_string_value(TSLexer *lexer) {
+  if (lexer->lookahead != '"')
+    return false;
+  advance(lexer);
+  while (!lexer->eof(lexer) && !is_newline(lexer->lookahead)) {
+    if (lexer->lookahead == '\\') {
+      advance(lexer);
+      if (!lexer->eof(lexer) && !is_newline(lexer->lookahead))
+        advance(lexer);
+      continue;
+    }
+    if (lexer->lookahead == '"') {
+      advance(lexer);
+      return true;
+    }
+    advance(lexer);
+  }
+  return false;
+}
+
+static bool scan_simple_number_value(TSLexer *lexer) {
+  if (!ascii_digit(lexer->lookahead))
+    return false;
+
+  do {
+    advance(lexer);
+  } while (ascii_digit(lexer->lookahead));
+
+  if (lexer->lookahead == '.') {
+    advance(lexer);
+    while (ascii_digit(lexer->lookahead))
+      advance(lexer);
+  }
+
+  // Recovery only: keep unit-like tails broad because this token can only
+  // succeed when the number is followed by a dangling operator and boundary.
+  while (is_id_continue(lexer->lookahead) || lexer->lookahead == '%')
+    advance(lexer);
+
+  return true;
+}
+
+static bool scan_simple_identifier_value(TSLexer *lexer) {
+  if (!is_id_start(lexer->lookahead))
+    return false;
+
+  do {
+    advance(lexer);
+  } while (is_id_continue(lexer->lookahead));
+
+  while (true) {
+    if (lexer->lookahead == '.') {
+      advance(lexer);
+      if (!is_id_start(lexer->lookahead))
+        return false;
+      do {
+        advance(lexer);
+      } while (is_id_continue(lexer->lookahead));
+      continue;
+    }
+
+    if (lexer->lookahead == '(') {
+      if (!scan_balanced_same_line(lexer, '(', ')'))
+        return false;
+      continue;
+    }
+
+    break;
+  }
+
+  return true;
+}
+
+static bool scan_simple_return_value(TSLexer *lexer) {
+  if (lexer->lookahead == '"')
+    return scan_simple_string_value(lexer);
+  if (lexer->lookahead == '(')
+    return scan_balanced_same_line(lexer, '(', ')');
+  if (ascii_digit(lexer->lookahead))
+    return scan_simple_number_value(lexer);
+  return scan_simple_identifier_value(lexer);
+}
+
+static bool scan_embedded_return_dangling_operator(TSLexer *lexer) {
+  if (lexer->lookahead != 'r')
+    return false;
+  advance(lexer);
+  if (lexer->lookahead != 'e')
+    return false;
+  advance(lexer);
+  if (lexer->lookahead != 't')
+    return false;
+  advance(lexer);
+  if (lexer->lookahead != 'u')
+    return false;
+  advance(lexer);
+  if (lexer->lookahead != 'r')
+    return false;
+  advance(lexer);
+  if (lexer->lookahead != 'n')
+    return false;
+  advance(lexer);
+  if (is_id_continue(lexer->lookahead))
+    return false;
+
+  skip_horizontal_space(lexer);
+  if (!scan_simple_return_value(lexer))
+    return false;
+
+  skip_horizontal_space(lexer);
+  if (!scan_return_recovery_operator(lexer))
+    return false;
+  lexer->mark_end(lexer);
+
+  skip_horizontal_space(lexer);
+  if (!lexer->eof(lexer) && !is_newline(lexer->lookahead) &&
+      lexer->lookahead != ';' && lexer->lookahead != ']' &&
+      lexer->lookahead != '/') {
+    return false;
+  }
+
+  lexer->result_symbol = EMBEDDED_RETURN_DANGLING_OPERATOR;
+  return true;
+}
+
+static bool hash_has_only_trivia_before_boundary(TSLexer *lexer) {
+  while (true) {
+    while (is_unicode_space(lexer->lookahead) &&
+           !is_newline(lexer->lookahead)) {
+      advance(lexer);
+    }
+
+    if (lexer->eof(lexer) || is_newline(lexer->lookahead))
+      return true;
+
+    if (lexer->lookahead != '/')
+      return false;
+
+    advance(lexer);
+    if (lexer->lookahead == '/') {
+      while (!lexer->eof(lexer) && !is_newline(lexer->lookahead))
+        advance(lexer);
+      return lexer->eof(lexer) || is_newline(lexer->lookahead);
+    }
+    if (lexer->lookahead == '*') {
+      if (!consume_nested_block_comment_body(lexer))
+        return false;
+      continue;
+    }
+
+    return false;
+  }
+}
+
 static bool scan_hash_or_shebang(TSLexer *lexer, bool shebang_valid,
                                  bool hash_valid) {
   if (lexer->lookahead != '#')
@@ -587,30 +1025,16 @@ static bool scan_hash_or_shebang(TSLexer *lexer, bool shebang_valid,
   if (!hash_valid)
     return false;
   // `#` always starts embedded code in Typst; literal prose hashes must be
-  // escaped. Declining trivia here lets recovery report malformed embedded
-  // code instead of folding `# text` into a text node.
-  if (is_unicode_space(lexer->lookahead))
-    return false;
-  if (lexer->lookahead == '/') {
-    advance(lexer);
-    if (lexer->lookahead == '/' || lexer->lookahead == '*')
+  // escaped. Accept hashes followed only by trivia to a line boundary so
+  // malformed embedded roots recover locally, but keep declining `# text` so
+  // spaces do not manufacture `#text`.
+  if (is_unicode_space(lexer->lookahead) || lexer->lookahead == '/') {
+    if (!hash_has_only_trivia_before_boundary(lexer))
       return false;
+    lexer->result_symbol = HASH;
+    return true;
   }
   lexer->result_symbol = HASH;
-  return true;
-}
-
-static bool scan_embedded_statement_end(TSLexer *lexer) {
-  // A statement embedded after `#` can end without a semicolon only at the
-  // stopped-code boundary. Horizontal trivia never terminates the statement;
-  // it remains available to ordinary code tokens and extras.
-  if (!lexer->eof(lexer) && !is_newline(lexer->lookahead) &&
-      lexer->lookahead != ']') {
-    return false;
-  }
-
-  lexer->mark_end(lexer);
-  lexer->result_symbol = EMBEDDED_STATEMENT_END;
   return true;
 }
 
@@ -1902,6 +2326,14 @@ static bool scanner_scan(void *payload, TSLexer *lexer,
       scan_embedded_statement_end(lexer)) {
     return true;
   }
+
+  if (valid_symbols[EMBEDDED_UNCLOSED_SET_ARGUMENTS] &&
+      lexer->lookahead == '(')
+    return scan_embedded_unclosed_set_arguments(lexer);
+
+  if (valid_symbols[EMBEDDED_RETURN_DANGLING_OPERATOR] &&
+      lexer->lookahead == 'r')
+    return scan_embedded_return_dangling_operator(lexer);
 
   // External scanner probes cannot backtrack within one `scan` call. Once
   // one of these helpers is selected, return its result directly even when it

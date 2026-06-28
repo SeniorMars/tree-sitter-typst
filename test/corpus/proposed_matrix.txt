@@ -474,7 +474,6 @@ set_immediate_arguments
               unit: (unit)))))))
   (ERROR
     (identifier)
-    (math_delimiter)
     (string_content)))
 
 ==================

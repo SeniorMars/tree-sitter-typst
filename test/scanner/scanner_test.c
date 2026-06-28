@@ -195,7 +195,16 @@ static void test_hash_and_shebang(void) {
   MockLexer m;
   size_t end = 0;
 
-  const char *cases[] = {"#foo", "#!x", "#"};
+  const char *cases[] = {
+      "#foo",
+      "#!x",
+      "#",
+      "#\nfoo",
+      "#   \nfoo",
+      "# // comment\nfoo",
+      "#/* comment */\nfoo",
+      "#// comment",
+  };
   for (size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
     mock_init(&m, cases[i]);
     assert(scan_one(s, &m, HASH, &end));
@@ -204,9 +213,8 @@ static void test_hash_and_shebang(void) {
 
   const char *invalid[] = {
       "# foo",
-      "#\nfoo",
       "#/* comment */foo",
-      "#// comment",
+      "# / not-comment",
   };
   for (size_t i = 0; i < sizeof(invalid) / sizeof(invalid[0]); i++) {
     mock_init(&m, invalid[i]);
@@ -225,6 +233,150 @@ static void test_hash_and_shebang(void) {
   assert(scan_valid(s, &m, both, 2, &end));
   assert(m.lexer.result_symbol == SHEBANG);
   assert(end == strlen("#!typst"));
+
+  tree_sitter_typst_external_scanner_destroy(s);
+}
+
+static void test_embedded_unclosed_set_arguments(void) {
+  void *s = tree_sitter_typst_external_scanner_create();
+  MockLexer m;
+  size_t end = 0;
+
+  mock_init(&m, "(\n#show");
+  assert(scan_one(s, &m, EMBEDDED_UNCLOSED_SET_ARGUMENTS, &end));
+  assert(end == strlen("("));
+
+  mock_init(&m, "(title: \"T\";\nnext");
+  assert(scan_one(s, &m, EMBEDDED_UNCLOSED_SET_ARGUMENTS, &end));
+  assert(end == strlen("(title: \"T\""));
+
+  mock_init(&m, "(title: \")\"\n#show");
+  assert(scan_one(s, &m, EMBEDDED_UNCLOSED_SET_ARGUMENTS, &end));
+  assert(end == strlen("(title: \")\""));
+
+  mock_init(&m, "( // bad\n#show");
+  assert(scan_one(s, &m, EMBEDDED_UNCLOSED_SET_ARGUMENTS, &end));
+  assert(end == strlen("( "));
+
+  mock_init(&m, "(/* bad */\n#show");
+  assert(scan_one(s, &m, EMBEDDED_UNCLOSED_SET_ARGUMENTS, &end));
+  assert(end == strlen("("));
+
+  mock_init(&m, "(\n  title: \"T\"");
+  assert(!scan_one(s, &m, EMBEDDED_UNCLOSED_SET_ARGUMENTS, NULL));
+  assert(m.position == 0);
+
+  mock_init(&m, "(title: \"T\")\nnext");
+  assert(!scan_one(s, &m, EMBEDDED_UNCLOSED_SET_ARGUMENTS, NULL));
+  assert(m.position == 0);
+
+  mock_init(&m, "(title: \"T\",\n)");
+  assert(!scan_one(s, &m, EMBEDDED_UNCLOSED_SET_ARGUMENTS, NULL));
+  assert(m.position == 0);
+
+  mock_init(&m, "(body: [hello])\nnext");
+  assert(!scan_one(s, &m, EMBEDDED_UNCLOSED_SET_ARGUMENTS, NULL));
+  assert(m.position == 0);
+
+  mock_init(&m, "(body: [\n#emph[Hello]\n])");
+  assert(!scan_one(s, &m, EMBEDDED_UNCLOSED_SET_ARGUMENTS, NULL));
+  assert(m.position == 0);
+
+  mock_init(&m, "+\nnext");
+  assert(!scan_one(s, &m, EMBEDDED_UNCLOSED_SET_ARGUMENTS, NULL));
+  assert(m.position == 0);
+
+  mock_init(&m, "\nnext");
+  assert(!scan_one(s, &m, EMBEDDED_UNCLOSED_SET_ARGUMENTS, NULL));
+  assert(m.position == 0);
+
+  mock_init(&m, ";");
+  assert(!scan_one(s, &m, EMBEDDED_UNCLOSED_SET_ARGUMENTS, NULL));
+  assert(m.position == 0);
+
+  tree_sitter_typst_external_scanner_destroy(s);
+}
+
+static void test_embedded_return_dangling_operator(void) {
+  void *s = tree_sitter_typst_external_scanner_create();
+  MockLexer m;
+  size_t end = 0;
+
+  mock_init(&m, "return foo +\nnext");
+  assert(scan_one(s, &m, EMBEDDED_RETURN_DANGLING_OPERATOR, &end));
+  assert(end == strlen("return foo +"));
+
+  mock_init(&m, "return 1 +\nnext");
+  assert(scan_one(s, &m, EMBEDDED_RETURN_DANGLING_OPERATOR, &end));
+  assert(end == strlen("return 1 +"));
+
+  mock_init(&m, "return foo.bar +\nnext");
+  assert(scan_one(s, &m, EMBEDDED_RETURN_DANGLING_OPERATOR, &end));
+  assert(end == strlen("return foo.bar +"));
+
+  mock_init(&m, "return foo() +\nnext");
+  assert(scan_one(s, &m, EMBEDDED_RETURN_DANGLING_OPERATOR, &end));
+  assert(end == strlen("return foo() +"));
+
+  mock_init(&m, "return \"x\" +\nnext");
+  assert(scan_one(s, &m, EMBEDDED_RETURN_DANGLING_OPERATOR, &end));
+  assert(end == strlen("return \"x\" +"));
+
+  mock_init(&m, "return (foo) +\nnext");
+  assert(scan_one(s, &m, EMBEDDED_RETURN_DANGLING_OPERATOR, &end));
+  assert(end == strlen("return (foo) +"));
+
+  mock_init(&m, "return foo and\nnext");
+  assert(scan_one(s, &m, EMBEDDED_RETURN_DANGLING_OPERATOR, &end));
+  assert(end == strlen("return foo and"));
+
+  mock_init(&m, "return foo or\nnext");
+  assert(scan_one(s, &m, EMBEDDED_RETURN_DANGLING_OPERATOR, &end));
+  assert(end == strlen("return foo or"));
+
+  mock_init(&m, "return foo in\nnext");
+  assert(scan_one(s, &m, EMBEDDED_RETURN_DANGLING_OPERATOR, &end));
+  assert(end == strlen("return foo in"));
+
+  mock_init(&m, "return foo not in\nnext");
+  assert(scan_one(s, &m, EMBEDDED_RETURN_DANGLING_OPERATOR, &end));
+  assert(end == strlen("return foo not in"));
+
+  mock_init(&m, "return foo /\nnext");
+  assert(scan_one(s, &m, EMBEDDED_RETURN_DANGLING_OPERATOR, &end));
+  assert(end == strlen("return foo /"));
+
+  mock_init(&m, "return foo + // bad\nnext");
+  assert(scan_one(s, &m, EMBEDDED_RETURN_DANGLING_OPERATOR, &end));
+  assert(end == strlen("return foo +"));
+
+  mock_init(&m, "return foo / // bad\nnext");
+  assert(scan_one(s, &m, EMBEDDED_RETURN_DANGLING_OPERATOR, &end));
+  assert(end == strlen("return foo /"));
+
+  mock_init(&m, "return foo // comment\nnext");
+  assert(!scan_one(s, &m, EMBEDDED_RETURN_DANGLING_OPERATOR, NULL));
+  assert(m.position == 0);
+
+  mock_init(&m, "return foo + 1\nnext");
+  assert(!scan_one(s, &m, EMBEDDED_RETURN_DANGLING_OPERATOR, NULL));
+  assert(m.position == 0);
+
+  mock_init(&m, "return foo in bar\nnext");
+  assert(!scan_one(s, &m, EMBEDDED_RETURN_DANGLING_OPERATOR, NULL));
+  assert(m.position == 0);
+
+  mock_init(&m, "return foo not in bar\nnext");
+  assert(!scan_one(s, &m, EMBEDDED_RETURN_DANGLING_OPERATOR, NULL));
+  assert(m.position == 0);
+
+  mock_init(&m, "returning foo +\nnext");
+  assert(!scan_one(s, &m, EMBEDDED_RETURN_DANGLING_OPERATOR, NULL));
+  assert(m.position == 0);
+
+  mock_init(&m, "return +\nnext");
+  assert(!scan_one(s, &m, EMBEDDED_RETURN_DANGLING_OPERATOR, NULL));
+  assert(m.position == 0);
 
   tree_sitter_typst_external_scanner_destroy(s);
 }
@@ -1272,6 +1424,8 @@ static void test_serialization(void) {
 
 int main(void) {
   test_hash_and_shebang();
+  test_embedded_unclosed_set_arguments();
+  test_embedded_return_dangling_operator();
   test_nested_comment();
   test_marker_boundaries();
   test_list_continuation();

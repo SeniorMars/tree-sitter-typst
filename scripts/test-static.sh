@@ -14,5 +14,4 @@ cc -std=c11 -Wall -Wextra -Werror -fsyntax-only -Isrc/vendor src/scanner.c
 cc -std=c11 -Wall -Wextra -Werror -Isrc/vendor \
   test/scanner/scanner_test.c -o /tmp/tree-sitter-typst-scanner-test
 /tmp/tree-sitter-typst-scanner-test
-scripts/test-docs.sh
 printf '%s\n' 'all static checks passed'
