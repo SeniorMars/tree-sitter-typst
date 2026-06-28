@@ -139,7 +139,10 @@
    '((equation "$" @font-lock-keyword-face)
      (math_identifier) @font-lock-constant-face
      (math_letter) @font-lock-variable-name-face
-     (math_text) @font-lock-string-face
+     ((math_text) @font-lock-operator-face
+      (:match "\\`[+=<>]\\'" @font-lock-operator-face))
+     ((math_text) @font-lock-string-face
+      (:match "\\`\\(?:[^+=<>]\\|..+\\)\\'" @font-lock-string-face))
      (math_number) @font-lock-number-face
      (math_shorthand) @font-lock-operator-face
      (math_alignment_point) @font-lock-operator-face

@@ -89,6 +89,7 @@ const IDENT_PATTERN =
 const IDENT = new RustRegex(IDENT_PATTERN);
 const FIELD_IDENT = new RustRegex(IDENT_PATTERN);
 const MATH_FIELD_IDENT = new RustRegex(`${XID_START}${MATH_XID_CONTINUE}*`);
+const MATH_STRAY_ATTACHMENT_TEXT = new RustRegex("[_\\^][\\p{XID_Continue}_\\-\\^]+");
 const LABEL_ID = new RustRegex("[\\p{XID_Continue}_-][\\p{XID_Continue}_.:-]*");
 const REF_ID = new RustRegex(
   "[\\p{XID_Continue}_-](?:[\\p{XID_Continue}_.:-]*[\\p{XID_Continue}_-])?",
@@ -128,6 +129,16 @@ const PREC = {
 };
 
 const CLOSURE_ARROW = token(prec(10, "=>"));
+const EMBEDDED_RECOVERY_PREC = -10;
+const MALFORMED_EMBEDDED_PREC = -20;
+const EMBEDDED_KEYWORD_STATEMENTS = Object.freeze([
+  "let_binding",
+  "set_rule",
+  "show_rule",
+  "module_import",
+  "module_include",
+  "return_expression",
+]);
 
 function root($) {
   switch (ROOT_MODE) {
@@ -328,6 +339,24 @@ function codeVariant($, context, name, publicName = name) {
     default:
       return $[name];
   }
+}
+
+function stoppedCodeVariantChoice($, names) {
+  return choice(
+    ...names.map((name) => codeVariant($, CODE_CONTEXT.stopped, name)),
+  );
+}
+
+function embeddedRecovery(body, dynamic = EMBEDDED_RECOVERY_PREC) {
+  return prec.dynamic(dynamic, prec(-1, body));
+}
+
+function embeddedTerminated($, ...parts) {
+  return seq(...parts, $._embedded_statement_terminator);
+}
+
+function embeddedMalformed(body) {
+  return embeddedRecovery(body, MALFORMED_EMBEDDED_PREC);
 }
 
 function codeOperator($, value, context, ahead) {
@@ -1232,9 +1261,17 @@ function showRule(
 
   return seq(
     "show",
-    optional(field("selector", expression($, context))),
-    ":",
-    field("transformation", transformation),
+    choice(
+      seq(
+        ":",
+        field("transformation", transformation),
+      ),
+      seq(
+        field("selector", expression($, context)),
+        ":",
+        field("transformation", transformation),
+      ),
+    ),
   );
 }
 
@@ -1302,7 +1339,7 @@ function elseClause($, context) {
 function embeddedIfExpression($) {
   const head = seq(
     "if",
-    field("condition", $._expression),
+    field("condition", $._stopped_expression),
     $._code_control_body_ahead,
     field("consequence", controlBody($)),
   );
@@ -2003,16 +2040,16 @@ export default grammar({
 
     _embedded_body: ($) =>
       choice(
-        prec(1, seq(
-          $._embedded_keyword_statement,
-          $._embedded_statement_terminator,
-        )),
         $.incomplete_let_binding,
         $.incomplete_set_rule,
         $.incomplete_show_rule,
         $.incomplete_module_import,
         $.incomplete_module_include,
         $.incomplete_return_expression,
+        prec(1, seq(
+          $._embedded_keyword_statement,
+          $._embedded_statement_terminator,
+        )),
         $.malformed_embedded_code,
         seq(
           $._atomic_postfix_expression,
@@ -2021,25 +2058,16 @@ export default grammar({
       ),
 
     _embedded_keyword_statement: ($) =>
-      choice(
-        codeVariant($, CODE_CONTEXT.stopped, "let_binding"),
-        codeVariant($, CODE_CONTEXT.stopped, "set_rule"),
-        codeVariant($, CODE_CONTEXT.stopped, "show_rule"),
-        codeVariant($, CODE_CONTEXT.stopped, "module_import"),
-        codeVariant($, CODE_CONTEXT.stopped, "module_include"),
-        codeVariant($, CODE_CONTEXT.stopped, "return_expression"),
-      ),
+      stoppedCodeVariantChoice($, EMBEDDED_KEYWORD_STATEMENTS),
 
     malformed_embedded_code: ($) =>
-      prec.dynamic(-20, prec(-1, $._embedded_statement_terminator)),
+      embeddedMalformed($._embedded_statement_terminator),
 
     incomplete_let_binding: ($) =>
-      prec.dynamic(-10, prec(-1, choice(
-        seq(
-          "let",
-          $._embedded_statement_terminator,
-        ),
-        seq(
+      embeddedRecovery(choice(
+        embeddedTerminated($, "let"),
+        embeddedTerminated(
+          $,
           "let",
           field("name", $.identifier),
           optional(field(
@@ -2047,9 +2075,9 @@ export default grammar({
             alias($._immediate_parameters, $.parameters),
           )),
           "=",
-          $._embedded_statement_terminator,
         ),
-        seq(
+        embeddedTerminated(
+          $,
           "let",
           field(
             "pattern",
@@ -2059,25 +2087,22 @@ export default grammar({
             ),
           ),
           "=",
-          $._embedded_statement_terminator,
         ),
-      ))),
+      )),
 
     incomplete_set_rule: ($) =>
-      prec.dynamic(-10, prec(-1, choice(
-        seq(
-          "set",
-          $._embedded_statement_terminator,
-        ),
-        seq(
+      embeddedRecovery(choice(
+        embeddedTerminated($, "set"),
+        embeddedTerminated(
+          $,
           "set",
           field(
             "target",
             contextRule($, CODE_CONTEXT.stopped, "set_target"),
           ),
-          $._embedded_statement_terminator,
         ),
-        seq(
+        embeddedTerminated(
+          $,
           "set",
           field(
             "target",
@@ -2085,55 +2110,45 @@ export default grammar({
           ),
           $._code_argument_ahead,
           $._embedded_unclosed_set_arguments,
-          $._embedded_statement_terminator,
         ),
-      ))),
+      )),
 
     incomplete_show_rule: ($) =>
-      prec.dynamic(-10, prec(-1, choice(
-        seq(
-          "show",
-          $._embedded_statement_terminator,
-        ),
-        seq(
+      embeddedRecovery(choice(
+        embeddedTerminated($, "show"),
+        embeddedTerminated(
+          $,
           "show",
           field("selector", $._stopped_expression),
-          $._embedded_statement_terminator,
         ),
-      ))),
+      )),
 
     incomplete_module_import: ($) =>
-      prec.dynamic(-10, prec(-1, choice(
-        seq(
-          "import",
-          $._embedded_statement_terminator,
-        ),
-        seq(
+      embeddedRecovery(choice(
+        embeddedTerminated($, "import"),
+        embeddedTerminated(
+          $,
           "import",
           field("source", $._stopped_expression),
           ":",
-          $._embedded_statement_terminator,
         ),
-      ))),
+      )),
 
     incomplete_module_include: ($) =>
-      prec.dynamic(-10, prec(-1, seq(
-        "include",
-        $._embedded_statement_terminator,
-      ))),
+      embeddedRecovery(embeddedTerminated($, "include")),
 
     incomplete_return_expression: ($) =>
-      prec.dynamic(-10, prec(-1, choice(
-        seq(
+      embeddedRecovery(choice(
+        embeddedTerminated(
+          $,
           "return",
           field("operator", choice("+", "-", "−", "not")),
-          $._embedded_statement_terminator,
         ),
-        seq(
+        embeddedTerminated(
+          $,
           $._embedded_return_dangling_operator,
-          $._embedded_statement_terminator,
         ),
-      ))),
+      )),
 
     // Top-level/code-block expressions are newline-strict. The only contextual
     // continuations are a following dot and `else`. Delimited constructs use
@@ -2210,9 +2225,9 @@ export default grammar({
       choice(
         $._primary_expression,
         alias($._embedded_if_expression, $.if_expression),
-        $.while_loop,
-        $.for_loop,
-        $.contextual_expression,
+        alias($._stopped_while_loop, $.while_loop),
+        alias($._stopped_for_loop, $.for_loop),
+        alias($._stopped_contextual_expression, $.contextual_expression),
         $.break_expression,
         $.continue_expression,
       ),
@@ -3010,6 +3025,8 @@ export default grammar({
         $.math_identifier,
         alias($._math_letter, $.math_letter),
         alias($._math_text, $.math_text),
+        alias($._math_stray_attachment_text, $.math_text),
+        alias($._math_stray_attachment_marker, $.math_text),
         $.math_number,
         $.math_text,
         $.math_shorthand,
@@ -3020,6 +3037,12 @@ export default grammar({
         $.linebreak,
         $.embedded_code,
       ),
+
+    _math_stray_attachment_text: (_) =>
+      token(prec(-10, MATH_STRAY_ATTACHMENT_TEXT)),
+
+    _math_stray_attachment_marker: (_) =>
+      token(prec(-10, /[_^]/)),
 
     // The editor-oriented scanner emits a single XID codepoint as `_math_letter`
     // and longer XID runs as `math_identifier`.

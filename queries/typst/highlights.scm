@@ -218,7 +218,10 @@
 (equation) @markup.math
 (math_identifier) @constant
 (math_letter) @variable
-(math_text) @character
+((math_text) @operator
+  (#match? @operator "^[+=<>]$"))
+((math_text) @character
+  (#match? @character "^([^+=<>]|..+)$"))
 (math_number) @number
 (math_shorthand) @operator
 (math_alignment_point) @operator

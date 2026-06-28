@@ -587,6 +587,15 @@ static void skip_horizontal_space(TSLexer *lexer) {
     advance(lexer);
 }
 
+static bool scan_keyword_boundary(TSLexer *lexer, const char *keyword) {
+  for (const char *p = keyword; *p; p++) {
+    if (lexer->lookahead != *p)
+      return false;
+    advance(lexer);
+  }
+  return !is_id_continue(lexer->lookahead);
+}
+
 static bool embedded_boundary_after_newline(TSLexer *lexer) {
   if (lexer->eof(lexer) || lexer->lookahead == ']' ||
       lexer->lookahead == ';')
@@ -623,29 +632,34 @@ static bool embedded_boundary_after_newline(TSLexer *lexer) {
   }
 }
 
-static bool consume_string_same_line(TSLexer *lexer) {
+static bool scan_string_same_line(TSLexer *lexer, bool record_end) {
   if (lexer->lookahead != '"')
     return false;
 
   advance(lexer);
-  lexer->mark_end(lexer);
+  if (record_end)
+    lexer->mark_end(lexer);
   while (!lexer->eof(lexer) && !is_newline(lexer->lookahead)) {
     if (lexer->lookahead == '\\') {
       advance(lexer);
-      lexer->mark_end(lexer);
+      if (record_end)
+        lexer->mark_end(lexer);
       if (!lexer->eof(lexer) && !is_newline(lexer->lookahead)) {
         advance(lexer);
-        lexer->mark_end(lexer);
+        if (record_end)
+          lexer->mark_end(lexer);
       }
       continue;
     }
     if (lexer->lookahead == '"') {
       advance(lexer);
-      lexer->mark_end(lexer);
+      if (record_end)
+        lexer->mark_end(lexer);
       return true;
     }
     advance(lexer);
-    lexer->mark_end(lexer);
+    if (record_end)
+      lexer->mark_end(lexer);
   }
 
   return false;
@@ -659,7 +673,7 @@ static bool scan_embedded_unclosed_set_arguments(TSLexer *lexer) {
   uint32_t bracket_depth = 0;
   while (!lexer->eof(lexer)) {
     if (lexer->lookahead == '"') {
-      if (!consume_string_same_line(lexer))
+      if (!scan_string_same_line(lexer, true))
         break;
       continue;
     }
@@ -727,55 +741,18 @@ static bool scan_embedded_unclosed_set_arguments(TSLexer *lexer) {
 }
 
 static bool scan_return_recovery_operator(TSLexer *lexer) {
-  if (lexer->lookahead == 'a') {
-    advance(lexer);
-    if (lexer->lookahead != 'n')
-      return false;
-    advance(lexer);
-    if (lexer->lookahead != 'd')
-      return false;
-    advance(lexer);
-    return !is_id_continue(lexer->lookahead);
-  }
-
-  if (lexer->lookahead == 'o') {
-    advance(lexer);
-    if (lexer->lookahead != 'r')
-      return false;
-    advance(lexer);
-    return !is_id_continue(lexer->lookahead);
-  }
-
-  if (lexer->lookahead == 'i') {
-    advance(lexer);
-    if (lexer->lookahead != 'n')
-      return false;
-    advance(lexer);
-    return !is_id_continue(lexer->lookahead);
-  }
-
-  if (lexer->lookahead == 'n') {
-    advance(lexer);
-    if (lexer->lookahead != 'o')
-      return false;
-    advance(lexer);
-    if (lexer->lookahead != 't')
-      return false;
-    advance(lexer);
-    if (is_id_continue(lexer->lookahead))
-      return false;
-
-    skip_horizontal_space(lexer);
-    if (lexer->lookahead != 'i')
-      return false;
-    advance(lexer);
-    if (lexer->lookahead != 'n')
-      return false;
-    advance(lexer);
-    return !is_id_continue(lexer->lookahead);
-  }
-
   switch (lexer->lookahead) {
+  case 'a':
+    return scan_keyword_boundary(lexer, "and");
+  case 'o':
+    return scan_keyword_boundary(lexer, "or");
+  case 'i':
+    return scan_keyword_boundary(lexer, "in");
+  case 'n':
+    if (!scan_keyword_boundary(lexer, "not"))
+      return false;
+    skip_horizontal_space(lexer);
+    return scan_keyword_boundary(lexer, "in");
   case '+':
   case '*':
   case '<':
@@ -818,20 +795,8 @@ static bool scan_balanced_same_line(TSLexer *lexer, int32_t open,
   uint32_t depth = 0;
   do {
     if (lexer->lookahead == '"') {
-      advance(lexer);
-      while (!lexer->eof(lexer) && !is_newline(lexer->lookahead)) {
-        if (lexer->lookahead == '\\') {
-          advance(lexer);
-          if (!lexer->eof(lexer) && !is_newline(lexer->lookahead))
-            advance(lexer);
-          continue;
-        }
-        if (lexer->lookahead == '"') {
-          advance(lexer);
-          break;
-        }
-        advance(lexer);
-      }
+      if (!scan_string_same_line(lexer, false))
+        return false;
       continue;
     }
 
@@ -850,23 +815,7 @@ static bool scan_balanced_same_line(TSLexer *lexer, int32_t open,
 }
 
 static bool scan_simple_string_value(TSLexer *lexer) {
-  if (lexer->lookahead != '"')
-    return false;
-  advance(lexer);
-  while (!lexer->eof(lexer) && !is_newline(lexer->lookahead)) {
-    if (lexer->lookahead == '\\') {
-      advance(lexer);
-      if (!lexer->eof(lexer) && !is_newline(lexer->lookahead))
-        advance(lexer);
-      continue;
-    }
-    if (lexer->lookahead == '"') {
-      advance(lexer);
-      return true;
-    }
-    advance(lexer);
-  }
-  return false;
+  return scan_string_same_line(lexer, false);
 }
 
 static bool scan_simple_number_value(TSLexer *lexer) {
@@ -935,23 +884,7 @@ static bool scan_simple_return_value(TSLexer *lexer) {
 static bool scan_embedded_return_dangling_operator(TSLexer *lexer) {
   if (lexer->lookahead != 'r')
     return false;
-  advance(lexer);
-  if (lexer->lookahead != 'e')
-    return false;
-  advance(lexer);
-  if (lexer->lookahead != 't')
-    return false;
-  advance(lexer);
-  if (lexer->lookahead != 'u')
-    return false;
-  advance(lexer);
-  if (lexer->lookahead != 'r')
-    return false;
-  advance(lexer);
-  if (lexer->lookahead != 'n')
-    return false;
-  advance(lexer);
-  if (is_id_continue(lexer->lookahead))
+  if (!scan_keyword_boundary(lexer, "return"))
     return false;
 
   skip_horizontal_space(lexer);
@@ -1877,12 +1810,7 @@ static bool scan_slash_prefixed(Scanner *scanner, TSLexer *lexer,
 
 static bool scan_code_keyword_ahead(TSLexer *lexer, const char *keyword,
                                     enum TokenType symbol) {
-  for (const char *p = keyword; *p; p++) {
-    if (lexer->lookahead != *p)
-      return false;
-    advance(lexer);
-  }
-  if (is_id_continue(lexer->lookahead))
+  if (!scan_keyword_boundary(lexer, keyword))
     return false;
   lexer->result_symbol = symbol;
   return true;

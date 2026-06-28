@@ -181,6 +181,8 @@ function assertEmacsFontLockCompatibility() {
   for (const rule of [
     "(named_destructuring_item pattern: (identifier) @font-lock-variable-name-face)",
     "(destructuring_sink pattern: (identifier) @font-lock-variable-name-face)",
+    '((math_text) @font-lock-operator-face\n      (:match "\\\\`[+=<>]\\\\\'" @font-lock-operator-face))',
+    '((math_text) @font-lock-string-face\n      (:match "\\\\`\\\\(?:[^+=<>]\\\\|..+\\\\)\\\\\'" @font-lock-string-face))',
   ]) {
     assert(
       text.includes(rule),
@@ -471,6 +473,31 @@ for (const [dir, name] of [[queryDir, "indents.scm"], [helixQueryDir, "indents.s
   assertCapture(captures, "variable", "x", 1, 3);
   assertCapture(captures, "function.call", "foo", 1, 6);
   assertCapture(captures, "function.method.call", "beta", 1, 19);
+}
+
+{
+  const source = "$x = y + z < w > q, r$\n";
+  const captures = queryCaptures("highlights.scm", source);
+  assertCapture(captures, "operator", "=", 1, 3);
+  assertCapture(captures, "operator", "+", 1, 7);
+  assertCapture(captures, "operator", "<", 1, 11);
+  assertCapture(captures, "operator", ">", 1, 15);
+  assertCapture(captures, "character", ",", 1, 18);
+  assertNoCapture(captures, "character", "=", 1, 3);
+  assertNoCapture(captures, "character", "+", 1, 7);
+  assertNoCapture(captures, "character", "<", 1, 11);
+  assertNoCapture(captures, "character", ">", 1, 15);
+
+  const helixCaptures = queryCapturesFrom(helixQueryDir, "highlights.scm", source);
+  assertCapture(helixCaptures, "operator", "=", 1, 3);
+  assertCapture(helixCaptures, "operator", "+", 1, 7);
+  assertCapture(helixCaptures, "operator", "<", 1, 11);
+  assertCapture(helixCaptures, "operator", ">", 1, 15);
+  assertCapture(helixCaptures, "constant.character", ",", 1, 18);
+  assertNoCapture(helixCaptures, "constant.character", "=", 1, 3);
+  assertNoCapture(helixCaptures, "constant.character", "+", 1, 7);
+  assertNoCapture(helixCaptures, "constant.character", "<", 1, 11);
+  assertNoCapture(helixCaptures, "constant.character", ">", 1, 15);
 }
 
 {

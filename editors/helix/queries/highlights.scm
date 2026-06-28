@@ -175,7 +175,10 @@
 (equation) @markup.raw.inline
 (math_identifier) @constant
 (math_letter) @variable
-(math_text) @constant.character
+((math_text) @operator
+  (#match? @operator "^[+=<>]$"))
+((math_text) @constant.character
+  (#match? @constant.character "^([^+=<>]|..+)$"))
 (math_number) @constant.numeric
 (math_shorthand) @operator
 (math_alignment_point) @operator

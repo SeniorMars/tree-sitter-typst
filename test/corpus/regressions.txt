@@ -1426,6 +1426,154 @@ $x $
         (math_letter)))))
 
 ==================
+Stray leading math attachments recover locally
+==================
+
+$ _emph_ $ after
+$ ^oops $ after
+$ _ $ after
+$ ^ $ after
+$ _#foo $ after
+$ ^#foo $ after
+$ _"text" $ after
+$ _[body] $ after
+$ x_emph $ after
+$ x _ y $ after
+
+---
+
+(source_file
+  (content
+    (equation
+      body: (math
+        (math_text)))
+    (text)
+    (equation
+      body: (math
+        (math_text)))
+    (text)
+    (equation
+      body: (math
+        (math_text)))
+    (text)
+    (equation
+      body: (math
+        (math_text)))
+    (text)
+    (equation
+      body: (math
+        (math_text)
+        (embedded_code
+          body: (identifier))))
+    (text)
+    (equation
+      body: (math
+        (math_text)
+        (embedded_code
+          body: (identifier))))
+    (text)
+    (equation
+      body: (math
+        (math_text)
+        (string
+          (string_content))))
+    (text)
+    (equation
+      body: (math
+        (math_text)
+        (math_delimited
+          open: (math_delimiter)
+          body: (math
+            (math_identifier))
+          close: (math_delimiter))))
+    (text)
+    (equation
+      body: (math
+        (math_attachment
+          base: (math_letter)
+          subscript: (math_identifier))))
+    (text)
+    (equation
+      body: (math
+        (math_attachment
+          base: (math_letter)
+          subscript: (math_letter))))
+    (text)))
+
+==================
+Stray math attachment boundary cases
+==================
+
+$ _emph_ $ $x+1$
+$ _/ x $ after
+$ _+ x $ after
+$ _.x $ after
+$ __ $ after
+$ ^^ $ after
+$ _-foo $ after
+$ _α $ after
+$ _١ $ after
+$ _👩‍🔬 $ after
+
+---
+
+(source_file
+  (content
+    (equation
+      body: (math
+        (math_text)))
+    (equation
+      body: (math
+        (math_letter)
+        (math_text)
+        (math_number)))
+    (equation
+      body: (math
+        (math_fraction
+          numerator: (math_text)
+          denominator: (math_letter))))
+    (text)
+    (equation
+      body: (math
+        (math_text)
+        (math_text)
+        (math_letter)))
+    (text)
+    (equation
+      body: (math
+        (math_text)
+        (math_text)
+        (math_letter)))
+    (text)
+    (equation
+      body: (math
+        (math_text)))
+    (text)
+    (equation
+      body: (math
+        (math_text)))
+    (text)
+    (equation
+      body: (math
+        (math_text)))
+    (text)
+    (equation
+      body: (math
+        (math_text)))
+    (text)
+    (equation
+      body: (math
+        (math_text)))
+    (text)
+    (equation
+      body: (math
+        (math_text)
+        (math_text)
+        (math_text)
+        (math_text)))
+    (text)))
+
+==================
 Heading and list comment boundaries
 ==================
 
@@ -1522,6 +1670,60 @@ $ vec(#(x + 1)) $
                   expression: (binary_expression
                     left: (identifier)
                     right: (integer)))))))))))
+
+==================
+Math style calls and embedded markup
+==================
+
+$ bold(x) upright("text") $
+$ #strong[bold] + #emph[emph] $
+$ *bold* $
+$ x_emph $
+
+---
+
+(source_file
+  (content
+    (equation
+      body: (math
+        (math_call
+          function: (math_identifier)
+          arguments: (math_arguments
+            (math_sequence
+              (math_letter))))
+        (math_call
+          function: (math_identifier)
+          arguments: (math_arguments
+            (math_sequence
+              (string
+                (string_content)))))))
+    (equation
+      body: (math
+        (embedded_code
+          body: (function_call
+            function: (identifier)
+            arguments: (arguments
+              (content_block
+                body: (content
+                  (text))))))
+        (math_text)
+        (embedded_code
+          body: (function_call
+            function: (identifier)
+            arguments: (arguments
+              (content_block
+                body: (content
+                  (text))))))))
+    (equation
+      body: (math
+        (math_shorthand)
+        (math_identifier)
+        (math_shorthand)))
+    (equation
+      body: (math
+        (math_attachment
+          base: (math_letter)
+          subscript: (math_identifier))))))
 
 ==================
 Spaced content block after control-flow header is body
