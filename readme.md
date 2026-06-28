@@ -197,11 +197,21 @@ Then run `M-x treesit-install-language-grammar RET typst RET`. Configure
 
 `typst-ts-mode` embeds font-lock queries for another Typst grammar, so using it
 unchanged with this parser can fail with node errors such as `(comment)`.
-Install the compatibility settings from `editors/emacs/` after loading
-`typst-ts-mode`:
+`treesit-install-language-grammar` installs only the parser library, not the
+compatibility Elisp file. Make `tree-sitter-typst-font-lock.el` available on
+`load-path`, either from a checkout of this repository or by copying that one
+file into your Emacs configuration, then install the override after
+`typst-ts-mode` loads:
+
+```sh
+mkdir -p ~/.emacs.d/lisp
+curl -L \
+  -o ~/.emacs.d/lisp/tree-sitter-typst-font-lock.el \
+  https://raw.githubusercontent.com/SeniorMars/tree-sitter-typst/main/editors/emacs/tree-sitter-typst-font-lock.el
+```
 
 ```elisp
-(add-to-list 'load-path "/path/to/tree-sitter-typst/editors/emacs")
+(add-to-list 'load-path (expand-file-name "lisp" user-emacs-directory))
 
 (with-eval-after-load 'typst-ts-mode
   (require 'tree-sitter-typst-font-lock)
