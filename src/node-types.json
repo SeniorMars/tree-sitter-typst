@@ -122,6 +122,10 @@
         "named": true
       },
       {
+        "type": "malformed_number",
+        "named": true
+      },
+      {
         "type": "none",
         "named": true
       },
@@ -149,6 +153,10 @@
       },
       {
         "type": "linebreak",
+        "named": true
+      },
+      {
+        "type": "malformed_escape",
         "named": true
       },
       {
@@ -979,6 +987,14 @@
           "named": true
         },
         {
+          "type": "malformed_automatic_link",
+          "named": true
+        },
+        {
+          "type": "malformed_escape",
+          "named": true
+        },
+        {
           "type": "parbreak",
           "named": true
         },
@@ -1155,6 +1171,14 @@
         },
         {
           "type": "linebreak",
+          "named": true
+        },
+        {
+          "type": "malformed_automatic_link",
+          "named": true
+        },
+        {
+          "type": "malformed_escape",
           "named": true
         },
         {
@@ -1786,6 +1810,14 @@
             "named": true
           },
           {
+            "type": "malformed_automatic_link",
+            "named": true
+          },
+          {
+            "type": "malformed_escape",
+            "named": true
+          },
+          {
             "type": "raw",
             "named": true
           },
@@ -2153,6 +2185,14 @@
         },
         {
           "type": "linebreak",
+          "named": true
+        },
+        {
+          "type": "malformed_automatic_link",
+          "named": true
+        },
+        {
+          "type": "malformed_escape",
           "named": true
         },
         {
@@ -2709,6 +2749,14 @@
             "named": true
           },
           {
+            "type": "malformed_automatic_link",
+            "named": true
+          },
+          {
+            "type": "malformed_escape",
+            "named": true
+          },
+          {
             "type": "raw",
             "named": true
           },
@@ -2791,6 +2839,14 @@
         },
         {
           "type": "linebreak",
+          "named": true
+        },
+        {
+          "type": "malformed_automatic_link",
+          "named": true
+        },
+        {
+          "type": "malformed_escape",
           "named": true
         },
         {
@@ -4403,6 +4459,14 @@
             "named": true
           },
           {
+            "type": "malformed_automatic_link",
+            "named": true
+          },
+          {
+            "type": "malformed_escape",
+            "named": true
+          },
+          {
             "type": "raw",
             "named": true
           },
@@ -4796,6 +4860,10 @@
       "required": false,
       "types": [
         {
+          "type": "malformed_escape",
+          "named": true
+        },
+        {
           "type": "string_content",
           "named": true
         },
@@ -4844,6 +4912,14 @@
           },
           {
             "type": "linebreak",
+            "named": true
+          },
+          {
+            "type": "malformed_automatic_link",
+            "named": true
+          },
+          {
+            "type": "malformed_escape",
             "named": true
           },
           {
@@ -4928,6 +5004,14 @@
           },
           {
             "type": "linebreak",
+            "named": true
+          },
+          {
+            "type": "malformed_automatic_link",
+            "named": true
+          },
+          {
+            "type": "malformed_escape",
             "named": true
           },
           {
@@ -5340,6 +5424,18 @@
   },
   {
     "type": "linebreak",
+    "named": true
+  },
+  {
+    "type": "malformed_automatic_link",
+    "named": true
+  },
+  {
+    "type": "malformed_escape",
+    "named": true
+  },
+  {
+    "type": "malformed_number",
     "named": true
   },
   {

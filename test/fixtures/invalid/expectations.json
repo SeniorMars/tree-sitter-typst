@@ -1,0 +1,14 @@
+{
+  "malformed-nodes.typ": {
+    "requires": [
+      "malformed_number",
+      "malformed_automatic_link",
+      "malformed_escape",
+      "malformed_embedded_code"
+    ],
+    "requires_recovery": true
+  },
+  "missing-token.typ": {
+    "requires_missing": true
+  }
+}

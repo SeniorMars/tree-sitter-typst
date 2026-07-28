@@ -4,6 +4,11 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import Parser from "tree-sitter";
 
+import {
+  SYNTAX_ISSUE_NODE_TYPES,
+  treeHasSyntaxIssue,
+} from "./syntax-issues.js";
+
 const { default: language } = await import("../bindings/node/index.js");
 
 const root = new URL("..", import.meta.url);
@@ -66,6 +71,8 @@ See https://typst.app/docs/. and @audit[Audit].
 $ f(size: #12pt, ..#args) + alpha.beta / (b + c) + √x! + a_1^2' & ... $
 `;
 
+const malformedAuditSource = "#1e\nhttps://host/a_(b\n\\u{D800}\n";
+
 function captureNames(queryText) {
   const withoutComments = queryText
     .split("\n")
@@ -82,32 +89,51 @@ function queryFilesFrom(dir) {
 }
 
 function nodeQueryText(queryText) {
-  return queryText
-    .split("\n")
-    .filter((line) => !/^\s*\(#(?:offset|set)!/.test(line))
-    .join("\n");
+  // node-tree-sitter rejects Neovim's `#offset!` directive. Translate it to
+  // ordinary query metadata so the audit can verify that the directive is
+  // attached to the right match instead of deleting it from the test input.
+  return queryText.replace(
+    /^(\s*)\(#offset! @([A-Za-z0-9_.-]+) (-?\d+) (-?\d+) (-?\d+) (-?\d+)\)\s*$/gm,
+    (_, indent, capture, startRow, startColumn, endRow, endColumn) =>
+      `${indent}(#set! audit.offset.${capture} ` +
+      `"${startRow} ${startColumn} ${endRow} ${endColumn}")`,
+  );
 }
 
-function parseSource(source) {
+function parseSource(source, {allowSyntaxIssues = false} = {}) {
   const tree = parser.parse(source);
-  assert.equal(tree.rootNode.hasError, false, tree.rootNode.toString());
+  if (!allowSyntaxIssues) {
+    assert.equal(
+      treeHasSyntaxIssue(tree.rootNode),
+      false,
+      tree.rootNode.toString(),
+    );
+  }
   return tree;
 }
 
-function queryCaptures(name, source) {
+function queryCaptures(name, source, options) {
   const query = new Parser.Query(
     language,
     nodeQueryText(readFileSync(join(queryDir.pathname, name), "utf8")),
   );
-  return query.captures(parseSource(source).rootNode);
+  return query.captures(parseSource(source, options).rootNode);
 }
 
-function queryCapturesFrom(dir, name, source) {
+function queryCapturesFrom(dir, name, source, options) {
   const query = new Parser.Query(
     language,
     nodeQueryText(readFileSync(join(dir.pathname, name), "utf8")),
   );
-  return query.captures(parseSource(source).rootNode);
+  return query.captures(parseSource(source, options).rootNode);
+}
+
+function queryMatches(name, source, options) {
+  const query = new Parser.Query(
+    language,
+    nodeQueryText(readFileSync(join(queryDir.pathname, name), "utf8")),
+  );
+  return query.matches(parseSource(source, options).rootNode);
 }
 
 function hasCapture(captures, name, text, row, column) {
@@ -154,7 +180,7 @@ function assertCaptureNodeType(captures, name, type) {
   );
 }
 
-function assertEmacsFontLockCompatibility() {
+function assertEmacsFontLockStaticSanity() {
   const text = readFileSync(emacsFontLockFile, "utf8");
   for (const obsolete of [
     "typst-ts-mode-font-lock-settings",
@@ -231,19 +257,72 @@ function assertEmacsFontLockCompatibility() {
     [],
     `${emacsFontLockFile.pathname.replace(root.pathname, "")}: invalid node types: ${invalid.join(", ")}`,
   );
-  console.log(`${emacsFontLockFile.pathname.replace(root.pathname, "")}: font-lock compatibility checked`);
+  console.log(`${emacsFontLockFile.pathname.replace(root.pathname, "")}: static font-lock sanity passed`);
+}
+
+function assertSyntaxIssueParity() {
+  const nodeTypes = JSON.parse(
+    readFileSync(new URL("../src/node-types.json", import.meta.url), "utf8"),
+  );
+  const publicRecoveryTypes = [...new Set(
+    nodeTypes
+      .filter((entry) =>
+        entry.named && /^(?:malformed|incomplete)_/.test(entry.type)
+      )
+      .map((entry) => entry.type),
+  )].sort();
+  const declaredRecoveryTypes = [...SYNTAX_ISSUE_NODE_TYPES].sort();
+
+  assert.deepEqual(
+    declaredRecoveryTypes,
+    publicRecoveryTypes,
+    "scripts/syntax-issues.js must list every public malformed_* and incomplete_* node",
+  );
+
+  for (const file of [
+    new URL("../queries/typst/highlights.scm", import.meta.url),
+    new URL("../editors/helix/queries/highlights.scm", import.meta.url),
+    emacsFontLockFile,
+  ]) {
+    const text = readFileSync(file, "utf8");
+    const uncommented = text
+      .split("\n")
+      .map((line) => line.replace(/;.*/, ""))
+      .join("\n");
+    const missing = publicRecoveryTypes.filter((type) =>
+      !uncommented.includes(`(${type})`)
+    );
+    assert.deepEqual(
+      missing,
+      [],
+      `${file.pathname.replace(root.pathname, "")}: missing syntax-issue nodes: ${missing.join(", ")}`,
+    );
+  }
 }
 
 const parser = new Parser();
 parser.setLanguage(language);
-const tree = parseSource(auditSource);
+assertSyntaxIssueParity();
+const coverageTrees = [
+  parseSource(auditSource),
+  parseSource(malformedAuditSource, {allowSyntaxIssues: true}),
+];
+assert.equal(
+  treeHasSyntaxIssue(coverageTrees[1].rootNode),
+  true,
+  "malformed query fixture unexpectedly parsed without a syntax issue",
+);
 
 for (const dir of [queryDir, helixQueryDir]) {
   for (const file of queryFilesFrom(dir)) {
     const text = readFileSync(file, "utf8");
     const query = new Parser.Query(language, nodeQueryText(text));
     const declared = captureNames(text);
-    const seen = new Set(query.captures(tree.rootNode).map((capture) => capture.name));
+    const seen = new Set(
+      coverageTrees.flatMap((tree) =>
+        query.captures(tree.rootNode).map((capture) => capture.name)
+      ),
+    );
     const missing = declared.filter((name) => !seen.has(name));
     assert.deepEqual(
       missing,
@@ -254,7 +333,7 @@ for (const dir of [queryDir, helixQueryDir]) {
   }
 }
 
-assertEmacsFontLockCompatibility();
+assertEmacsFontLockStaticSanity();
 
 {
   const captures = queryCaptures("indents.scm", "$ mat(\n  a, b\n) $\n");
@@ -365,6 +444,67 @@ for (const [dir, name] of [[queryDir, "indents.scm"], [helixQueryDir, "indents.s
 }
 
 {
+  const source = [
+    "#let f(x, y) = x + y",
+    "#let block(x) = { x + 1 }",
+    "#{ let nested(x) = { x * 2 }; nested(1) }",
+    "#let value = 1",
+    "#show heading: it => emph(it.body)",
+    "#let mapped = (x) => { x + 1 }",
+    "",
+  ].join("\n");
+  const captures = queryCaptures(
+    "textobjects.scm",
+    source,
+  );
+  assertCapture(captures, "function.outer", "#let f(x, y) = x + y", 1, 0);
+  assertCapture(captures, "function.inner", "x + y", 1, 15);
+  assertCapture(
+    captures,
+    "function.outer",
+    "#let block(x) = { x + 1 }",
+    2,
+    0,
+  );
+  assertCaptureText(captures, "function.inner", "{ x + 1 }");
+  assertCapture(
+    captures,
+    "function.outer",
+    "let nested(x) = { x * 2 }",
+    3,
+    3,
+  );
+  assertCaptureNodeType(captures, "function.outer", "closure");
+  assertCaptureText(captures, "function.inner", "emph(it.body)");
+  assertNoCaptureText(captures, "function.outer", "let value = 1");
+
+  const blockMatches = queryMatches("textobjects.scm", source).filter((match) =>
+    match.captures.some((capture) =>
+      capture.name === "function.inner" &&
+      capture.node.type === "code_block"
+    )
+  );
+  assert.equal(blockMatches.length, 3, "expected all three code-block functions");
+  for (const match of blockMatches) {
+    assert.equal(
+      match.setProperties?.["audit.offset.function.inner"],
+      "0 1 0 -1",
+      "code-block inner capture must carry Neovim's brace-excluding offset",
+    );
+  }
+
+  const adjustedInnerTexts = blockMatches.map((match) => {
+    const capture = match.captures.find(({name}) => name === "function.inner");
+    return source.slice(capture.node.startIndex + 1, capture.node.endIndex - 1);
+  });
+  assert.deepEqual(
+    adjustedInnerTexts.sort(),
+    [" x * 2 ", " x + 1 ", " x + 1 "].sort(),
+    "Neovim's offsets must select code-block contents without braces",
+  );
+}
+
+{
   const captures = queryCapturesFrom(
     helixQueryDir,
     "textobjects.scm",
@@ -397,6 +537,27 @@ for (const [dir, name] of [[queryDir, "indents.scm"], [helixQueryDir, "indents.s
   assertCaptureText(captures, "comment.note", "/* NOTE item */");
   assertCaptureText(captures, "comment.warning", "// WARNING item");
   assertCaptureText(captures, "comment.error", "/* FIXME item */");
+}
+
+{
+  const captures = queryCaptures(
+    "highlights.scm",
+    malformedAuditSource,
+    {allowSyntaxIssues: true},
+  );
+  assertCaptureText(captures, "error", "1e");
+  assertCaptureText(captures, "error", "https://host/a_(b");
+  assertCaptureText(captures, "error", "\\u{D800}");
+
+  const helixCaptures = queryCapturesFrom(
+    helixQueryDir,
+    "highlights.scm",
+    malformedAuditSource,
+    {allowSyntaxIssues: true},
+  );
+  assertCaptureText(helixCaptures, "error", "1e");
+  assertCaptureText(helixCaptures, "error", "https://host/a_(b");
+  assertCaptureText(helixCaptures, "error", "\\u{D800}");
 }
 
 {

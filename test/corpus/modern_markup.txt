@@ -47,7 +47,7 @@ Heading less-than text
     body: (content)))
 
 ==================
-Automatic links trim punctuation without delimiter validation
+Automatic links trim punctuation and classify malformed brackets
 ==================
 
 https://host/a_(b)[c].
@@ -63,11 +63,11 @@ https://host/a_(b tail
     (text)
     (automatic_link)
     (text)
-    (automatic_link)
+    (malformed_automatic_link)
     (text)))
 
 ==================
-Malformed code numbers tokenize recoverable prefixes
+Malformed code numbers are explicit recovery nodes
 ==================
 
 #0b102
@@ -81,20 +81,15 @@ Malformed code numbers tokenize recoverable prefixes
 (source_file
   (content
     (embedded_code
-      (integer))
-    (text)
+      (malformed_number))
     (embedded_code
-      (integer))
-    (text)
+      (malformed_number))
     (embedded_code
-      (integer))
-    (text)
+      (malformed_number))
     (embedded_code
-      (integer))
-    (text)
+      (malformed_number))
     (embedded_code
-      (integer))
-    (text)))
+      (malformed_number))))
 
 ==================
 List bodies accept line-start markup

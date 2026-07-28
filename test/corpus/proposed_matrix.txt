@@ -302,7 +302,7 @@ https://éxample.test
     (text)))
 
 ==================
-automatic_link_unbalanced_recovery
+automatic_link_unbalanced_is_malformed
 ==================
 
 https://host/a_(b
@@ -311,10 +311,10 @@ https://host/a_(b
 
 (source_file
   (content
-    (automatic_link)))
+    (malformed_automatic_link)))
 
 ==================
-automatic_link_crossed_bracket_recovery
+automatic_link_crossed_brackets_are_malformed
 ==================
 
 https://host/a_[(])
@@ -323,7 +323,9 @@ https://host/a_[(])
 
 (source_file
   (content
-    (automatic_link)))
+    (malformed_automatic_link))
+  (ERROR
+    (string_content)))
 
 ==================
 reference_trailing_punctuation
@@ -911,7 +913,7 @@ dynamic_import_alias
           alias: (identifier))))))
 
 ==================
-base_number_prefix_recovery
+malformed_base_numbers
 ==================
 
 #0b102
@@ -924,19 +926,16 @@ base_number_prefix_recovery
 (source_file
   (content
     (embedded_code
-      (integer))
-    (text)
+      (malformed_number))
     (embedded_code
-      (integer))
-    (text)
+      (malformed_number))
     (embedded_code
-      (integer))
-    (text)
+      (malformed_number))
     (embedded_code
       (integer))))
 
 ==================
-exponent_prefix_recovery
+malformed_exponents
 ==================
 
 #1e
@@ -950,20 +949,15 @@ exponent_prefix_recovery
 (source_file
   (content
     (embedded_code
-      (integer))
-    (text)
+      (malformed_number))
     (embedded_code
-      (integer))
-    (text)
+      (malformed_number))
     (embedded_code
-      (integer))
-    (text)
+      (malformed_number))
     (embedded_code
-      (integer))
-    (text)
+      (malformed_number))
     (embedded_code
-      (integer))
-    (text)))
+      (malformed_number))))
 
 ==================
 math_fraction_014_precedence

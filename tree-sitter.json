@@ -9,6 +9,7 @@
       "path": ".",
       "external-files": [
         "src/scanner.c",
+        "src/external_tokens.h",
         "src/unicode_tables.h"
       ],
       "file-types": [

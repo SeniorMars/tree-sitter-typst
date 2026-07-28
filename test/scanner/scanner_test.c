@@ -186,8 +186,70 @@ static bool scan_math_text_choice(void *scanner, MockLexer *m, size_t *end) {
 
 static bool scan_automatic_link_choice(void *scanner, MockLexer *m,
                                        size_t *end) {
-  const enum TokenType tokens[] = {AUTOMATIC_LINK};
-  return scan_valid(scanner, m, tokens, 1, end);
+  const enum TokenType tokens[] = {
+      AUTOMATIC_LINK,
+      MALFORMED_AUTOMATIC_LINK,
+  };
+  return scan_valid(scanner, m, tokens, 2, end);
+}
+
+static uint32_t next_property_random(uint32_t *state) {
+  *state ^= *state << 13;
+  *state ^= *state >> 17;
+  *state ^= *state << 5;
+  return *state;
+}
+
+static void clone_scanner_state(void *source, void *target) {
+  char buffer[TREE_SITTER_SERIALIZATION_BUFFER_SIZE] = {0};
+  unsigned length =
+      tree_sitter_typst_external_scanner_serialize(source, buffer);
+  tree_sitter_typst_external_scanner_deserialize(target, buffer, length);
+}
+
+static void assert_scanner_states_equal(void *left, void *right) {
+  char left_bytes[TREE_SITTER_SERIALIZATION_BUFFER_SIZE] = {0};
+  char right_bytes[TREE_SITTER_SERIALIZATION_BUFFER_SIZE] = {0};
+  unsigned left_length =
+      tree_sitter_typst_external_scanner_serialize(left, left_bytes);
+  unsigned right_length =
+      tree_sitter_typst_external_scanner_serialize(right, right_bytes);
+
+  assert(left_length == right_length);
+  assert(memcmp(left_bytes, right_bytes, left_length) == 0);
+}
+
+static void assert_serialized_transition(
+    void *original, void *restored, const char *input, size_t position,
+    const enum TokenType *tokens, size_t token_count, bool expected_success,
+    enum TokenType expected_symbol) {
+  MockLexer original_lexer;
+  MockLexer restored_lexer;
+  size_t original_end = position;
+  size_t restored_end = position;
+
+  mock_init(&original_lexer, input);
+  mock_init(&restored_lexer, input);
+  mock_jump(&original_lexer, position);
+  mock_jump(&restored_lexer, position);
+
+  bool original_ok = scan_valid(original, &original_lexer, tokens, token_count,
+                                &original_end);
+  bool restored_ok = scan_valid(restored, &restored_lexer, tokens, token_count,
+                                &restored_end);
+  assert(original_ok == expected_success);
+  assert(restored_ok == expected_success);
+
+  if (expected_success) {
+    assert(original_lexer.lexer.result_symbol == expected_symbol);
+    assert(restored_lexer.lexer.result_symbol == expected_symbol);
+    assert(original_end == restored_end);
+  } else {
+    assert(original_lexer.position == position);
+    assert(restored_lexer.position == position);
+  }
+
+  assert_scanner_states_equal(original, restored);
 }
 
 static void test_hash_and_shebang(void) {
@@ -278,6 +340,26 @@ static void test_embedded_unclosed_set_arguments(void) {
   assert(!scan_one(s, &m, EMBEDDED_UNCLOSED_SET_ARGUMENTS, NULL));
   assert(m.position == 0);
 
+  mock_init(&m, "(value: { let x = 1; x })\nnext");
+  assert(!scan_one(s, &m, EMBEDDED_UNCLOSED_SET_ARGUMENTS, NULL));
+  assert(m.position == 0);
+
+  mock_init(&m, "(value: `a;b`)\nnext");
+  assert(!scan_one(s, &m, EMBEDDED_UNCLOSED_SET_ARGUMENTS, NULL));
+  assert(m.position == 0);
+
+  mock_init(&m, "(value: ``;\nnext");
+  assert(scan_one(s, &m, EMBEDDED_UNCLOSED_SET_ARGUMENTS, &end));
+  assert(end == strlen("(value: ``"));
+
+  mock_init(&m, "(value: $a;b$)\nnext");
+  assert(!scan_one(s, &m, EMBEDDED_UNCLOSED_SET_ARGUMENTS, NULL));
+  assert(m.position == 0);
+
+  mock_init(&m, "(value: [a; b])\nnext");
+  assert(!scan_one(s, &m, EMBEDDED_UNCLOSED_SET_ARGUMENTS, NULL));
+  assert(m.position == 0);
+
   mock_init(&m, "(body: [\n#emph[Hello]\n])");
   assert(!scan_one(s, &m, EMBEDDED_UNCLOSED_SET_ARGUMENTS, NULL));
   assert(m.position == 0);
@@ -322,9 +404,37 @@ static void test_embedded_return_dangling_operator(void) {
   assert(scan_one(s, &m, EMBEDDED_RETURN_DANGLING_OPERATOR, &end));
   assert(end == strlen("return \"x\" +"));
 
+  mock_init(&m, "return `` +\nnext");
+  assert(scan_one(s, &m, EMBEDDED_RETURN_DANGLING_OPERATOR, &end));
+  assert(end == strlen("return `` +"));
+
+  mock_init(&m, "return `x` +\nnext");
+  assert(scan_one(s, &m, EMBEDDED_RETURN_DANGLING_OPERATOR, &end));
+  assert(end == strlen("return `x` +"));
+
+  mock_init(&m, "return ```x``` +\nnext");
+  assert(scan_one(s, &m, EMBEDDED_RETURN_DANGLING_OPERATOR, &end));
+  assert(end == strlen("return ```x``` +"));
+
+  mock_init(&m, "return outer(``) +\nnext");
+  assert(scan_one(s, &m, EMBEDDED_RETURN_DANGLING_OPERATOR, &end));
+  assert(end == strlen("return outer(``) +"));
+
   mock_init(&m, "return (foo) +\nnext");
   assert(scan_one(s, &m, EMBEDDED_RETURN_DANGLING_OPERATOR, &end));
   assert(end == strlen("return (foo) +"));
+
+  mock_init(&m, "return ((foo)) +\nnext");
+  assert(scan_one(s, &m, EMBEDDED_RETURN_DANGLING_OPERATOR, &end));
+  assert(end == strlen("return ((foo)) +"));
+
+  mock_init(&m, "return outer(inner(value)) +\nnext");
+  assert(scan_one(s, &m, EMBEDDED_RETURN_DANGLING_OPERATOR, &end));
+  assert(end == strlen("return outer(inner(value)) +"));
+
+  mock_init(&m, "return (foo /* ) */) +\nnext");
+  assert(scan_one(s, &m, EMBEDDED_RETURN_DANGLING_OPERATOR, &end));
+  assert(end == strlen("return (foo /* ) */) +"));
 
   mock_init(&m, "return foo and\nnext");
   assert(scan_one(s, &m, EMBEDDED_RETURN_DANGLING_OPERATOR, &end));
@@ -410,7 +520,9 @@ static void test_marker_boundaries(void) {
       {"+ item", NUMBERED_LIST_MARKER, true, 1},
       {"1.foo", NUMBERED_LIST_MARKER, false, 0},
       {"12. item", NUMBERED_LIST_MARKER, true, 3},
-      {"18446744073709551616. item", NUMBERED_LIST_MARKER, true, 21},
+      {"18446744073709551615. item", NUMBERED_LIST_MARKER, true, 21},
+      {"18446744073709551616. item", NUMBERED_LIST_MARKER, false, 0},
+      {"00000000000000000001. item", NUMBERED_LIST_MARKER, true, 21},
       {"/foo", TERM_LIST_MARKER, false, 0},
       {"/ Term", TERM_LIST_MARKER, true, 1},
       {"//comment", TERM_LIST_MARKER, false, 0},
@@ -578,6 +690,8 @@ static void test_code_numbers(void) {
       {"0000000009223372036854775808", INTEGER, 28},
       {"0xff", INTEGER, 4},
       {"0x7fffffffffffffff", INTEGER, 18},
+      {"0x8000000000000000", INTEGER, 18},
+      {"0xffffffffffffffff", INTEGER, 18},
       {"0b101", INTEGER, 5},
       {"0o77", INTEGER, 4},
   };
@@ -589,39 +703,48 @@ static void test_code_numbers(void) {
     assert(end == cases[i].end);
   }
 
-  struct NumberCase loose_exponents[] = {
-      {"1e", INTEGER, 1},
-      {"1E", INTEGER, 1},
-      {"1e+", INTEGER, 1},
-      {"1E-", INTEGER, 1},
-      {"1ex", INTEGER, 1},
-      {"1.2e", FLOAT, 3},
-      {".5e+", FLOAT, 2},
+  const char *malformed_numbers[] = {
+      "1e",
+      "1E",
+      "1e+",
+      "1E-",
+      "1ex",
+      "1.2e",
+      ".5e+",
+      "0b102",
+      "0xGG",
+      "0x10pt",
+      "1foo",
+      "1e3foo",
   };
-  for (size_t i = 0; i < sizeof(loose_exponents) / sizeof(loose_exponents[0]);
+  for (size_t i = 0; i < sizeof(malformed_numbers) / sizeof(malformed_numbers[0]);
        i++) {
-    mock_init(&m, loose_exponents[i].input);
-    assert(scan_number(s, &m, &end));
-    assert(m.lexer.result_symbol == loose_exponents[i].token);
-    assert(end == loose_exponents[i].end);
+    mock_init(&m, malformed_numbers[i]);
+    const enum TokenType number_symbols[] = {
+        INTEGER, FLOAT, MALFORMED_NUMBER,
+    };
+    assert(scan_valid(s, &m, number_symbols, 3, &end));
+    assert(m.lexer.result_symbol == MALFORMED_NUMBER);
+    assert(end == strlen(malformed_numbers[i]));
   }
 
-  struct NumberCase loose_prefixed[] = {
-      {"0b102", INTEGER, 4},
-      {"0xGG", INTEGER, 1},
-      {"0x10pt", INTEGER, 4},
-      {"0x8000000000000000", INTEGER, 18},
-      {"0xffffffffffffffff", INTEGER, 18},
-  };
-  for (size_t i = 0; i < sizeof(loose_prefixed) / sizeof(loose_prefixed[0]);
-       i++) {
-    mock_init(&m, loose_prefixed[i].input);
-    assert(scan_number(s, &m, &end));
-    assert(m.lexer.result_symbol == loose_prefixed[i].token);
-    assert(end == loose_prefixed[i].end);
-  }
+  mock_init(&m, "1e");
+  assert(scan_one(s, &m, MALFORMED_NUMBER, &end));
+  assert(end == 2);
 
   mock_init(&m, "12pt");
+  assert(scan_number(s, &m, &end));
+  assert(end == 2);
+  assert(scan_one(s, &m, UNIT, &end));
+  assert(end == 4);
+
+  mock_init(&m, "12pt-foo");
+  assert(scan_number(s, &m, &end));
+  assert(end == 2);
+  assert(scan_one(s, &m, UNIT, &end));
+  assert(end == 4);
+
+  mock_init(&m, "12pt_foo");
   assert(scan_number(s, &m, &end));
   assert(end == 2);
   assert(scan_one(s, &m, UNIT, &end));
@@ -926,6 +1049,39 @@ static void test_prefix_dispatch_no_corruption(void) {
   assert(!scan_one(s, &m, ATOMIC_FIELD_DOT, NULL));
   assert(m.position == end);
 
+  const char *blocked_math_openings[] = {
+      "/* comment */{y}",
+      "/* comment */⌈y⌉",
+      "/* comment */[|y|]",
+  };
+  for (size_t i = 0;
+       i < sizeof(blocked_math_openings) / sizeof(blocked_math_openings[0]);
+       i++) {
+    mock_init(&m, blocked_math_openings[i]);
+    assert(scan_one(s, &m, BLOCK_COMMENT, &end));
+    assert(end == strlen("/* comment */"));
+    assert(!scan_one(s, &m, MATH_IMMEDIATE_OPEN, NULL));
+    assert(!scan_one(s, &m, MATH_IMMEDIATE_NONPAREN_OPEN, NULL));
+    assert(m.position == end);
+  }
+
+  const char *immediate_math_openings[] = {
+      "{y}",
+      "⌈y⌉",
+      "[|y|]",
+  };
+  for (size_t i = 0;
+       i < sizeof(immediate_math_openings) / sizeof(immediate_math_openings[0]);
+       i++) {
+    mock_init(&m, immediate_math_openings[i]);
+    assert(scan_one(s, &m, MATH_IMMEDIATE_OPEN, &end));
+    assert(end > 0);
+
+    mock_init(&m, immediate_math_openings[i]);
+    assert(scan_one(s, &m, MATH_IMMEDIATE_NONPAREN_OPEN, &end));
+    assert(end > 0);
+  }
+
   const enum TokenType atomic_field_or_space[] = {ATOMIC_FIELD_DOT, CODE_SPACE};
   mock_init(&m, " .field");
   assert(!scan_valid(s, &m, atomic_field_or_space, 2, NULL));
@@ -996,20 +1152,25 @@ static void test_automatic_links(void) {
 
   mock_init(&m, "https://host/a_(b tail");
   assert(scan_automatic_link_choice(s, &m, &end));
-  assert(m.lexer.result_symbol == AUTOMATIC_LINK);
+  assert(m.lexer.result_symbol == MALFORMED_AUTOMATIC_LINK);
   assert(end == strlen("https://host/a_(b"));
 
   mock_init(&m, "https://host/a_[(]) tail");
   assert(scan_automatic_link_choice(s, &m, &end));
-  assert(m.lexer.result_symbol == AUTOMATIC_LINK);
-  assert(end == strlen("https://host/a_[(])"));
+  assert(m.lexer.result_symbol == MALFORMED_AUTOMATIC_LINK);
+  assert(end == strlen("https://host/a_[("));
+
+  mock_init(&m, "https://host/a_) tail");
+  assert(scan_one(s, &m, AUTOMATIC_LINK, &end));
+  assert(end == strlen("https://host/a_"));
 
   mock_init(&m, "https://host/a_(b)");
   assert(scan_one(s, &m, AUTOMATIC_LINK, &end));
   assert(end == strlen("https://host/a_(b)"));
 
   mock_init(&m, "https://host/a_(b");
-  assert(scan_one(s, &m, AUTOMATIC_LINK, &end));
+  assert(scan_automatic_link_choice(s, &m, &end));
+  assert(m.lexer.result_symbol == MALFORMED_AUTOMATIC_LINK);
   assert(end == strlen("https://host/a_(b"));
 
   mock_init(&m, "https://éxample.test");
@@ -1056,6 +1217,19 @@ static void test_math_words(void) {
   assert(scan_math_text_choice(s, &m, &end));
   assert(m.lexer.result_symbol == MATH_TEXT);
   assert(end == strlen("👩"));
+
+  const char *paired_delimiters[] = {"⌈", "⌉", "⟦", "⟧"};
+  for (size_t i = 0;
+       i < sizeof(paired_delimiters) / sizeof(paired_delimiters[0]);
+       i++) {
+    mock_init(&m, paired_delimiters[i]);
+    assert(!scan_one(s, &m, MATH_TEXT, NULL));
+    assert(m.position == 0);
+  }
+
+  mock_init(&m, "∞");
+  assert(scan_one(s, &m, MATH_TEXT, &end));
+  assert(end == strlen("∞"));
 
   tree_sitter_typst_external_scanner_destroy(s);
 }
@@ -1405,6 +1579,8 @@ static void test_serialization(void) {
 
   mock_init(&m, "`````body`````");
   assert(scan_one(a, &m, RAW_OPEN, NULL));
+  ((Scanner *)a)->unit_column_plus_one = 9;
+  ((Scanner *)a)->immediate_postfix_blocked_column_plus_one = 11;
   ((Scanner *)a)->list_indents[0] = 2;
   ((Scanner *)a)->list_indents[1] = 6;
   ((Scanner *)a)->list_depth = 2;
@@ -1414,12 +1590,132 @@ static void test_serialization(void) {
   assert(length == SCANNER_FIXED_STATE_SIZE + 8);
   tree_sitter_typst_external_scanner_deserialize(b, buffer, length);
   assert(((Scanner *)b)->raw_delimiter_length == 5);
+  assert(((Scanner *)b)->unit_column_plus_one == 9);
+  assert(((Scanner *)b)->immediate_postfix_blocked_column_plus_one == 11);
   assert(((Scanner *)b)->list_depth == 2);
   assert(((Scanner *)b)->list_indents[0] == 2);
   assert(((Scanner *)b)->list_indents[1] == 6);
 
+  for (unsigned truncated = 0; truncated < length; truncated++) {
+    void *candidate = tree_sitter_typst_external_scanner_create();
+    Scanner *state = (Scanner *)candidate;
+    state->raw_delimiter_length = 99;
+    state->unit_column_plus_one = 99;
+    state->immediate_postfix_blocked_column_plus_one = 99;
+    state->list_depth = 1;
+    tree_sitter_typst_external_scanner_deserialize(
+        candidate, buffer, truncated);
+    assert(state->raw_delimiter_length == 0);
+    assert(state->unit_column_plus_one == 0);
+    assert(state->immediate_postfix_blocked_column_plus_one == 0);
+    assert(state->list_depth == 0);
+    tree_sitter_typst_external_scanner_destroy(candidate);
+  }
+
   tree_sitter_typst_external_scanner_destroy(a);
   tree_sitter_typst_external_scanner_destroy(b);
+
+  // Round-trip arbitrary bounded states. Transition behavior is covered
+  // separately with real scanner token sequences.
+  uint32_t random_state = 0x54595053u;
+  for (unsigned iteration = 0; iteration < 256; iteration++) {
+    void *original = tree_sitter_typst_external_scanner_create();
+    void *restored = tree_sitter_typst_external_scanner_create();
+    Scanner *state = (Scanner *)original;
+
+    state->raw_delimiter_length = next_property_random(&random_state) % 12u;
+    state->unit_column_plus_one = next_property_random(&random_state) % 80u;
+    state->immediate_postfix_blocked_column_plus_one =
+        next_property_random(&random_state) % 80u;
+    state->list_depth =
+        (uint8_t)(next_property_random(&random_state) % 16u);
+    for (uint8_t i = 0; i < state->list_depth; i++)
+      state->list_indents[i] = next_property_random(&random_state) % 120u;
+
+    char original_bytes[TREE_SITTER_SERIALIZATION_BUFFER_SIZE] = {0};
+    char restored_bytes[TREE_SITTER_SERIALIZATION_BUFFER_SIZE] = {0};
+    unsigned original_length =
+        tree_sitter_typst_external_scanner_serialize(original, original_bytes);
+    tree_sitter_typst_external_scanner_deserialize(
+        restored, original_bytes, original_length);
+    unsigned restored_length =
+        tree_sitter_typst_external_scanner_serialize(restored, restored_bytes);
+
+    assert(original_length == restored_length);
+    assert(memcmp(original_bytes, restored_bytes, original_length) == 0);
+    tree_sitter_typst_external_scanner_destroy(original);
+    tree_sitter_typst_external_scanner_destroy(restored);
+  }
+}
+
+static void test_serialized_state_transitions(void) {
+  const enum TokenType raw_symbols[] = {RAW_CONTENT, RAW_CLOSE};
+  const enum TokenType unit_symbols[] = {UNIT};
+  const enum TokenType math_open_symbols[] = {
+      MATH_IMMEDIATE_OPEN,
+      MATH_IMMEDIATE_NONPAREN_OPEN,
+  };
+  const enum TokenType list_symbols[] = {LIST_CONTINUATION, LIST_END};
+  MockLexer lexer;
+  size_t end = 0;
+
+  void *original = tree_sitter_typst_external_scanner_create();
+  void *restored = tree_sitter_typst_external_scanner_create();
+  mock_init(&lexer, "```body```");
+  assert(scan_one(original, &lexer, RAW_OPEN, &end));
+  assert(end == 3);
+  clone_scanner_state(original, restored);
+  assert_serialized_transition(original, restored, "```body```", end,
+                               raw_symbols, 2, true, RAW_CONTENT);
+  tree_sitter_typst_external_scanner_destroy(original);
+  tree_sitter_typst_external_scanner_destroy(restored);
+
+  original = tree_sitter_typst_external_scanner_create();
+  restored = tree_sitter_typst_external_scanner_create();
+  mock_init(&lexer, "12pt");
+  assert(scan_number(original, &lexer, &end));
+  assert(end == 2);
+  clone_scanner_state(original, restored);
+  assert_serialized_transition(original, restored, "12pt", end, unit_symbols,
+                               1, true, UNIT);
+  tree_sitter_typst_external_scanner_destroy(original);
+  tree_sitter_typst_external_scanner_destroy(restored);
+
+  original = tree_sitter_typst_external_scanner_create();
+  restored = tree_sitter_typst_external_scanner_create();
+  mock_init(&lexer, "/*c*/(y)");
+  assert(scan_one(original, &lexer, BLOCK_COMMENT, &end));
+  assert(end == strlen("/*c*/"));
+  clone_scanner_state(original, restored);
+  assert_serialized_transition(original, restored, "/*c*/(y)", end,
+                               math_open_symbols, 2, false,
+                               MATH_IMMEDIATE_OPEN);
+  tree_sitter_typst_external_scanner_destroy(original);
+  tree_sitter_typst_external_scanner_destroy(restored);
+
+  original = tree_sitter_typst_external_scanner_create();
+  restored = tree_sitter_typst_external_scanner_create();
+  mock_init(&lexer, "- item\n  continuation");
+  assert(scan_one(original, &lexer, BULLET_LIST_MARKER, &end));
+  clone_scanner_state(original, restored);
+  assert_serialized_transition(original, restored, "- item\n  continuation",
+                               strlen("- item"), list_symbols, 2, true,
+                               LIST_CONTINUATION);
+  tree_sitter_typst_external_scanner_destroy(original);
+  tree_sitter_typst_external_scanner_destroy(restored);
+
+  original = tree_sitter_typst_external_scanner_create();
+  restored = tree_sitter_typst_external_scanner_create();
+  mock_init(&lexer, "- item\nnext");
+  assert(scan_one(original, &lexer, BULLET_LIST_MARKER, &end));
+  clone_scanner_state(original, restored);
+  assert_serialized_transition(original, restored, "- item\nnext",
+                               strlen("- item"), list_symbols, 2, true,
+                               LIST_END);
+  assert(((Scanner *)original)->list_depth == 0);
+  assert(((Scanner *)restored)->list_depth == 0);
+  tree_sitter_typst_external_scanner_destroy(original);
+  tree_sitter_typst_external_scanner_destroy(restored);
 }
 
 int main(void) {
@@ -1444,6 +1740,7 @@ int main(void) {
   test_math_space_boundary_endpoints();
   test_whitespace();
   test_serialization();
+  test_serialized_state_transitions();
   puts("scanner tests passed");
   return 0;
 }

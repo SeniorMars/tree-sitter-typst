@@ -1,6 +1,8 @@
 import assert from "node:assert";
 import Parser from "tree-sitter";
 
+import {treeHasSyntaxIssue} from "../../scripts/syntax-issues.js";
+
 const {default: language} = await import(
   process.env.TREE_SITTER_TYPST_BINDING || "../../bindings/node/index.js"
 );
@@ -11,14 +13,14 @@ parser.setLanguage(language);
 function pointAt(text, index) {
   const prefix = text.slice(0, index);
   const lines = prefix.split("\n");
-  return {row: lines.length - 1, column: Buffer.byteLength(lines.at(-1))};
+  return {row: lines.length - 1, column: lines.at(-1).length};
 }
 
 function applyEdit(text, tree, edit) {
   const oldText = edit.oldText ?? "";
   const newText = edit.newText ?? "";
-  const oldEndIndex = edit.index + Buffer.byteLength(oldText);
-  const newEndIndex = edit.index + Buffer.byteLength(newText);
+  const oldEndIndex = edit.index + oldText.length;
+  const newEndIndex = edit.index + newText.length;
   const after =
     text.slice(0, edit.index) +
     newText +
@@ -56,7 +58,7 @@ function assertConverges(name, before, edits, options = {}) {
 
   if (options.expectError !== undefined) {
     assert.equal(
-      tree.rootNode.hasError,
+      treeHasSyntaxIssue(tree.rootNode),
       options.expectError,
       `${name}\n${tree.rootNode.toString()}`,
     );
@@ -244,8 +246,24 @@ assertConverges("complete unclosed block comment", "/* c", [
 
 {
   const source = "#1e2\n";
-  assertConverges("edit valid exponent into recoverable prefix", source, [
+  assertConverges("edit valid exponent into malformed number", source, [
     replaceFirst(source, "2", "+"),
+  ], {expectError: true});
+}
+
+{
+  const source = "= 한글 😀\n#value.field\n";
+  assertConverges("edit around BMP and astral Unicode text", source, [
+    replaceFirst(source, "😀", "👩🏽‍💻"),
+    insertBeforeFirst(source.replace("😀", "👩🏽‍💻"), ".field", "/* c */"),
+  ], {expectError: false});
+}
+
+{
+  const source = "= one\r\n= two\u2028tail\n";
+  assertConverges("edit around CRLF and Unicode separator characters", source, [
+    replaceFirst(source, "two", "둘"),
+    insertBeforeFirst(source.replace("two", "둘"), "tail", "😀"),
   ], {expectError: false});
 }
 

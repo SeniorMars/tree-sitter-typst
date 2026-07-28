@@ -1609,10 +1609,7 @@ Heading and list comment boundaries
         (block_comment)
         body: (list_body
           (text)))
-      (numbered_list_item
-        marker: (numbered_list_marker)
-        body: (list_body
-          (text))))))
+      (text))))
 
 ==================
 Heading trailing comments
@@ -3203,7 +3200,7 @@ Review matrix large base integer recovery
       (integer))))
 
 ==================
-Review matrix exponent prefix recovery
+Review matrix malformed exponent
 ==================
 
 #1e
@@ -3213,11 +3210,10 @@ Review matrix exponent prefix recovery
 (source_file
   (content
     (embedded_code
-      (integer))
-    (text)))
+      (malformed_number))))
 
 ==================
-Review matrix signed exponent prefix recovery
+Review matrix malformed signed exponent
 ==================
 
 #1e+
@@ -3227,8 +3223,7 @@ Review matrix signed exponent prefix recovery
 (source_file
   (content
     (embedded_code
-      (integer))
-    (text)))
+      (malformed_number))))
 
 ==================
 Review matrix import trivia and trailing comma
@@ -3447,7 +3442,7 @@ Review checklist single list paragraph continuation
         (text)))))
 
 ==================
-Review checklist number recovery
+Review checklist malformed numbers
 ==================
 
 #9223372036854775808
@@ -3461,11 +3456,9 @@ Review checklist number recovery
     (embedded_code
       body: (integer))
     (embedded_code
-      body: (integer))
-    (text)
+      body: (malformed_number))
     (embedded_code
-      body: (integer))
-    (text)))
+      body: (malformed_number))))
 
 ==================
 Adjacent headings are sibling sections

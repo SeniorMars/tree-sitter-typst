@@ -17,11 +17,13 @@
 // and the rules themselves. Otherwise, if you spot an error or have a
 // suggestion, please open an issue on the GitHub repository.
 
-import {readFileSync} from "node:fs";
-import {join} from "node:path";
-import {fileURLToPath} from "node:url";
-
-const GRAMMAR_DIR = fileURLToPath(new URL(".", import.meta.url));
+import {EXTERNAL_TOKENS} from "./grammar/externals.js";
+import {
+  excludeCodepoint,
+  generatedRanges,
+  rustClassFromRanges,
+  rustRanges,
+} from "./grammar/unicode.js";
 
 // The default build starts in Typst markup. The same grammar can also generate
 // code-mode and math-mode parser variants for editor injections:
@@ -38,61 +40,48 @@ if (!Object.hasOwn(NAMES, ROOT_MODE)) {
   throw new Error(`invalid TYPST_ROOT_MODE: ${ROOT_MODE}`);
 }
 
-const UNICODE_TABLES = readFileSync(
-  join(GRAMMAR_DIR, "src", "unicode_tables.h"),
-  "utf8",
-);
-
-function generatedRanges(name) {
-  const match = UNICODE_TABLES.match(new RegExp(
-    `static const UnicodeRange ${name}\\[\\] = \\{([\\s\\S]*?)\\n\\};`,
-  ));
-  if (!match) {
-    throw new Error(`missing generated Unicode range table: ${name}`);
-  }
-
-  return [...match[1].matchAll(/\{0x([0-9A-F]+)u,\s*0x([0-9A-F]+)u\},/g)]
-    .map((range) => [parseInt(range[1], 16), parseInt(range[2], 16)]);
-}
-
-function excludeCodepoint(ranges, codepoint) {
-  const result = [];
-  for (const [first, last] of ranges) {
-    if (codepoint < first || codepoint > last) {
-      result.push([first, last]);
-    } else {
-      if (first < codepoint) result.push([first, codepoint - 1]);
-      if (codepoint < last) result.push([codepoint + 1, last]);
-    }
-  }
-  return result;
-}
-
-function rustCodepoint(codepoint) {
-  return `\\u{${codepoint.toString(16).toUpperCase()}}`;
-}
-
-function rustClassFromRanges(ranges) {
-  return `[${ranges.map(([first, last]) =>
-    first === last
-      ? rustCodepoint(first)
-      : `${rustCodepoint(first)}-${rustCodepoint(last)}`,
-  ).join("")}]`;
-}
-
-const XID_START = rustClassFromRanges(generatedRanges("XID_START_RANGES"));
+const XID_START_RANGES = generatedRanges("XID_START_RANGES");
+const XID_CONTINUE_RANGES = generatedRanges("XID_CONTINUE_RANGES");
+const NUMBER_RANGES = generatedRanges("NUMBER_RANGES");
+const XID_START = rustClassFromRanges(XID_START_RANGES);
+const NUMBER = rustClassFromRanges(NUMBER_RANGES);
+const CODE_IDENT_CONTINUE = rustClassFromRanges([
+  ...XID_CONTINUE_RANGES,
+  [0x2D, 0x2D],
+  [0x5F, 0x5F],
+]);
 const MATH_XID_CONTINUE = rustClassFromRanges(
-  excludeCodepoint(generatedRanges("XID_CONTINUE_RANGES"), 0x5F),
+  excludeCodepoint(XID_CONTINUE_RANGES, 0x5F),
 );
 const IDENT_PATTERN =
-  "(?:\\p{XID_Start}[\\p{XID_Continue}_-]*|_[\\p{XID_Continue}_-]+)";
+  `(?:${XID_START}${CODE_IDENT_CONTINUE}*|_${CODE_IDENT_CONTINUE}+)`;
 const IDENT = new RustRegex(IDENT_PATTERN);
 const FIELD_IDENT = new RustRegex(IDENT_PATTERN);
 const MATH_FIELD_IDENT = new RustRegex(`${XID_START}${MATH_XID_CONTINUE}*`);
-const MATH_STRAY_ATTACHMENT_TEXT = new RustRegex("[_\\^][\\p{XID_Continue}_\\-\\^]+");
-const LABEL_ID = new RustRegex("[\\p{XID_Continue}_-][\\p{XID_Continue}_.:-]*");
+const MATH_ATTACHMENT_CONTINUE = rustClassFromRanges([
+  ...XID_CONTINUE_RANGES,
+  [0x2D, 0x2D],
+  [0x5E, 0x5F],
+]);
+const LABEL_START = rustClassFromRanges([
+  ...XID_CONTINUE_RANGES,
+  [0x2D, 0x2D],
+  [0x5F, 0x5F],
+]);
+const LABEL_CONTINUE = rustClassFromRanges([
+  ...XID_CONTINUE_RANGES,
+  [0x2D, 0x2E],
+  [0x3A, 0x3A],
+  [0x5F, 0x5F],
+]);
+const MATH_STRAY_ATTACHMENT_TEXT =
+  new RustRegex(`[_\\^]${MATH_ATTACHMENT_CONTINUE}+`);
+const LABEL_ID = new RustRegex(`${LABEL_START}${LABEL_CONTINUE}*`);
 const REF_ID = new RustRegex(
-  "[\\p{XID_Continue}_-](?:[\\p{XID_Continue}_.:-]*[\\p{XID_Continue}_-])?",
+  `${LABEL_START}(?:${LABEL_CONTINUE}*${LABEL_START})?`,
+);
+const UNICODE_SCALAR_ESCAPE = new RustRegex(
+  "\\\\u\\{0*(?:[0-9A-Fa-f]{1,3}|[0-9A-Ca-c][0-9A-Fa-f]{3}|[Dd][0-7][0-9A-Fa-f]{2}|[EeFf][0-9A-Fa-f]{3}|[1-9A-Fa-f][0-9A-Fa-f]{4}|10[0-9A-Fa-f]{4})\\}",
 );
 const MARKUP_WORDY = rustClassFromRanges(generatedRanges("MARKUP_WORDY_RANGES"));
 const MARKUP_WORD_WITH_INTERNAL_MARKER = new RustRegex(
@@ -102,9 +91,6 @@ const MARKUP_WORD_WITH_INTERNAL_MARKER = new RustRegex(
 // as the scanner, avoiding drift between grammar regexes and scanner helpers.
 const MATH_OPEN_RANGES = generatedRanges("MATH_OPEN_RANGES");
 const MATH_OPEN = new RustRegex(rustClassFromRanges(MATH_OPEN_RANGES));
-const MATH_OPEN_NONPAREN = new RustRegex(
-  rustClassFromRanges(excludeCodepoint(MATH_OPEN_RANGES, 0x28)),
-);
 const MATH_CLOSE = new RustRegex(
   rustClassFromRanges(generatedRanges("MATH_CLOSE_RANGES")),
 );
@@ -180,6 +166,7 @@ function commaList($, item, {empty = true} = {}) {
 
 function parenthesizedList($, item, {immediate = false, empty = true} = {}) {
   return seq(
+    ...(immediate ? [$._code_argument_ahead] : []),
     startToken("(", immediate),
     commaList($, item, {empty}),
     ")",
@@ -477,6 +464,7 @@ function markupInlineSet($, {
     ...(emphasis ? [$.emphasis] : []),
     $.raw,
     $.automatic_link,
+    $.malformed_automatic_link,
     ...(label ? [$.label] : []),
     $.reference,
     $.equation,
@@ -484,6 +472,7 @@ function markupInlineSet($, {
     $.shorthand,
     $.smart_quote,
     $.escape,
+    $.malformed_escape,
     $.linebreak,
     bracket,
   );
@@ -551,7 +540,7 @@ function mathAttachmentPart($, kind, operand) {
 function mathPrimes($) {
   return field(
     "primes",
-    alias(token.immediate(/'+/), $.math_primes),
+    alias($._math_immediate_primes, $.math_primes),
   );
 }
 
@@ -744,14 +733,9 @@ const BINARY_TIERS = Object.freeze([
 
 const LOW_BINARY_TIERS = Object.freeze(BINARY_TIERS.slice(0, 2));
 const HIGH_BINARY_TIERS = Object.freeze(BINARY_TIERS.slice(2));
-const OPERATOR_AHEAD_TIERS = Object.freeze([ASSIGNMENT_TIER, ...BINARY_TIERS]);
 
 function operatorAhead($, tier) {
   return $[tier.ahead];
-}
-
-function operatorAheadExternals($) {
-  return OPERATOR_AHEAD_TIERS.map((tier) => operatorAhead($, tier));
 }
 
 function hiddenVariantRuleName(variant, name) {
@@ -1496,67 +1480,11 @@ function embeddedRootBody($, context) {
 export default grammar({
   name: NAMES[ROOT_MODE],
 
-  externals: ($) => [
-    $.shebang,
-    $.block_comment,
-    $._hash,
-    $._embedded_statement_end,
-    $._embedded_unclosed_set_arguments,
-    $._embedded_return_dangling_operator,
-    $.math_spread_operator,
-    $._math_argument_identifier,
-
-    $.heading_marker,
-    $.bullet_list_marker,
-    $.numbered_list_marker,
-    $.term_list_marker,
-    $.shorthand,
-    $.automatic_link,
-    $._list_continuation,
-    $._list_end,
-
-    // `unit` intentionally remains external. A grammar token.immediate rule
-    // still lets global extras such as block comments intervene, so it would
-    // incorrectly accept `12/*...*/pt` as one numeric literal.
-    $.integer,
-    $.float,
-    $.unit,
-
-    $.math_identifier,
-    $._math_letter,
-    $._math_text,
-    $._math_fraction_ahead,
-    $._math_fraction_space,
-    $._math_expression_space,
-    $._math_attachment_space,
-    $._math_close_space,
-    $._math_argument_separator_space,
-
-    $._raw_open,
-    $.raw_language,
-    $.raw_content,
-    $._raw_close,
-
-    $._markup_indent,
-    $._markup_space,
-    $._markup_word_gap,
-    $._markup_newline,
-    $.parbreak,
-    $._math_space,
-    $._atomic_field_dot,
-    $._code_dot_ahead,
-    $._code_else_ahead,
-    $._code_else_space_ahead,
-    ...operatorAheadExternals($),
-    $._code_close_ahead,
-    $._code_argument_ahead,
-    $._code_control_body_ahead,
-    $._code_space,
-    $._code_newline,
-    // During broad recovery Tree-sitter can mark all external symbols valid.
-    // This unused symbol lets the scanner decline context-sensitive scanning.
-    $._error_sentinel,
-  ],
+  // `unit` remains external because token.immediate still permits global extras
+  // to intervene. `_error_sentinel` lets the scanner decline broad recovery
+  // states before mutating context-sensitive state. The manifest generates the
+  // matching C enum, so this ABI order has one source of truth.
+  externals: ($) => EXTERNAL_TOKENS.map(([, grammarName]) => $[grammarName]),
 
   // Code horizontal whitespace is an external extra. The scanner emits it only
   // when visible markup/math whitespace is not valid. Code newlines remain
@@ -1799,6 +1727,7 @@ export default grammar({
               field("body", $.heading_body),
             )),
           ),
+          field("body", $.heading_body),
         )),
       )),
 
@@ -1935,7 +1864,10 @@ export default grammar({
         field("target", alias(token.immediate(REF_ID), $.identifier)),
         optional(field(
           "supplement",
-          alias(contentBlock($, {immediate: true}), $.content_block),
+          seq(
+            $._immediate_content_ahead,
+            alias(contentBlock($, {immediate: true}), $.content_block),
+          ),
         )),
       ),
 
@@ -1943,9 +1875,12 @@ export default grammar({
 
     escape: (_) =>
       token(choice(
-        /\\u\{[0-9A-Fa-f]+\}/,
+        UNICODE_SCALAR_ESCAPE,
         /\\[^\s]/,
       )),
+
+    malformed_escape: (_) =>
+      token(prec(-1, new RustRegex("\\\\u\\{[^\\s}]*\\}?"))),
 
     linebreak: (_) => "\\",
 
@@ -2253,6 +2188,7 @@ export default grammar({
         $.numeric,
         $.integer,
         $.float,
+        $.malformed_number,
         $.string,
         $.label,
       ),
@@ -2272,14 +2208,18 @@ export default grammar({
     string: ($) =>
       seq(
         '"',
-        repeat(choice($.string_content, $.string_escape)),
+        repeat(choice(
+          $.string_content,
+          $.string_escape,
+          $.malformed_escape,
+        )),
         '"',
       ),
 
     string_content: (_) => token.immediate(prec(2, /[^"\\]+/)),
     string_escape: (_) =>
       token.immediate(choice(
-        /\\u\{[0-9A-Fa-f]+\}/,
+        UNICODE_SCALAR_ESCAPE,
         /\\\r\n/,
         /\\[\n\r\v\f\u0085\u2028\u2029]/,
         /\\./,
@@ -2981,7 +2921,7 @@ export default grammar({
         PREC.mathFactorial,
         seq(
           field("operand", $._math_postfix_expression),
-          token.immediate("!"),
+          alias($._math_immediate_factorial, "!"),
         ),
       ),
 
@@ -2996,7 +2936,7 @@ export default grammar({
             "operand",
             alias($._math_prime_only_attachment, $.math_attachment),
           ),
-          token.immediate("!"),
+          alias($._math_immediate_factorial, "!"),
         ),
       ),
 
@@ -3034,6 +2974,7 @@ export default grammar({
         $.math_primes,
         $.string,
         $.escape,
+        $.malformed_escape,
         $.linebreak,
         $.embedded_code,
       ),
@@ -3049,7 +2990,7 @@ export default grammar({
     math_number: (_) =>
       token(prec(
         2,
-        new RustRegex("\\p{N}+(?:\\.\\p{N}+)?"),
+        new RustRegex(`${NUMBER}+(?:\\.${NUMBER}+)?`),
       )),
 
     math_text: (_) =>
@@ -3057,7 +2998,7 @@ export default grammar({
         token(prec(
           -1,
           new RustRegex(
-            "[^\\p{XID_Start}\\p{N}\\s$#_\\^/!'()\\[\\]{}|,;.&]",
+            `[^${rustRanges(XID_START_RANGES)}${rustRanges(NUMBER_RANGES)}\\s$#_\\^/!'()\\[\\]{}|,;.&]`,
           ),
         )),
         // `!` is a factorial only when it is directly adjacent to its operand.
@@ -3117,7 +3058,7 @@ export default grammar({
         PREC.mathCall,
         seq(
           field("object", choice($.math_identifier, $.math_field_access)),
-          token.immediate("."),
+          alias($._math_immediate_field_dot, "."),
           field(
             "field",
             alias(token.immediate(MATH_FIELD_IDENT), $.math_identifier),
@@ -3136,7 +3077,7 @@ export default grammar({
 
     math_arguments: ($) =>
       seq(
-        token.immediate("("),
+        alias($._math_immediate_lparen, "("),
         optional(mathSpaceRun($)),
         optional(choice(
           $._math_argument_list,
@@ -3270,7 +3211,7 @@ export default grammar({
       seq(
         field(
           "open",
-          alias(token.immediate(choice("[|", MATH_OPEN)), $.math_delimiter),
+          alias($._math_immediate_open, $.math_delimiter),
         ),
         optional(field("body", $.math)),
         mathClose($),
@@ -3281,7 +3222,7 @@ export default grammar({
         field(
           "open",
           alias(
-            token.immediate(choice("[|", MATH_OPEN_NONPAREN)),
+            $._math_immediate_nonparen_open,
             $.math_delimiter,
           ),
         ),

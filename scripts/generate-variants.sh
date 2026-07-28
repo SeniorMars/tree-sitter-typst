@@ -41,9 +41,9 @@ for MODE in $MODES; do
   printf 'generating %s variant in %s\n' "$NAME" "$DEST"
 
   rm -rf "$DEST"
-  mkdir -p "$DEST/src" "$DEST/queries"
+  mkdir -p "$DEST/queries"
   cp "$ROOT/grammar.js" "$ROOT/package.json" "$ROOT/tree-sitter.json" "$DEST/"
-  cp "$ROOT/src/scanner.c" "$ROOT/src/unicode_tables.h" "$DEST/src/"
+  cp -R "$ROOT/grammar" "$ROOT/src" "$DEST/"
   if [ -d "$ROOT/queries" ]; then
     cp -R "$ROOT/queries/." "$DEST/queries/"
   fi

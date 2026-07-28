@@ -1,0 +1,426 @@
+==================
+Nested return recovery stays on one line
+==================
+
+#return ((foo)) +
+next
+#return outer(inner(value)) +
+after
+#return (foo /* ) */) +
+done
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      (incomplete_return_expression))
+    (text)
+    (embedded_code
+      (incomplete_return_expression))
+    (text)
+    (embedded_code
+      (incomplete_return_expression))
+    (text)))
+
+==================
+Valid nested content does not trigger return recovery
+==================
+
+#let f() = { return repr([) +
+]) }
+#f()
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      (let_binding
+        (identifier)
+        (parameters)
+        (code_block
+          (return_expression
+            (function_call
+              (identifier)
+              (arguments
+                (content_block
+                  (content
+                    (text)))))))))
+    (embedded_code
+      (function_call
+        (identifier)
+        (arguments)))))
+
+==================
+Reference punctuation is not a supplement
+==================
+
+@target!
+@target(text)
+@target'
+@target/* comment */[supplement]
+
+---
+
+(source_file
+  (content
+    (reference
+      (identifier))
+    (text)
+    (reference
+      (identifier))
+    (text)
+    (reference
+      (identifier))
+    (smart_quote)
+    (reference
+      (identifier))
+    (block_comment)
+    (bracketed_text
+      (text))))
+
+==================
+Mismatched automatic-link closer remains outside the token
+==================
+
+https://host/a_) tail
+
+---
+
+(source_file
+  (content
+    (automatic_link)
+    (text)))
+
+==================
+Valid set arguments do not enter malformed recovery
+==================
+
+#set block(above: { let x = 1; 2pt })
+#set block(above: `a;b`)
+#set block(above: [a; b])
+#set block(above: $a;b$)
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      (set_rule
+        (identifier)
+        (arguments
+          (named_argument
+            (identifier)
+            (code_block
+              (let_binding
+                (identifier)
+                (integer))
+              (numeric
+                (integer)
+                (unit)))))))
+    (embedded_code
+      (set_rule
+        (identifier)
+        (arguments
+          (named_argument
+            (identifier)
+            (raw
+              (raw_delimiter)
+              (raw_content)
+              (raw_delimiter))))))
+    (embedded_code
+      (set_rule
+        (identifier)
+        (arguments
+          (named_argument
+            (identifier)
+            (content_block
+              (content
+                (text)))))))
+    (embedded_code
+      (set_rule
+        (identifier)
+        (arguments
+          (named_argument
+            (identifier)
+            (equation
+              (math
+                (math_letter)
+                (math_text)
+                (math_letter)))))))))
+
+==================
+Malformed numbers remain local
+==================
+
+#1e
+next
+#1e+
+after
+#0xGG
+more
+#0b102
+done
+#1foo
+end
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      (malformed_number))
+    (text)
+    (embedded_code
+      (malformed_number))
+    (text)
+    (embedded_code
+      (malformed_number))
+    (text)
+    (embedded_code
+      (malformed_number))
+    (text)
+    (embedded_code
+      (malformed_number))
+    (text)))
+
+==================
+Numbered marker overflow
+==================
+
+18446744073709551615. item
+18446744073709551616. text
+00000000000000000001. leading zeros
+
+---
+
+(source_file
+  (content
+    (numbered_list_item
+      (numbered_list_marker)
+      (list_body
+        (text)))
+    (text)
+    (numbered_list_item
+      (numbered_list_marker)
+      (list_body
+        (text)))))
+
+==================
+Direct adjacency does not cross block comments
+==================
+
+#let f/* comment */(x) = x
+@target/* comment */[supplement]
+$pi/* comment */(y)$
+$pi/* comment */[y]$
+$pi/* comment */.field$
+$x/* comment */!$
+$x/* comment */'$
+$pi/* comment */{y}$
+$pi/* comment */⌈y⌉$
+$pi/* comment */[|y|]$
+$x{y}$
+$x⌈y⌉$
+$x[|y|]$
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      (let_binding
+        (ERROR
+          (identifier))
+        (block_comment)
+        (destructuring_pattern
+          (identifier))
+        (identifier)))
+    (reference
+      (identifier))
+    (block_comment)
+    (bracketed_text
+      (text))
+    (equation
+      (math
+        (math_identifier)
+        (block_comment)
+        (math_delimited
+          (math_delimiter)
+          (math
+            (math_letter))
+          (math_delimiter))))
+    (equation
+      (math
+        (math_identifier)
+        (block_comment)
+        (math_delimited
+          (math_delimiter)
+          (math
+            (math_letter))
+          (math_delimiter))))
+    (equation
+      (math
+        (math_identifier)
+        (block_comment)
+        (math_text)
+        (math_identifier)))
+    (equation
+      (math
+        (math_letter)
+        (block_comment)
+        (math_text)))
+    (equation
+      (math
+        (math_letter)
+        (block_comment)
+        (math_primes)))
+    (equation
+      (math
+        (math_identifier)
+        (block_comment)
+        (math_delimited
+          (math_delimiter)
+          (math
+            (math_letter))
+          (math_delimiter))))
+    (equation
+      (math
+        (math_identifier)
+        (block_comment)
+        (math_delimited
+          (math_delimiter)
+          (math
+            (math_letter))
+          (math_delimiter))))
+    (equation
+      (math
+        (math_identifier)
+        (block_comment)
+        (math_delimited
+          (math_delimiter)
+          (math
+            (math_letter))
+          (math_delimiter))))
+    (equation
+      (math
+        (math_application
+          (math_letter)
+          (math_delimited
+            (math_delimiter)
+            (math
+              (math_letter))
+            (math_delimiter)))))
+    (equation
+      (math
+        (math_application
+          (math_letter)
+          (math_delimited
+            (math_delimiter)
+            (math
+              (math_letter))
+            (math_delimiter)))))
+    (equation
+      (math
+        (math_application
+          (math_letter)
+          (math_delimited
+            (math_delimiter)
+            (math
+              (math_letter))
+            (math_delimiter)))))))
+
+==================
+Unicode heading space starts the body
+==================
+
+= Heading
+= Heading
+=　Heading
+
+---
+
+(source_file
+  (content)
+  (section
+    (heading
+      (heading_marker)
+      (heading_body
+        (text)))
+    (content))
+  (section
+    (heading
+      (heading_marker)
+      (heading_body
+        (text)))
+    (content))
+  (section
+    (heading
+      (heading_marker)
+      (heading_body
+        (text)))
+    (content)))
+
+==================
+Markup Unicode escapes require scalar values
+==================
+
+\u
+\unit
+\u text
+\u{10FFFF}
+\u{000041}
+\u{110000}
+\u{D800}
+\u{}
+\u{xyz}
+
+---
+
+(source_file
+  (content
+    (escape)
+    (escape)
+    (text)
+    (escape)
+    (text)
+    (escape)
+    (escape)
+    (malformed_escape)
+    (malformed_escape)
+    (malformed_escape)
+    (malformed_escape)))
+
+==================
+String Unicode escapes require scalar values
+==================
+
+#"ordinary \u \unit \u text"
+#"valid \u{10FFFF} \u{000041}"
+#"invalid \u{110000} \u{D800} \u{} \u{xyz}"
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      (string
+        (string_content)
+        (string_escape)
+        (string_escape)
+        (string_content)
+        (string_escape)
+        (string_content)))
+    (embedded_code
+      (string
+        (string_content)
+        (string_escape)
+        (string_escape)))
+    (embedded_code
+      (string
+        (string_content)
+        (malformed_escape)
+        (malformed_escape)
+        (malformed_escape)
+        (malformed_escape)))))

@@ -1,6 +1,8 @@
 import assert from "node:assert";
 import Parser from "tree-sitter";
 
+import {treeHasSyntaxIssue} from "../../scripts/syntax-issues.js";
+
 const {default: language} = await import(
   process.env.TREE_SITTER_TYPST_BINDING || "../../bindings/node/index.js"
 );
@@ -11,25 +13,22 @@ parser.setLanguage(language);
 function pointAt(text, index) {
   const prefix = text.slice(0, index);
   const lines = prefix.split("\n");
-  return {row: lines.length - 1, column: Buffer.byteLength(lines.at(-1))};
+  return {row: lines.length - 1, column: lines.at(-1).length};
 }
 
 function assertAppendConverges(name, before, inserted) {
   const index = before.length;
   const after = before + inserted;
   const oldTree = parser.parse(before);
-  assert.equal(oldTree.rootNode.hasError, true, name);
+  assert.equal(treeHasSyntaxIssue(oldTree.rootNode), true, name);
 
   const startPosition = pointAt(before, index);
-  const newEndPosition = {
-    row: startPosition.row,
-    column: startPosition.column + Buffer.byteLength(inserted),
-  };
+  const newEndPosition = pointAt(after, index + inserted.length);
 
   oldTree.edit({
     startIndex: index,
     oldEndIndex: index,
-    newEndIndex: index + Buffer.byteLength(inserted),
+    newEndIndex: index + inserted.length,
     startPosition,
     oldEndPosition: startPosition,
     newEndPosition,
@@ -37,7 +36,11 @@ function assertAppendConverges(name, before, inserted) {
 
   const incremental = parser.parse(after, oldTree);
   const clean = parser.parse(after);
-  assert.equal(clean.rootNode.hasError, false, clean.rootNode.toString());
+  assert.equal(
+    treeHasSyntaxIssue(clean.rootNode),
+    false,
+    clean.rootNode.toString(),
+  );
   assert.strictEqual(
     incremental.rootNode.toString(),
     clean.rootNode.toString(),
