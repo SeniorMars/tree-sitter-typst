@@ -48,6 +48,19 @@
   (#match? @comment.error "DEPRECATED"))
 
 ; Markup
+[
+  (incomplete_let_binding)
+  (incomplete_module_import)
+  (incomplete_module_include)
+  (incomplete_return_expression)
+  (incomplete_set_rule)
+  (incomplete_show_rule)
+  (malformed_automatic_link)
+  (malformed_embedded_code)
+  (malformed_escape)
+  (malformed_number)
+] @error
+
 (heading) @markup.heading
 ((heading marker: (heading_marker) @_heading_marker) @markup.heading.1
   (#eq? @_heading_marker "="))

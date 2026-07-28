@@ -1,6 +1,8 @@
 import assert from "node:assert";
 import Parser from "tree-sitter";
 
+import {treeHasSyntaxIssue} from "../../scripts/syntax-issues.js";
+
 const {default: language} = await import(
   process.env.TREE_SITTER_TYPST_BINDING || "../../bindings/node/index.js"
 );
@@ -11,7 +13,11 @@ parser.setLanguage(language);
 function assertParsesWithoutError(name, source) {
   const tree = parser.parse(source);
   assert.equal(tree.rootNode.type, "source_file");
-  assert.equal(tree.rootNode.hasError, false, `${name}\n${tree.rootNode.toString()}`);
+  assert.equal(
+    treeHasSyntaxIssue(tree.rootNode),
+    false,
+    `${name}\n${tree.rootNode.toString()}`,
+  );
 }
 
 function nestedList(depth) {

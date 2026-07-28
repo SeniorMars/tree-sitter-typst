@@ -30,7 +30,17 @@
 
    :language 'typst
    :feature 'markup
-   '((shebang) @font-lock-preprocessor-face
+   '(([(incomplete_let_binding)
+       (incomplete_module_import)
+       (incomplete_module_include)
+       (incomplete_return_expression)
+       (incomplete_set_rule)
+       (incomplete_show_rule)
+       (malformed_automatic_link)
+       (malformed_embedded_code)
+       (malformed_escape)
+       (malformed_number)] @font-lock-warning-face)
+     (shebang) @font-lock-preprocessor-face
      (heading marker: (heading_marker) @font-lock-keyword-face
               body: (heading_body) @font-lock-function-name-face)
      (bullet_list_item marker: (bullet_list_marker) @font-lock-keyword-face)

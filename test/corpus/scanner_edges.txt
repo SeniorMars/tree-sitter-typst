@@ -58,7 +58,7 @@ Scanner edge set rule rejects trailing content block
       (text))))
 
 ==================
-Scanner edge huge numbered list marker
+Scanner edge overflowing numbered marker is text
 ==================
 
 999999999999999999999999999999999999999. item
@@ -67,10 +67,7 @@ Scanner edge huge numbered list marker
 
 (source_file
   (content
-    (numbered_list_item
-      marker: (numbered_list_marker)
-      body: (list_body
-        (text)))))
+    (text)))
 
 ==================
 Scanner edge failed else-space probe falls back

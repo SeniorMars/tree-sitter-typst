@@ -689,6 +689,28 @@ Malformed return after non-identifier value stops locally
               (string_content))))))))
 
 ==================
+Empty raw return recovery stops locally
+==================
+
+#return `` +
+#set document(title: "T")
+
+---
+
+(source_file
+  (content
+    (embedded_code
+      body: (incomplete_return_expression))
+    (embedded_code
+      body: (set_rule
+        target: (identifier)
+        arguments: (arguments
+          (named_argument
+            name: (identifier)
+            value: (string
+              (string_content))))))))
+
+==================
 Malformed return logical operator stops locally
 ==================
 
@@ -1184,9 +1206,9 @@ $arrow. r$
   (content
     (equation
       body: (math
-        (math_field_access
-          object: (math_identifier)
-          field: (math_identifier))))))
+        (math_identifier)
+        (math_text)
+        (math_letter)))))
 
 ==================
 Unicode raw language tag

@@ -40,7 +40,11 @@ class BdistWheel(bdist_wheel):
 class EggInfo(egg_info):
     def find_sources(self):
         super().find_sources()
+        self.filelist.include("grammar.js")
+        self.filelist.recursive_include("grammar", "*.js")
         self.filelist.recursive_include("queries", "*.scm")
+        self.filelist.include("src/*.c")
+        self.filelist.include("src/*.h")
         self.filelist.include("src/tree_sitter/*.h")
 
 
@@ -63,6 +67,10 @@ setup(
                 ("TREE_SITTER_HIDE_SYMBOLS", None),
             ],
             include_dirs=["src"],
+            depends=[
+                "src/external_tokens.h",
+                "src/unicode_tables.h",
+            ],
             py_limited_api=not get_config_var("Py_GIL_DISABLED"),
         )
     ],

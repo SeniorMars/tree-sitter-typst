@@ -18,10 +18,25 @@ endif()
 include(GNUInstallDirs)
 
 find_program(TREE_SITTER_CLI tree-sitter DOC "Tree-sitter CLI")
+find_program(NODE_RUNTIME node DOC "Node.js runtime")
+
+set(TYPST_GRAMMAR_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/grammar.js"
+    "${CMAKE_CURRENT_SOURCE_DIR}/grammar/externals.js"
+    "${CMAKE_CURRENT_SOURCE_DIR}/grammar/unicode.js"
+    "${CMAKE_CURRENT_SOURCE_DIR}/grammar/unicode-ranges.js")
+
+add_custom_command(
+    OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/src/external_tokens.h"
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/grammar/externals.js"
+            "${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate-external-tokens.js"
+    COMMAND "${NODE_RUNTIME}" scripts/generate-external-tokens.js
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    COMMENT "Generating external_tokens.h")
 
 add_custom_command(OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/src/grammar.json"
                           "${CMAKE_CURRENT_SOURCE_DIR}/src/node-types.json"
-                   DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/grammar.js"
+                   DEPENDS ${TYPST_GRAMMAR_SOURCES}
                    COMMAND "${TREE_SITTER_CLI}" generate grammar.js --no-parser
                    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
                    COMMENT "Generating grammar.json")
@@ -38,7 +53,10 @@ add_custom_command(OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/src/parser.c"
 
 add_library(tree-sitter-typst src/parser.c)
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/src/scanner.c)
-  target_sources(tree-sitter-typst PRIVATE src/scanner.c)
+  target_sources(tree-sitter-typst PRIVATE
+                 src/scanner.c
+                 src/external_tokens.h
+                 src/unicode_tables.h)
 endif()
 target_include_directories(tree-sitter-typst
                            PRIVATE src
@@ -67,9 +85,9 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/tree-sitter-typst.pc"
 install(TARGETS tree-sitter-typst
         LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}")
 
-file(GLOB QUERIES queries/*.scm)
-install(FILES ${QUERIES}
-        DESTINATION "${CMAKE_INSTALL_DATADIR}/tree-sitter/queries/tree-sitter-typst")
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/queries/typst/"
+        DESTINATION "${CMAKE_INSTALL_DATADIR}/tree-sitter/queries/tree-sitter-typst"
+        FILES_MATCHING PATTERN "*.scm")
 
 add_custom_target(ts-test "${TREE_SITTER_CLI}" test
                   WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"

@@ -4,23 +4,31 @@
   "private": true,
   "type": "module",
   "description": "Tree-sitter grammar for Typst",
+  "engines": {
+    "node": "^22.23.1"
+  },
   "scripts": {
     "install": "node-gyp-build",
-    "generate": "tree-sitter generate",
+    "generate": "npm run generate:externals && tree-sitter generate",
+    "generate:externals": "node scripts/generate-external-tokens.js",
     "generate:variants": "scripts/generate-variants.sh",
-    "test": "tree-sitter test && npm run test:incremental && npm run test:fuzz",
+    "test": "tree-sitter test && npm run test:incremental && npm run test:validator && npm run test:fuzz && npm run test:fuzz:recovery",
     "test:corpus": "tree-sitter test",
-    "test:incremental": "node test/incremental/delimiters.js && node test/incremental/strings.js && node test/incremental/edits.js && node test/incremental/stress.js",
-    "test:fuzz": "node scripts/fuzz-parser.js --iterations 1000",
-    "test:fuzz:full": "node scripts/fuzz-parser.js --iterations 50000 --max-length 4096",
+    "test:incremental": "node test/incremental/syntax-issues.js && node test/incremental/delimiters.js && node test/incremental/strings.js && node test/incremental/edits.js && node test/incremental/stress.js",
+    "test:fuzz": "node scripts/fuzz-parser.js --iterations 1000 --check-incremental",
+    "test:fuzz:observe": "node scripts/fuzz-parser.js --iterations 1000",
+    "test:fuzz:full": "node scripts/fuzz-parser.js --iterations 50000 --max-length 4096 --check-incremental",
     "test:fuzz:incremental": "node scripts/fuzz-parser.js --iterations 1000 --check-incremental",
+    "test:fuzz:recovery": "node scripts/fuzz-parser.js --iterations 1000 --check-incremental --include-error-recovery",
     "test:queries": "node scripts/audit-queries.js",
-    "test:unicode": "python3 scripts/check-unicode-mathclass.py",
+    "test:generated": "node scripts/generate-external-tokens.js --check && node scripts/check-generated-parser.js",
+    "test:validator": "node scripts/validate-real-world-fixtures.js --expectations test/fixtures/invalid/expectations.json test/fixtures/invalid",
+    "test:unicode": "sh scripts/run-unicode-python.sh scripts/check-unicode-mathclass.py",
     "fetch:real-world": "node scripts/fetch-real-world-fixtures.js",
     "test:real-world": "npm run fetch:real-world && node scripts/validate-real-world-fixtures.js test/fixtures/real_world",
     "test:real-world:strict": "npm run fetch:real-world && node scripts/validate-real-world-fixtures.js --fail-on-error test/fixtures/real_world",
     "check": "scripts/test-static.sh",
-    "generate:unicode": "python3 scripts/generate-unicode-tables.py"
+    "generate:unicode": "sh scripts/run-unicode-python.sh scripts/generate-unicode-tables.py"
   },
   "devDependencies": {
     "tree-sitter": "^0.25.0",
@@ -29,5 +37,9 @@
   "dependencies": {
     "node-addon-api": "^8.8.0",
     "node-gyp-build": "^4.8.4"
+  },
+  "allowScripts": {
+    "tree-sitter@0.25.0": true,
+    "tree-sitter-cli@0.26.9": true
   }
 }

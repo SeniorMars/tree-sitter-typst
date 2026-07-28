@@ -4,8 +4,21 @@ VERSION := 0.1.0
 
 # repository
 SRC_DIR := src
+GRAMMAR_SOURCES := \
+	grammar.js \
+	grammar/externals.js \
+	grammar/unicode.js \
+	grammar/unicode-ranges.js
+SCANNER_HEADERS := \
+	$(SRC_DIR)/external_tokens.h \
+	$(SRC_DIR)/unicode_tables.h
+EXTERNAL_TOKEN_SOURCES := \
+	grammar/externals.js \
+	scripts/generate-external-tokens.js
+QUERY_FILES := $(wildcard queries/typst/*.scm)
 
 TS ?= tree-sitter
+NODE ?= node
 
 # install directory layout
 PREFIX ?= /usr/local
@@ -72,11 +85,16 @@ $(LANGUAGE_NAME).pc: bindings/c/$(LANGUAGE_NAME).pc.in
 		-e 's|@PROJECT_HOMEPAGE_URL@|$(HOMEPAGE_URL)|' \
 		-e 's|@CMAKE_INSTALL_PREFIX@|$(PREFIX)|' $< > $@
 
-$(SRC_DIR)/grammar.json: grammar.js
-	$(TS) generate --no-parser $^
+$(SRC_DIR)/grammar.json: $(GRAMMAR_SOURCES)
+	$(TS) generate --no-parser $<
 
 $(PARSER): $(SRC_DIR)/grammar.json
 	$(TS) generate $^
+
+$(SRC_DIR)/external_tokens.h: $(EXTERNAL_TOKEN_SOURCES)
+	$(NODE) scripts/generate-external-tokens.js
+
+$(SRC_DIR)/scanner.o: $(SCANNER_HEADERS)
 
 install: all
 	install -d '$(DESTDIR)$(DATADIR)'/tree-sitter/queries/tree-sitter-typst '$(DESTDIR)$(INCLUDEDIR)'/tree_sitter '$(DESTDIR)$(PCLIBDIR)' '$(DESTDIR)$(LIBDIR)'
@@ -93,8 +111,8 @@ else
 	cd '$(DESTDIR)$(LIBDIR)' && ln -sf lib$(LANGUAGE_NAME).$(SOEXTVER) lib$(LANGUAGE_NAME).$(SOEXTVER_MAJOR)
 	cd '$(DESTDIR)$(LIBDIR)' && ln -sf lib$(LANGUAGE_NAME).$(SOEXTVER_MAJOR) lib$(LANGUAGE_NAME).$(SOEXT)
 endif
-ifneq ($(wildcard queries/*.scm),)
-	install -m644 queries/*.scm '$(DESTDIR)$(DATADIR)'/tree-sitter/queries/tree-sitter-typst
+ifneq ($(QUERY_FILES),)
+	install -m644 $(QUERY_FILES) '$(DESTDIR)$(DATADIR)'/tree-sitter/queries/tree-sitter-typst
 endif
 
 uninstall:

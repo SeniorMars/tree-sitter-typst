@@ -5,6 +5,7 @@
 #include <stdlib.h>
 
 #include "unicode_tables.h"
+#include "external_tokens.h"
 
 #ifdef TREE_SITTER_REUSE_ALLOCATOR
 #include <tree_sitter/alloc.h>
@@ -12,69 +13,6 @@
 #define ts_calloc calloc
 #define ts_free free
 #endif
-
-enum TokenType {
-  SHEBANG,
-  BLOCK_COMMENT,
-  HASH,
-  EMBEDDED_STATEMENT_END,
-  EMBEDDED_UNCLOSED_SET_ARGUMENTS,
-  EMBEDDED_RETURN_DANGLING_OPERATOR,
-  MATH_SPREAD_OPERATOR,
-  MATH_ARGUMENT_IDENTIFIER,
-
-  HEADING_MARKER,
-  BULLET_LIST_MARKER,
-  NUMBERED_LIST_MARKER,
-  TERM_LIST_MARKER,
-  SHORTHAND,
-  AUTOMATIC_LINK,
-  LIST_CONTINUATION,
-  LIST_END,
-
-  INTEGER,
-  FLOAT,
-  UNIT,
-
-  MATH_IDENTIFIER,
-  MATH_LETTER,
-  MATH_TEXT,
-  MATH_FRACTION_AHEAD,
-  MATH_FRACTION_SPACE,
-  MATH_EXPRESSION_SPACE,
-  MATH_ATTACHMENT_SPACE,
-  MATH_CLOSE_SPACE,
-  MATH_ARGUMENT_SEPARATOR_SPACE,
-
-  RAW_OPEN,
-  RAW_LANGUAGE,
-  RAW_CONTENT,
-  RAW_CLOSE,
-
-  MARKUP_INDENT,
-  MARKUP_SPACE,
-  MARKUP_WORD_GAP,
-  MARKUP_NEWLINE,
-  PARBREAK,
-  MATH_SPACE,
-  ATOMIC_FIELD_DOT,
-  CODE_DOT_AHEAD,
-  CODE_ELSE_AHEAD,
-  CODE_ELSE_SPACE_AHEAD,
-  CODE_ASSIGNMENT_OPERATOR_AHEAD,
-  CODE_LOGICAL_OR_OPERATOR_AHEAD,
-  CODE_LOGICAL_AND_OPERATOR_AHEAD,
-  CODE_COMPARISON_OPERATOR_AHEAD,
-  CODE_ADDITION_OPERATOR_AHEAD,
-  CODE_MULTIPLICATION_OPERATOR_AHEAD,
-  CODE_CLOSE_AHEAD,
-  CODE_ARGUMENT_AHEAD,
-  CODE_CONTROL_BODY_AHEAD,
-  CODE_SPACE,
-  CODE_NEWLINE,
-
-  ERROR_SENTINEL,
-};
 
 enum OperatorAheadMask {
   OP_ASSIGNMENT = 1u << 0,
@@ -94,6 +32,11 @@ enum MathSpaceBoundary {
   MATH_BOUNDARY_PLAIN,
 };
 
+enum CodeTriviaTarget {
+  CODE_TRIVIA_TARGET_TOKEN,
+  CODE_TRIVIA_TARGET_BARE_SLASH,
+};
+
 #define SCANNER_FIXED_U32_FIELDS 3u
 #define SCANNER_FIXED_U8_FIELDS 1u
 #define SCANNER_FIXED_STATE_SIZE                                               \
@@ -109,18 +52,15 @@ _Static_assert(SCANNER_FIXED_STATE_SIZE + 4u * MAX_LIST_DEPTH <=
                "scanner state exceeds Tree-sitter serialization buffer");
 
 typedef struct {
-  // Tree-sitter serializes this state into parse trees and restores it during
-  // incremental parsing and GLR exploration. These fields therefore describe
-  // parse position, not cache data that can be cleared opportunistically.
   uint32_t raw_delimiter_length;
-  // Numeric-unit adjacency is scanner state Tree-sitter may skip global extras
-  // before token.immediate rules, so moving UNIT into grammar would allow
-  // `12/*...*/pt` to parse as numeric.
+  // Numeric-unit adjacency must survive skipped extras and incremental resumes.
   uint32_t unit_column_plus_one;
   uint32_t immediate_postfix_blocked_column_plus_one;
   uint32_t list_indents[MAX_LIST_DEPTH];
   uint8_t list_depth;
 } Scanner;
+
+static inline void advance(TSLexer *lexer) { lexer->advance(lexer, false); }
 
 static inline void clear_unit_pending(Scanner *scanner) {
   scanner->unit_column_plus_one = 0;
@@ -131,7 +71,8 @@ static inline uint32_t current_column_plus_one(TSLexer *lexer) {
   return lexer->get_column(lexer) + 1u;
 }
 
-static inline bool immediate_postfix_blocked(Scanner *scanner, TSLexer *lexer) {
+static inline bool immediate_postfix_blocked(Scanner *scanner,
+                                             TSLexer *lexer) {
   return scanner->immediate_postfix_blocked_column_plus_one != 0 &&
          scanner->immediate_postfix_blocked_column_plus_one ==
              current_column_plus_one(lexer);
@@ -140,20 +81,6 @@ static inline bool immediate_postfix_blocked(Scanner *scanner, TSLexer *lexer) {
 static inline void clear_immediate_postfix_block(Scanner *scanner) {
   scanner->immediate_postfix_blocked_column_plus_one = 0;
 }
-
-static inline void record_immediate_postfix_block_after_trivia(Scanner *scanner,
-                                                               TSLexer *lexer) {
-  // Extras are skipped before token.immediate is checked. This latch prevents
-  // trivia from accidentally manufacturing immediacy for calls/content blocks
-  // and atomic fields.
-  scanner->immediate_postfix_blocked_column_plus_one =
-      (lexer->lookahead == '(' || lexer->lookahead == '[' ||
-       lexer->lookahead == '.')
-          ? current_column_plus_one(lexer)
-          : 0;
-}
-
-static inline void advance(TSLexer *lexer) { lexer->advance(lexer, false); }
 
 static unsigned write_u32(char *buffer, unsigned offset, uint32_t value) {
   buffer[offset++] = (char)(value & 0xFFu);
@@ -172,7 +99,8 @@ static uint32_t read_u32(const char *buffer, unsigned offset) {
 
 static bool scan_code_keyword_ahead(TSLexer *lexer, const char *keyword,
                                     enum TokenType symbol);
-static bool skip_code_all_trivia(TSLexer *lexer, bool *saw_comment);
+static enum CodeTriviaTarget
+skip_code_trivia_and_classify_target(TSLexer *lexer, bool *saw_comment);
 static bool consume_nested_block_comment_body_same_line(TSLexer *lexer);
 static bool scan_code_operator_ahead(TSLexer *lexer, bool slash_operator,
                                      uint8_t valid_operator_mask);
@@ -373,7 +301,13 @@ static bool scan_literal(TSLexer *lexer, const char *literal) {
   return true;
 }
 
-static bool scan_automatic_link(TSLexer *lexer) {
+static bool scan_automatic_link(TSLexer *lexer, bool automatic_valid,
+                                bool malformed_valid) {
+  enum { MAX_LINK_BRACKET_DEPTH = 64 };
+  int32_t closes[MAX_LINK_BRACKET_DEPTH];
+  uint32_t depth = 0;
+  bool malformed = false;
+
   if (!scan_literal(lexer, "http"))
     return false;
   if (lexer->lookahead == 's')
@@ -386,7 +320,24 @@ static bool scan_automatic_link(TSLexer *lexer) {
   while (!lexer->eof(lexer)) {
     int32_t c = lexer->lookahead;
 
-    if (c == '(' || c == ')' || c == '[' || c == ']') {
+    if (c == '(' || c == '[') {
+      if (depth == MAX_LINK_BRACKET_DEPTH) {
+        malformed = true;
+      } else {
+        closes[depth++] = c == '(' ? ')' : ']';
+      }
+      advance(lexer);
+      lexer->mark_end(lexer);
+      continue;
+    }
+
+    if (c == ')' || c == ']') {
+      if (depth == 0 || closes[depth - 1] != c) {
+        // A mismatched closer belongs to the surrounding markup. Stop before
+        // it so one bad bracket does not absorb the following stable text.
+        break;
+      }
+      depth--;
       advance(lexer);
       lexer->mark_end(lexer);
       continue;
@@ -399,6 +350,16 @@ static bool scan_automatic_link(TSLexer *lexer) {
     if (!is_link_trailing_punctuation(c))
       lexer->mark_end(lexer);
   }
+
+  malformed = malformed || depth != 0;
+  if (malformed) {
+    if (!malformed_valid)
+      return false;
+    lexer->result_symbol = MALFORMED_AUTOMATIC_LINK;
+    return true;
+  }
+  if (!automatic_valid)
+    return false;
 
   lexer->result_symbol = AUTOMATIC_LINK;
   return true;
@@ -481,9 +442,19 @@ static bool scan_markup_marker(Scanner *scanner, TSLexer *lexer,
   }
 
   if (ascii_digit(lexer->lookahead) && valid_symbols[NUMBERED_LIST_MARKER]) {
+    uint64_t value = 0;
+    bool overflow = false;
     do {
+      uint32_t digit = (uint32_t)(lexer->lookahead - '0');
+      if (value > (UINT64_MAX - digit) / 10u) {
+        overflow = true;
+      } else {
+        value = value * 10u + digit;
+      }
       advance(lexer);
     } while (ascii_digit(lexer->lookahead));
+    if (overflow)
+      return false;
     if (lexer->lookahead != '.')
       return false;
     advance(lexer);
@@ -665,16 +636,64 @@ static bool scan_string_same_line(TSLexer *lexer, bool record_end) {
   return false;
 }
 
+static bool scan_raw_same_line(TSLexer *lexer, bool record_end) {
+  if (lexer->lookahead != '`')
+    return false;
+
+  uint32_t opening_run = 0;
+  do {
+    opening_run++;
+    advance(lexer);
+    if (record_end)
+      lexer->mark_end(lexer);
+  } while (lexer->lookahead == '`');
+
+  // Typst interprets `` as an empty raw value with two one-tick delimiters.
+  if (opening_run == 2)
+    return true;
+
+  uint32_t closing_run = 0;
+  while (!lexer->eof(lexer) && !is_newline(lexer->lookahead)) {
+    if (lexer->lookahead == '`') {
+      closing_run++;
+      advance(lexer);
+      if (record_end)
+        lexer->mark_end(lexer);
+      if (closing_run == opening_run)
+        return true;
+      continue;
+    }
+    closing_run = 0;
+    advance(lexer);
+    if (record_end)
+      lexer->mark_end(lexer);
+  }
+
+  return false;
+}
+
 static bool scan_embedded_unclosed_set_arguments(TSLexer *lexer) {
+  enum { MAX_RECOVERY_DELIMITER_DEPTH = 64 };
+  int32_t closes[MAX_RECOVERY_DELIMITER_DEPTH];
+
   if (lexer->lookahead != '(')
     return false;
 
-  uint32_t parenthesis_depth = 0;
-  uint32_t bracket_depth = 0;
+  uint32_t depth = 1;
+  closes[0] = ')';
+  advance(lexer);
+  lexer->mark_end(lexer);
+
   while (!lexer->eof(lexer)) {
     if (lexer->lookahead == '"') {
       if (!scan_string_same_line(lexer, true))
-        break;
+        return false;
+      continue;
+    }
+
+    if (lexer->lookahead == '`') {
+      if (!scan_raw_same_line(lexer, true))
+        return false;
       continue;
     }
 
@@ -697,39 +716,47 @@ static bool scan_embedded_unclosed_set_arguments(TSLexer *lexer) {
     if (is_newline(lexer->lookahead))
       break;
 
-    if (lexer->lookahead == '[') {
-      bracket_depth++;
+    if (lexer->lookahead == '$' && closes[depth - 1] == '$') {
+      depth--;
       advance(lexer);
       lexer->mark_end(lexer);
       continue;
     }
 
-    if (lexer->lookahead == ']') {
-      if (bracket_depth == 0)
-        break;
-      bracket_depth--;
+    if (lexer->lookahead == '(' || lexer->lookahead == '[' ||
+        lexer->lookahead == '{' || lexer->lookahead == '$') {
+      if (depth == MAX_RECOVERY_DELIMITER_DEPTH)
+        return false;
+      closes[depth++] =
+          lexer->lookahead == '('   ? ')'
+          : lexer->lookahead == '[' ? ']'
+          : lexer->lookahead == '{' ? '}'
+                                    : '$';
       advance(lexer);
       lexer->mark_end(lexer);
       continue;
     }
 
-    if (bracket_depth == 0) {
-      if (lexer->lookahead == ';')
-        break;
-      if (lexer->lookahead == '(') {
-        parenthesis_depth++;
-      } else if (lexer->lookahead == ')' && parenthesis_depth > 0) {
-        parenthesis_depth--;
-        if (parenthesis_depth == 0)
-          return false;
-      }
+    if (lexer->lookahead == ')' || lexer->lookahead == ']' ||
+        lexer->lookahead == '}') {
+      if (depth == 0 || closes[depth - 1] != lexer->lookahead)
+        return false;
+      depth--;
+      advance(lexer);
+      lexer->mark_end(lexer);
+      if (depth == 0)
+        return false;
+      continue;
     }
+
+    if (depth == 1 && lexer->lookahead == ';')
+      break;
 
     advance(lexer);
     lexer->mark_end(lexer);
   }
 
-  if (parenthesis_depth == 0 || bracket_depth > 0)
+  if (depth != 1)
     return false;
 
   if (embedded_boundary_after_newline(lexer)) {
@@ -792,24 +819,72 @@ static bool scan_balanced_same_line(TSLexer *lexer, int32_t open,
   if (lexer->lookahead != open)
     return false;
 
-  uint32_t depth = 0;
-  do {
+  enum { MAX_RECOVERY_DELIMITER_DEPTH = 64 };
+  int32_t closes[MAX_RECOVERY_DELIMITER_DEPTH];
+  uint32_t depth = 1;
+  closes[0] = close;
+  advance(lexer);
+
+  while (!lexer->eof(lexer) && !is_newline(lexer->lookahead)) {
     if (lexer->lookahead == '"') {
       if (!scan_string_same_line(lexer, false))
         return false;
       continue;
     }
 
-    if (lexer->lookahead == open) {
-      depth++;
-    } else if (lexer->lookahead == close) {
+    if (lexer->lookahead == '`') {
+      if (!scan_raw_same_line(lexer, false))
+        return false;
+      continue;
+    }
+
+    if (lexer->lookahead == '/') {
+      advance(lexer);
+      if (lexer->lookahead == '*') {
+        if (!consume_nested_block_comment_body_same_line(lexer))
+          return false;
+      } else if (lexer->lookahead == '/') {
+        return false;
+      }
+      continue;
+    }
+
+    if (lexer->lookahead == '$' && closes[depth - 1] == '$') {
       depth--;
       advance(lexer);
-      return depth == 0;
+      if (depth == 0)
+        return true;
+      continue;
+    }
+
+    if (lexer->lookahead == '(' || lexer->lookahead == '[' ||
+        lexer->lookahead == '{' || lexer->lookahead == '$') {
+      if (depth == MAX_RECOVERY_DELIMITER_DEPTH)
+        return false;
+      closes[depth++] =
+          lexer->lookahead == '('   ? ')'
+          : lexer->lookahead == '[' ? ']'
+          : lexer->lookahead == '{' ? '}'
+                                    : '$';
+      advance(lexer);
+      continue;
+    }
+
+    if (lexer->lookahead == ')' || lexer->lookahead == ']' ||
+        lexer->lookahead == '}') {
+      // A closer from a nested content/math construct must not terminate the
+      // outer call. Conservatively decline recovery on any mismatch.
+      if (closes[depth - 1] != lexer->lookahead)
+        return false;
+      depth--;
+      advance(lexer);
+      if (depth == 0)
+        return true;
+      continue;
     }
 
     advance(lexer);
-  } while (!lexer->eof(lexer) && !is_newline(lexer->lookahead));
+  }
 
   return false;
 }
@@ -874,6 +949,8 @@ static bool scan_simple_identifier_value(TSLexer *lexer) {
 static bool scan_simple_return_value(TSLexer *lexer) {
   if (lexer->lookahead == '"')
     return scan_simple_string_value(lexer);
+  if (lexer->lookahead == '`')
+    return scan_raw_same_line(lexer, false);
   if (lexer->lookahead == '(')
     return scan_balanced_same_line(lexer, '(', ')');
   if (ascii_digit(lexer->lookahead))
@@ -984,66 +1061,32 @@ static bool emit_number(Scanner *scanner, TSLexer *lexer, enum TokenType token,
   return true;
 }
 
-static bool emit_number_before_current_char(Scanner *scanner, TSLexer *lexer,
-                                            enum TokenType token,
-                                            const bool *valid_symbols) {
+static bool emit_number_at_unit_column(Scanner *scanner, TSLexer *lexer,
+                                       enum TokenType token,
+                                       const bool *valid_symbols,
+                                       uint32_t unit_column_plus_one) {
   if (!valid_symbols[token])
     return false;
-  scanner->unit_column_plus_one = lexer->get_column(lexer);
+  scanner->unit_column_plus_one = unit_column_plus_one;
   lexer->result_symbol = token;
   return true;
 }
 
-static bool scan_code_number_tail(Scanner *scanner, TSLexer *lexer,
-                                  const bool *valid_symbols, bool is_float) {
-  // `em` is a unit, i.e., making sure we don't parse as exponent prefix.
-  if (lexer->lookahead == 'e') {
-    advance(lexer);
-    if (lexer->lookahead == 'm') {
-      return emit_number_before_current_char(
-          scanner, lexer, is_float ? FLOAT : INTEGER, valid_symbols);
-    }
-
-    if (lexer->lookahead == '+' || lexer->lookahead == '-')
-      advance(lexer);
-    if (!ascii_digit(lexer->lookahead)) {
-      return emit_number(scanner, lexer, is_float ? FLOAT : INTEGER,
-                         valid_symbols, false);
-    }
-    is_float = true;
-    do
-      advance(lexer);
-    while (ascii_digit(lexer->lookahead));
-    lexer->mark_end(lexer);
-  } else if (lexer->lookahead == 'E') {
-    advance(lexer);
-    if (lexer->lookahead == '+' || lexer->lookahead == '-')
-      advance(lexer);
-    if (!ascii_digit(lexer->lookahead)) {
-      return emit_number(scanner, lexer, is_float ? FLOAT : INTEGER,
-                         valid_symbols, false);
-    }
-    is_float = true;
-    do
-      advance(lexer);
-    while (ascii_digit(lexer->lookahead));
-    lexer->mark_end(lexer);
-  }
-
-  return emit_number(scanner, lexer, is_float ? FLOAT : INTEGER, valid_symbols,
-                     true);
+static bool emit_malformed_number(Scanner *scanner, TSLexer *lexer,
+                                  const bool *valid_symbols) {
+  clear_unit_pending(scanner);
+  if (!valid_symbols[MALFORMED_NUMBER])
+    return false;
+  lexer->mark_end(lexer);
+  lexer->result_symbol = MALFORMED_NUMBER;
+  return true;
 }
 
-static bool scan_numeric_unit(Scanner *scanner, TSLexer *lexer) {
-  // UNIT is only valid immediately after an emitted numeric token. That token
-  // records the expected adjacent column; comments, spaces, invalid base-number
-  // tails, and incremental resumes must not manufacture adjacency later.
-  if (scanner->unit_column_plus_one != lexer->get_column(lexer) + 1u) {
-    scanner->unit_column_plus_one = 0;
-    return false;
-  }
-  scanner->unit_column_plus_one = 0;
+static inline bool is_numeric_suffix_char(int32_t c) {
+  return ascii_alnum(c) || c == '%';
+}
 
+static bool scan_known_numeric_unit_text(TSLexer *lexer) {
   switch (lexer->lookahead) {
   case '%':
     advance(lexer);
@@ -1106,8 +1149,89 @@ static bool scan_numeric_unit(Scanner *scanner, TSLexer *lexer) {
     return false;
   }
 
-  if (is_id_continue(lexer->lookahead))
+  return !is_numeric_suffix_char(lexer->lookahead);
+}
+
+static bool emit_number_with_validated_suffix(
+    Scanner *scanner, TSLexer *lexer, enum TokenType token,
+    const bool *valid_symbols) {
+  if (!is_numeric_suffix_char(lexer->lookahead))
+    return emit_number(scanner, lexer, token, valid_symbols, true);
+
+  uint32_t unit_column_plus_one = current_column_plus_one(lexer);
+  if (!scan_known_numeric_unit_text(lexer)) {
+    while (is_numeric_suffix_char(lexer->lookahead))
+      advance(lexer);
+    return emit_malformed_number(scanner, lexer, valid_symbols);
+  }
+
+  return emit_number_at_unit_column(scanner, lexer, token, valid_symbols,
+                                    unit_column_plus_one);
+}
+
+static bool scan_code_number_tail(Scanner *scanner, TSLexer *lexer,
+                                  const bool *valid_symbols, bool is_float) {
+  // `em` is a unit, i.e., making sure we don't parse as exponent prefix.
+  if (lexer->lookahead == 'e') {
+    uint32_t suffix_column_plus_one = current_column_plus_one(lexer);
+    advance(lexer);
+    if (lexer->lookahead == 'm') {
+      advance(lexer);
+      if (is_numeric_suffix_char(lexer->lookahead)) {
+        while (is_numeric_suffix_char(lexer->lookahead))
+          advance(lexer);
+        return emit_malformed_number(scanner, lexer, valid_symbols);
+      }
+      return emit_number_at_unit_column(
+          scanner, lexer, is_float ? FLOAT : INTEGER, valid_symbols,
+          suffix_column_plus_one);
+    }
+
+    if (lexer->lookahead == '+' || lexer->lookahead == '-')
+      advance(lexer);
+    if (!ascii_digit(lexer->lookahead)) {
+      while (is_numeric_suffix_char(lexer->lookahead))
+        advance(lexer);
+      return emit_malformed_number(scanner, lexer, valid_symbols);
+    }
+    is_float = true;
+    do
+      advance(lexer);
+    while (ascii_digit(lexer->lookahead));
+    lexer->mark_end(lexer);
+  } else if (lexer->lookahead == 'E') {
+    advance(lexer);
+    if (lexer->lookahead == '+' || lexer->lookahead == '-')
+      advance(lexer);
+    if (!ascii_digit(lexer->lookahead)) {
+      while (is_numeric_suffix_char(lexer->lookahead))
+        advance(lexer);
+      return emit_malformed_number(scanner, lexer, valid_symbols);
+    }
+    is_float = true;
+    do
+      advance(lexer);
+    while (ascii_digit(lexer->lookahead));
+    lexer->mark_end(lexer);
+  }
+
+  return emit_number_with_validated_suffix(
+      scanner, lexer, is_float ? FLOAT : INTEGER, valid_symbols);
+}
+
+static bool scan_numeric_unit(Scanner *scanner, TSLexer *lexer) {
+  // UNIT is only valid immediately after an emitted numeric token. That token
+  // records the expected adjacent column; comments, spaces, invalid base-number
+  // tails, and incremental resumes must not manufacture adjacency later.
+  if (scanner->unit_column_plus_one != lexer->get_column(lexer) + 1u) {
+    scanner->unit_column_plus_one = 0;
     return false;
+  }
+  scanner->unit_column_plus_one = 0;
+
+  if (!scan_known_numeric_unit_text(lexer))
+    return false;
+
   lexer->mark_end(lexer);
   lexer->result_symbol = UNIT;
   return true;
@@ -1117,6 +1241,7 @@ static bool scan_code_number(Scanner *scanner, TSLexer *lexer,
                              const bool *valid_symbols) {
   bool is_float = false;
   bool looked_past_end = false;
+  clear_unit_pending(scanner);
 
   if (ascii_digit(lexer->lookahead)) {
     int32_t first = lexer->lookahead;
@@ -1127,11 +1252,16 @@ static bool scan_code_number(Scanner *scanner, TSLexer *lexer,
                          lexer->lookahead == 'x')) {
       int base = lexer->lookahead == 'b' ? 2 : lexer->lookahead == 'o' ? 8 : 16;
       advance(lexer);
-      if (!base_digit(lexer->lookahead, base))
-        return emit_number(scanner, lexer, INTEGER, valid_symbols, false);
-      do {
+      bool has_digit = false;
+      bool valid = true;
+      while (is_numeric_suffix_char(lexer->lookahead)) {
+        has_digit = true;
+        if (!base_digit(lexer->lookahead, base))
+          valid = false;
         advance(lexer);
-      } while (base_digit(lexer->lookahead, base));
+      }
+      if (!has_digit || !valid)
+        return emit_malformed_number(scanner, lexer, valid_symbols);
       lexer->mark_end(lexer);
       return emit_number(scanner, lexer, INTEGER, valid_symbols, false);
     }
@@ -1235,10 +1365,17 @@ static bool scan_math_word(TSLexer *lexer, bool argument_identifier_valid,
   return true;
 }
 
+static inline bool is_math_close_delimiter(int32_t c);
+static inline bool is_math_open_delimiter(int32_t c);
+
 static bool math_text_cluster_start(int32_t c) {
   if (c < 0x80)
     return false;
   if (is_unicode_space(c) || is_math_id_start(c) || is_unicode_number(c))
+    return false;
+  // Let the internal lexer distinguish paired Unicode delimiters from ordinary
+  // math text according to the current grammar state.
+  if (is_math_open_delimiter(c) || is_math_close_delimiter(c))
     return false;
   if (c == 0x221A || c == 0x221B || c == 0x221C)
     return false;
@@ -1540,6 +1677,54 @@ static inline bool is_math_close_delimiter(int32_t c) {
   }
 }
 
+static inline bool is_math_open_delimiter(int32_t c) {
+  switch (c) {
+  case '(':
+  case '[':
+  case '{':
+    return true;
+  default:
+    if (c < 0x80)
+      return false;
+    return in_ranges(MATH_OPEN_RANGES, MATH_OPEN_RANGES_LEN, (uint32_t)c);
+  }
+}
+
+static inline bool starts_immediate_math_postfix(int32_t c) {
+  return c == '.' || c == '!' || c == '\'' || is_math_open_delimiter(c);
+}
+
+static inline void record_immediate_postfix_block_after_trivia(
+    Scanner *scanner, TSLexer *lexer) {
+  // Extras are skipped before token.immediate is checked. This latch prevents
+  // trivia from manufacturing immediacy for calls, fields, and math postfixes.
+  scanner->immediate_postfix_blocked_column_plus_one =
+      starts_immediate_math_postfix(lexer->lookahead)
+          ? current_column_plus_one(lexer)
+          : 0;
+}
+
+static bool scan_math_immediate_open(TSLexer *lexer,
+                                     enum TokenType symbol,
+                                     bool allow_parenthesis) {
+  if (!is_math_open_delimiter(lexer->lookahead) ||
+      (!allow_parenthesis && lexer->lookahead == '(')) {
+    return false;
+  }
+
+  if (lexer->lookahead == '[') {
+    advance(lexer);
+    if (lexer->lookahead == '|')
+      advance(lexer);
+  } else {
+    advance(lexer);
+  }
+
+  lexer->mark_end(lexer);
+  lexer->result_symbol = symbol;
+  return true;
+}
+
 static bool skip_math_space_run_tail(TSLexer *lexer, bool *slash_ahead) {
   *slash_ahead = false;
 
@@ -1709,8 +1894,10 @@ static bool scan_dot_prefixed(Scanner *scanner, TSLexer *lexer,
     return true;
   }
 
-  if ((valid_symbols[INTEGER] || valid_symbols[FLOAT]) &&
+  if ((valid_symbols[INTEGER] || valid_symbols[FLOAT] ||
+       valid_symbols[MALFORMED_NUMBER]) &&
       ascii_digit(lexer->lookahead)) {
+    clear_unit_pending(scanner);
     do
       advance(lexer);
     while (ascii_digit(lexer->lookahead));
@@ -1831,7 +2018,8 @@ static bool scan_code_not_in_ahead(TSLexer *lexer, enum TokenType symbol) {
   if (!scan_code_keyword_ahead(lexer, "not", symbol))
     return false;
 
-  if (skip_code_all_trivia(lexer, NULL))
+  if (skip_code_trivia_and_classify_target(lexer, NULL) ==
+      CODE_TRIVIA_TARGET_BARE_SLASH)
     return false;
   if (lexer->lookahead != 'i')
     return false;
@@ -1966,7 +2154,8 @@ static bool scan_code_contextual_space_ahead(TSLexer *lexer,
   return true;
 }
 
-static bool skip_code_all_trivia(TSLexer *lexer, bool *saw_comment) {
+static enum CodeTriviaTarget
+skip_code_trivia_and_classify_target(TSLexer *lexer, bool *saw_comment) {
   if (saw_comment)
     *saw_comment = false;
 
@@ -1991,13 +2180,13 @@ static bool skip_code_all_trivia(TSLexer *lexer, bool *saw_comment) {
         consume_nested_block_comment_body(lexer);
         continue;
       }
-      return true;
+      return CODE_TRIVIA_TARGET_BARE_SLASH;
     }
 
     if (consume_newline(lexer))
       continue;
 
-    return false;
+    return CODE_TRIVIA_TARGET_TOKEN;
   }
 }
 
@@ -2087,8 +2276,11 @@ scan_code_newline_or_continuation_ahead(TSLexer *lexer, bool dot_valid,
 
   bool saw_comment = false;
   bool slash_operator = false;
-  if (dot_valid || else_valid || operator_mask != 0 || close_valid)
-    slash_operator = skip_code_all_trivia(lexer, &saw_comment);
+  if (dot_valid || else_valid || operator_mask != 0 || close_valid) {
+    slash_operator =
+        skip_code_trivia_and_classify_target(lexer, &saw_comment) ==
+        CODE_TRIVIA_TARGET_BARE_SLASH;
+  }
 
   if (!saw_comment && !slash_operator)
     lexer->mark_end(lexer);
@@ -2313,11 +2505,64 @@ static bool scanner_scan(void *payload, TSLexer *lexer,
   if (valid_symbols[MATH_SPACE] && scan_math_space(lexer))
     return true;
 
+  if (!immediate_postfix_blocked(scanner, lexer)) {
+    if (valid_symbols[MATH_IMMEDIATE_LPAREN] &&
+        lexer->lookahead == '(') {
+      advance(lexer);
+      lexer->mark_end(lexer);
+      lexer->result_symbol = MATH_IMMEDIATE_LPAREN;
+      return true;
+    }
+    if (valid_symbols[MATH_IMMEDIATE_NONPAREN_OPEN] &&
+        is_math_open_delimiter(lexer->lookahead) &&
+        lexer->lookahead != '(') {
+      return scan_math_immediate_open(
+          lexer, MATH_IMMEDIATE_NONPAREN_OPEN, false);
+    }
+    if (valid_symbols[MATH_IMMEDIATE_OPEN] &&
+        is_math_open_delimiter(lexer->lookahead)) {
+      return scan_math_immediate_open(lexer, MATH_IMMEDIATE_OPEN, true);
+    }
+    if (valid_symbols[MATH_IMMEDIATE_FIELD_DOT] &&
+        lexer->lookahead == '.') {
+      advance(lexer);
+      if (!is_xid_start(lexer->lookahead))
+        return false;
+      lexer->mark_end(lexer);
+      lexer->result_symbol = MATH_IMMEDIATE_FIELD_DOT;
+      return true;
+    }
+    if (valid_symbols[MATH_IMMEDIATE_FACTORIAL] &&
+        lexer->lookahead == '!') {
+      advance(lexer);
+      lexer->mark_end(lexer);
+      lexer->result_symbol = MATH_IMMEDIATE_FACTORIAL;
+      return true;
+    }
+    if (valid_symbols[MATH_IMMEDIATE_PRIMES] &&
+        lexer->lookahead == '\'') {
+      do
+        advance(lexer);
+      while (lexer->lookahead == '\'');
+      lexer->mark_end(lexer);
+      lexer->result_symbol = MATH_IMMEDIATE_PRIMES;
+      return true;
+    }
+  }
+
   if (lexer->lookahead == '.' &&
       (valid_symbols[ATOMIC_FIELD_DOT] || valid_symbols[INTEGER] ||
        valid_symbols[FLOAT] || valid_symbols[SHORTHAND] ||
        valid_symbols[MATH_SPREAD_OPERATOR])) {
     return scan_dot_prefixed(scanner, lexer, valid_symbols);
+  }
+
+  if (valid_symbols[IMMEDIATE_CONTENT_AHEAD] &&
+      lexer->lookahead == '[' &&
+      !immediate_postfix_blocked(scanner, lexer)) {
+    lexer->mark_end(lexer);
+    lexer->result_symbol = IMMEDIATE_CONTENT_AHEAD;
+    return true;
   }
 
   if (valid_symbols[CODE_ARGUMENT_AHEAD] &&
@@ -2400,11 +2645,16 @@ static bool scanner_scan(void *payload, TSLexer *lexer,
     return scan_markup_shorthand(lexer);
   }
 
-  if (valid_symbols[AUTOMATIC_LINK] && lexer->lookahead == 'h') {
-    return scan_automatic_link(lexer);
+  if ((valid_symbols[AUTOMATIC_LINK] ||
+       valid_symbols[MALFORMED_AUTOMATIC_LINK]) &&
+      lexer->lookahead == 'h') {
+    return scan_automatic_link(
+        lexer, valid_symbols[AUTOMATIC_LINK],
+        valid_symbols[MALFORMED_AUTOMATIC_LINK]);
   }
 
-  if ((valid_symbols[INTEGER] || valid_symbols[FLOAT]) &&
+  if ((valid_symbols[INTEGER] || valid_symbols[FLOAT] ||
+       valid_symbols[MALFORMED_NUMBER]) &&
       ascii_digit(lexer->lookahead)) {
     return scan_code_number(scanner, lexer, valid_symbols);
   }

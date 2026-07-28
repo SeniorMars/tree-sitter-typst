@@ -27,20 +27,17 @@ parser.setLanguage(language);
 function pointAt(text, index) {
   const prefix = text.slice(0, index);
   const lines = prefix.split('\n');
-  return {row: lines.length - 1, column: Buffer.byteLength(lines.at(-1))};
+  return {row: lines.length - 1, column: lines.at(-1).length};
 }
 
 for (const [before, after, index, inserted] of cases) {
   const oldTree = parser.parse(before);
   const startPosition = pointAt(before, index);
-  const newEndPosition = {
-    row: startPosition.row,
-    column: startPosition.column + Buffer.byteLength(inserted),
-  };
+  const newEndPosition = pointAt(after, index + inserted.length);
   oldTree.edit({
     startIndex: index,
     oldEndIndex: index,
-    newEndIndex: index + Buffer.byteLength(inserted),
+    newEndIndex: index + inserted.length,
     startPosition,
     oldEndPosition: startPosition,
     newEndPosition,

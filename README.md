@@ -1,9 +1,9 @@
 # tree-sitter-typst
 
-`tree-sitter-typst` is a correct Tree-sitter parser for Typst. It parses
-Typst's markup, code, and math syntax, including embedded code, content blocks,
-equations, imports, set/show rules, closures, arrays, dictionaries, lists,
-sections, labels, raw blocks, and math attachments.
+`tree-sitter-typst` is an editor-oriented Tree-sitter parser for Typst. It
+parses Typst's markup, code, and math syntax, including embedded code, content
+blocks, equations, imports, set/show rules, closures, arrays, dictionaries,
+lists, sections, labels, raw blocks, and math attachments.
 
 Compared with earlier Typst grammars such as
 [`uben0/tree-sitter-typst`](https://github.com/uben0/tree-sitter-typst), this
@@ -11,16 +11,16 @@ project is intended to be a more complete parser that works for real Typst
 documents, editor queries, injections, incremental parsing, and real-world
 fixture validation.
 
-The grammar is intentionally written as one self-contained `grammar.js` plus an
-external scanner for the lexical decisions that Tree-sitter cannot express
-well in pure LR grammar rules.
+`grammar.js` is the composition root. Generated Unicode ranges and the external
+token manifest live under `grammar/`; the C scanner keeps its serialized state
+in `src/scanner.c`.
 
-## Generate And Test
+## Generate and Test
 
-Use Tree-sitter CLI 0.26.9 or newer:
+Use Node.js 22.23.1 and Tree-sitter CLI 0.26.9 or newer:
 
 ```sh
-npm install
+npm ci
 npm run generate
 npm test
 npm run check
@@ -32,24 +32,38 @@ Useful focused checks:
 npm run test:corpus
 npm run test:queries
 npm run test:incremental
+npm run test:fuzz:recovery
+npm run test:generated
 npm run test:real-world
 ```
 
 `src/parser.c`, `src/grammar.json`, and `src/node-types.json` are generated.
 Do not hand-edit them.
 
-The committed `src/unicode_tables.h` is generated scanner support data. Regenerate
-it only when updating Unicode data:
+The committed `src/unicode_tables.h` and `grammar/unicode-ranges.js` are
+generated from the same Unicode data. Regenerate them only when updating
+Unicode data:
 
 ```sh
 npm run generate:unicode
 ```
 
-The Unicode generator requires Python's `regex` module plus Unicode XID/number
-data and UTR #25 MathClass data files. It searches `vendor/unicode`,
+The Unicode generator requires Python `regex==2026.7.19` plus Unicode
+XID/number data and UTR #25 MathClass data files. It searches `vendor/unicode`,
 `src/vendor/unicode`, `third_party/unicode`, `unicode`, and `data`; set
 `TREE_SITTER_TYPST_UNICODE_DIR` or `TREE_SITTER_TYPST_MATH_CLASS` for other
 locations.
+
+Malformed numeric runs, automatic links, and markup Unicode escapes are exposed
+as `malformed_number`, `malformed_automatic_link`, and `malformed_escape`.
+Editor highlight integrations mark these nodes as errors without letting
+recovery consume the following stable syntax boundary.
+
+Repository validation treats every public `malformed_*` and `incomplete_*`
+recovery node as a syntax issue through `scripts/syntax-issues.js`. This is
+necessary because Tree-sitter's built-in `hasError` flag only reflects `ERROR`
+and `MISSING` nodes, not named recovery nodes emitted intentionally by a
+grammar.
 
 ## Root Modes
 
@@ -86,11 +100,25 @@ Editor queries live under `queries/typst/`:
 - `folds.scm`: foldable blocks and sections
 - `indents.scm`: Neovim indentation captures
 - `images.scm`: Snacks.nvim image and Typst math captures
+- `textobjects.scm`: Neovim function selection and movement captures
 
 The main highlight query follows Neovim's current tree-sitter capture
 conventions. The Helix integration keeps a separate highlight query adapted to
-Helix theme scopes instead of copying Neovim captures verbatim. Emacs likewise
-uses separate `treesit` font-lock rules under `editors/emacs/`.
+Helix theme scopes instead of copying Neovim captures verbatim. Emacs keeps
+separate `treesit` font-lock settings under `editors/emacs/`.
+
+The Neovim textobject query exposes `@function.outer` and `@function.inner` for
+function-shaped `let` bindings and closures. Conventional
+`nvim-treesitter-textobjects` mappings use `daf` for the whole function, `dif`
+for its body, and `]m` for the next function. To make `dif` delete the whole
+function instead, map `if` to `@function.outer`. Helix's existing
+`function.around` and `function.inside` captures provide `maf`, `mif`, and
+function navigation such as `]f`.
+
+`queries/typst/textobjects.scm` is a maintained Neovim integration query rather
+than a binding-neutral parser query, so language bindings do not expose a
+generic `TEXTOBJECTS_QUERY` constant. Helix keeps its editor-specific
+textobjects under `editors/helix/queries/`.
 
 `npm run test:queries` compiles every query and verifies that every declared
 capture is exercised by the audit fixture.
@@ -125,7 +153,7 @@ test/scanner/scanner_test.c
 test/corpus/scanner_edges.txt
 ```
 
-## Corpus And Real-World Fixtures
+## Corpus and Real-World Fixtures
 
 The corpus covers small syntax contracts, scanner edge cases, regressions, and a
 large synthetic Typst document:

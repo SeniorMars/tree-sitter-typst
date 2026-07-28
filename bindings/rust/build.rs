@@ -32,7 +32,13 @@ fn main() {
     let scanner_path = src_dir.join("scanner.c");
     if scanner_path.exists() {
         c_config.file(&scanner_path);
-        println!("cargo:rerun-if-changed={}", scanner_path.to_str().unwrap());
+        for path in [
+            scanner_path,
+            src_dir.join("external_tokens.h"),
+            src_dir.join("unicode_tables.h"),
+        ] {
+            println!("cargo:rerun-if-changed={}", path.display());
+        }
     }
 
     c_config.compile("tree-sitter-typst");
